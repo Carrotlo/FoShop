@@ -1,0 +1,69 @@
+name: FoShop
+description: Highly configurable, server-owner friendly shop and sellgui plugin
+version: '${version}'
+main: me.foesio.foShop.FoShop
+api-version: '1.21'
+authors: [ Carrotio ]
+softdepend: [ Vault, PlaceholderAPI, FoTeams, packetevents ]
+
+commands:
+  foshop:
+    description: Opens the FoShop main shop GUI
+    usage: /<command>
+    aliases: [ shop ]
+    permission: foshop.use
+  foshopadmin:
+    description: FoShop admin command
+    usage: "/<command> <version|reload|editor|booster|rotatingshop reset|convert <ShopGUIPlus|EconomyShopGUI> [dryrun]>"
+    aliases: [ shopadmin ]
+    permission: foshop.admin
+  rotatingshop:
+    description: Opens the FoShop rotating boosted shop GUI
+    usage: /<command>
+    aliases: [ rshop ]
+    permission: foshop.rotatingshop
+  fosellgui:
+    description: Opens the FoShop sell GUI
+    usage: /<command>
+    aliases: [ sellgui ]
+    permission: foshop.sellgui.use
+  sell:
+    description: Opens SellGUI or sells inventory/hand items
+    usage: "/<command> [all|hand|gui]"
+  sellall:
+    description: Sells all sellable items in your inventory
+    usage: /<command>
+    permission: foshop.sellall
+  sellhand:
+    description: Sells the item in your main hand
+    usage: /<command>
+    aliases: [ sellheld ]
+    permission: foshop.sellhand
+  worth:
+    description: Opens the FoShop worth browser
+    usage: /<command>
+    aliases: [ prices ]
+    permission: foshop.worth
+
+permissions:
+  foshop.use:
+    description: Allows using /foshop
+    default: true
+  foshop.sellgui.use:
+    description: Allows using /fosellgui
+    default: true
+  foshop.rotatingshop:
+    description: Allows using /rotatingshop
+    default: true
+  foshop.sellall:
+    description: Allows using /sellall
+    default: true
+  foshop.sellhand:
+    description: Allows using /sellhand
+    default: true
+  foshop.worth:
+    description: Allows using /worth
+    default: true
+  foshop.admin:
+    description: Allows using /foshopadmin and receiving admin update notices
+    default: op

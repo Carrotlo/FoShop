@@ -1,0 +1,26 @@
+# Public rotating boosted shop page.
+title: "&8Rotating Shop"
+
+filler:
+  material: GRAY_STAINED_GLASS_PANE
+  amount: 1
+  name: " "
+  lore: []
+  custom-model-data: -1
+
+# Middle row, columns 3-7 in a 3-row GUI.
+slots: [11, 12, 13, 14, 15]
+
+boost-lore:
+  - "&#ffffffBoost: &#03fc88{boost}x"
+  - "&#ffffffBoosted sell: &#03fc88{price}"
+  - "&#a7b8b0Resets in {time}."
+
+empty:
+  slot: 13
+  material: GRAY_DYE
+  amount: 1
+  name: "&#ff5d73No Boosts"
+  lore:
+    - "&#ffffffNo sellable rotating items available."
+  custom-model-data: -1

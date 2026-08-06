@@ -1,0 +1,106 @@
+# Need help or want support? Join the Discord: https://discord.gg/kEF77QCfu7
+
+# FoShop Configuration
+#
+# Global text tokens supported in config, messages, and GUI files:
+# {prefix} {theme} {muted} {white} {good} {bad}
+
+# Theme colors used by messages and GUI text.
+colors:
+  theme: "&#03fc88"
+  muted: "&#a7b8b0"
+  white: "&#ffffff"
+  good: "&#3ecf8e"
+  bad: "&#ff5d73"
+
+# File logging works like debug mode and saves plugin activity to logs/latest.log. Default: false
+file-logging: false
+
+# Uses Minecraft's native dialog/input screens for search and text/number input when supported.
+# Requires a compatible Paper or Paper-fork server with the Dialog API.
+# Spigot and older versions automatically fall back to inventory/chat GUI mode.
+# Set this to false to always use inventory/chat GUIs.
+native-dialogs:
+  enabled: true
+  # Sends admins a short warning when native dialogs are enabled but unavailable and the plugin falls back.
+  warn-on-fallback: true
+
+# Rotating shop behavior. Visible layout lives in guis/rotating-shop.yml.
+rotating-shop:
+  # Disabled by default. When enabled, /rotatingshop opens the boosted items GUI.
+  enabled: false
+  # How often the random boosted items reset. 86400 = 1 day.
+  reset-interval-seconds: 86400
+  # Missing sections default to true. Use the editor to toggle section participation.
+  sections: {}
+  # Missing items default to true. Use the editor to toggle item participation per section.
+  items: {}
+
+# Sell booster behavior. Active boosters are stored in sell-boosters.yml.
+sell-boosters:
+  # When disabled, active sell boosters stay saved but do not affect prices.
+  enabled: true
+  # true = multiply all applicable boosters. false = use the highest applicable booster.
+  stack-boosters: false
+  # true = multiply rotating shop boosts with sell boosters. false = use the highest multiplier.
+  stack-with-rotating-shop: false
+  bossbar:
+    # Shows a bossbar to players while a sell booster applies to them.
+    enabled: true
+    title: "&#03fc88{multiplier}x &#a7b8b0SELL BOOSTER &8- &#ffffff{time}"
+    color: GREEN
+    style: SEGMENTED_10
+    update-ticks: 20
+  team-boosters:
+    # Requires FoTeams. FoShop only softdepends on FoTeams and never requires FoDropBooster.
+    enabled: true
+
+# Global sell prices make every vanilla item sellable from global-sell-prices.yml.
+global-sell-prices:
+  # Disabled by default. Shop section items always override global material prices.
+  enabled: false
+  worth-lore:
+    # Shows packet-only worth lore in player inventories and physical containers. Requires PacketEvents.
+    enabled: false
+
+# SellGUI behavior settings. Visible layout lives in guis/sell-gui.yml.
+sellgui:
+  # Game modes blocked from using /sellgui. Use Bukkit enum names, e.g. CREATIVE.
+  blocked-gamemodes: []
+
+  receipts:
+    # 0 = disabled, 1 = append hover receipt text to the sold message.
+    type: 1
+
+  titles:
+    # Send title feedback after a successful SellGUI sale.
+    enabled: true
+    title: "&#3ecf8e+{earning}"
+    subtitle: "&#a7b8b0You sold &#03fc88{amount}&#a7b8b0 items in this batch."
+
+  action-bar:
+    # Send action bar feedback after a successful SellGUI sale.
+    enabled: true
+    message: "&#3ecf8eSold &#03fc88{amount}&#3ecf8e item(s) for &#03fc88{earning}&#3ecf8e."
+
+  transaction-log:
+    # Writes SellGUI sale history to transactions/sellgui.log.
+    enabled: true
+    date-format: "yyyy/MM/dd HH:mm:ss"
+
+  price-format:
+    # rounded-pricing uses two decimals. remove-trailing-zeros trims .00. abbreviate-numbers uses k/m/b.
+    rounded-pricing: false
+    remove-trailing-zeros: false
+    abbreviate-numbers: true
+
+  sounds:
+    # Sound names must match Bukkit Sound enum names.
+    enabled: true
+    error-notification: true
+    pitch: 1
+    volume: 1
+    events:
+      open: BLOCK_CHEST_OPEN
+      success: ENTITY_VILLAGER_CELEBRATE
+      failed: ENTITY_VILLAGER_HURT

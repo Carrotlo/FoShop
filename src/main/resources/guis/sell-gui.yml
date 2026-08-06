@@ -1,0 +1,26 @@
+# Public /sellgui layout. Top rows are player input slots; bottom row is protected controls.
+title: "&8Sell Gui"
+rows: 6
+
+filler:
+  material: GRAY_STAINED_GLASS_PANE
+  amount: 1
+  name: " "
+  lore: []
+  custom-model-data: -1
+
+buttons:
+  sell:
+    slot: -1 # -1 means plugin default: bottom center.
+    material: EMERALD
+    amount: 1
+    name: "&#03fc88Sell Items"
+    lore:
+      - "&#ffffffPut items in the top rows."
+      - "&#ffffffClick to sell all sellable items."
+      - "&#a7b8b0Unsellable items are returned."
+    custom-model-data: -1
+
+# Optional static buttons/decorations.
+# Keys are arbitrary. Use player-commands and console-commands for click actions.
+decorations: {}

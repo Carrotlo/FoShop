@@ -1,0 +1,83 @@
+# Public buy amount selector. Slot indexes are 0-based for a 27-slot GUI.
+title: "&8Buy: {item}"
+filler:
+  material: GRAY_STAINED_GLASS_PANE
+  amount: 1
+  name: " "
+  lore: []
+  custom-model-data: -1
+
+buttons:
+  remove-64:
+    slot: 10
+    change: -64
+    material: RED_STAINED_GLASS_PANE
+    amount: 1
+    name: "&#ff5d73-64"
+    lore:
+      - "&#ffffffRemove 64."
+    custom-model-data: -1
+  remove-10:
+    slot: 11
+    change: -10
+    material: RED_STAINED_GLASS_PANE
+    amount: 1
+    name: "&#ff5d73-10"
+    lore:
+      - "&#ffffffRemove 10."
+    custom-model-data: -1
+  remove-1:
+    slot: 12
+    change: -1
+    material: RED_STAINED_GLASS_PANE
+    amount: 1
+    name: "&#ff5d73-1"
+    lore:
+      - "&#ffffffRemove 1."
+    custom-model-data: -1
+  add-1:
+    slot: 14
+    change: 1
+    material: LIME_STAINED_GLASS_PANE
+    amount: 1
+    name: "&#3ecf8e+1"
+    lore:
+      - "&#ffffffAdd 1."
+    custom-model-data: -1
+  add-10:
+    slot: 15
+    change: 10
+    material: LIME_STAINED_GLASS_PANE
+    amount: 1
+    name: "&#3ecf8e+10"
+    lore:
+      - "&#ffffffAdd 10."
+    custom-model-data: -1
+  add-64:
+    slot: 16
+    change: 64
+    material: LIME_STAINED_GLASS_PANE
+    amount: 1
+    name: "&#3ecf8e+64"
+    lore:
+      - "&#ffffffAdd 64."
+    custom-model-data: -1
+  cancel:
+    slot: 22
+  bulk:
+    slot: 21
+    material: HOPPER
+    amount: 1
+    name: "&#03fc88Buy More"
+    lore:
+      - "&#ffffffChoose stack amount preset."
+    custom-model-data: -1
+  confirm:
+    slot: 23
+    material: LIME_SHULKER_BOX
+    amount: 1
+    name: "&#3ecf8eConfirm Buy"
+    lore:
+      - "&#ffffffBuy: &#03fc88{amount}"
+      - "&#ffffffPrice: &#03fc88{price}"
+    custom-model-data: -1

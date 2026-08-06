@@ -1,0 +1,15 @@
+# Public shop section pages. Product items come from shops/*.yml.
+filler:
+  material: GRAY_STAINED_GLASS_PANE
+  amount: 1
+  name: " "
+  lore: []
+  custom-model-data: -1
+
+buttons:
+  back:
+    slot: -1 # -1 means plugin default: bottom center.
+  previous:
+    slot: -1 # -1 means plugin default: bottom left.
+  next:
+    slot: -1 # -1 means plugin default: bottom right.

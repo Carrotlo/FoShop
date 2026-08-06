@@ -1,0 +1,7384 @@
+# FoShop global fallback sell prices.
+# The system is still controlled by config.yml: global-sell-prices.enabled.
+# Shop items override these prices. Per item, enabled must also be true for the fallback to sell.
+# rotating-shop controls whether this fallback item may appear in the rotating shop pool.
+# Villager-sold currency/items are conservative by default to avoid emerald trade loops.
+# Normally unobtainable/admin-only and block-state-only entries are disabled by default.
+items:
+  ACACIA_BOAT:
+    enabled: true
+    price: 20.0
+    rotating-shop: true
+  ACACIA_BUTTON:
+    enabled: true
+    price: 4.0
+    rotating-shop: true
+  ACACIA_CHEST_BOAT:
+    enabled: true
+    price: 52.0
+    rotating-shop: true
+  ACACIA_DOOR:
+    enabled: true
+    price: 8.0
+    rotating-shop: true
+  ACACIA_FENCE:
+    enabled: true
+    price: 6.67
+    rotating-shop: true
+  ACACIA_FENCE_GATE:
+    enabled: true
+    price: 16.0
+    rotating-shop: true
+  ACACIA_HANGING_SIGN:
+    enabled: true
+    price: 16.5
+    rotating-shop: true
+  ACACIA_LEAVES:
+    enabled: true
+    price: 1.0
+    rotating-shop: true
+  ACACIA_LOG:
+    enabled: true
+    price: 16.0
+    rotating-shop: true
+  ACACIA_PLANKS:
+    enabled: true
+    price: 4.0
+    rotating-shop: true
+  ACACIA_PRESSURE_PLATE:
+    enabled: true
+    price: 8.0
+    rotating-shop: true
+  ACACIA_SAPLING:
+    enabled: true
+    price: 4.0
+    rotating-shop: true
+  ACACIA_SHELF:
+    enabled: true
+    price: 1.5
+    rotating-shop: true
+  ACACIA_SIGN:
+    enabled: true
+    price: 8.67
+    rotating-shop: true
+  ACACIA_SLAB:
+    enabled: true
+    price: 2.0
+    rotating-shop: true
+  ACACIA_STAIRS:
+    enabled: true
+    price: 6.0
+    rotating-shop: true
+  ACACIA_TRAPDOOR:
+    enabled: true
+    price: 12.0
+    rotating-shop: true
+  ACACIA_WALL_HANGING_SIGN:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  ACACIA_WALL_SIGN:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  ACACIA_WOOD:
+    enabled: true
+    price: 16.0
+    rotating-shop: true
+  ACTIVATOR_RAIL:
+    enabled: true
+    price: 1.35
+    rotating-shop: true
+  ALLAY_SPAWN_EGG:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  ALLIUM:
+    enabled: true
+    price: 1.25
+    rotating-shop: true
+  AMETHYST_BLOCK:
+    enabled: true
+    price: 10.0
+    rotating-shop: true
+  AMETHYST_CLUSTER:
+    enabled: true
+    price: 25.0
+    rotating-shop: true
+  AMETHYST_SHARD:
+    enabled: true
+    price: 25.0
+    rotating-shop: true
+  ANCIENT_DEBRIS:
+    enabled: true
+    price: 375.0
+    rotating-shop: false
+  ANDESITE:
+    enabled: true
+    price: 0.62
+    rotating-shop: true
+  ANDESITE_SLAB:
+    enabled: true
+    price: 0.31
+    rotating-shop: true
+  ANDESITE_STAIRS:
+    enabled: true
+    price: 0.62
+    rotating-shop: true
+  ANDESITE_WALL:
+    enabled: true
+    price: 0.62
+    rotating-shop: true
+  ANGLER_POTTERY_SHERD:
+    enabled: true
+    price: 22.5
+    rotating-shop: true
+  ANVIL:
+    enabled: true
+    price: 34.44
+    rotating-shop: true
+  APPLE:
+    enabled: true
+    price: 0.1
+    rotating-shop: false
+  ARCHER_POTTERY_SHERD:
+    enabled: true
+    price: 22.5
+    rotating-shop: true
+  ARMADILLO_SCUTE:
+    enabled: true
+    price: 3.75
+    rotating-shop: true
+  ARMADILLO_SPAWN_EGG:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  ARMOR_STAND:
+    enabled: true
+    price: 5.0
+    rotating-shop: true
+  ARMS_UP_POTTERY_SHERD:
+    enabled: true
+    price: 22.5
+    rotating-shop: true
+  ARROW:
+    enabled: true
+    price: 0.03
+    rotating-shop: false
+  ATTACHED_MELON_STEM:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  ATTACHED_PUMPKIN_STEM:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  AXOLOTL_BUCKET:
+    enabled: true
+    price: 4.0
+    rotating-shop: true
+  AXOLOTL_SPAWN_EGG:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  AZALEA:
+    enabled: true
+    price: 1.5
+    rotating-shop: true
+  AZALEA_LEAVES:
+    enabled: true
+    price: 0.25
+    rotating-shop: true
+  AZURE_BLUET:
+    enabled: true
+    price: 1.25
+    rotating-shop: true
+  BAKED_POTATO:
+    enabled: true
+    price: 3.75
+    rotating-shop: true
+  BAMBOO:
+    enabled: true
+    price: 10.0
+    rotating-shop: true
+  BAMBOO_BLOCK:
+    enabled: true
+    price: 16.0
+    rotating-shop: true
+  BAMBOO_BUTTON:
+    enabled: true
+    price: 4.0
+    rotating-shop: true
+  BAMBOO_CHEST_RAFT:
+    enabled: true
+    price: 52.0
+    rotating-shop: true
+  BAMBOO_DOOR:
+    enabled: true
+    price: 8.0
+    rotating-shop: true
+  BAMBOO_FENCE:
+    enabled: true
+    price: 6.67
+    rotating-shop: true
+  BAMBOO_FENCE_GATE:
+    enabled: true
+    price: 16.0
+    rotating-shop: true
+  BAMBOO_HANGING_SIGN:
+    enabled: true
+    price: 16.5
+    rotating-shop: true
+  BAMBOO_MOSAIC:
+    enabled: true
+    price: 4.0
+    rotating-shop: true
+  BAMBOO_MOSAIC_SLAB:
+    enabled: true
+    price: 2.0
+    rotating-shop: true
+  BAMBOO_MOSAIC_STAIRS:
+    enabled: true
+    price: 6.0
+    rotating-shop: true
+  BAMBOO_PLANKS:
+    enabled: true
+    price: 4.0
+    rotating-shop: true
+  BAMBOO_PRESSURE_PLATE:
+    enabled: true
+    price: 8.0
+    rotating-shop: true
+  BAMBOO_RAFT:
+    enabled: true
+    price: 20.0
+    rotating-shop: true
+  BAMBOO_SAPLING:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  BAMBOO_SHELF:
+    enabled: true
+    price: 1.5
+    rotating-shop: true
+  BAMBOO_SIGN:
+    enabled: true
+    price: 8.67
+    rotating-shop: true
+  BAMBOO_SLAB:
+    enabled: true
+    price: 2.0
+    rotating-shop: true
+  BAMBOO_STAIRS:
+    enabled: true
+    price: 6.0
+    rotating-shop: true
+  BAMBOO_TRAPDOOR:
+    enabled: true
+    price: 12.0
+    rotating-shop: true
+  BAMBOO_WALL_HANGING_SIGN:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  BAMBOO_WALL_SIGN:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  BARREL:
+    enabled: true
+    price: 7.0
+    rotating-shop: true
+  BARRIER:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  BASALT:
+    enabled: true
+    price: 1.0
+    rotating-shop: true
+  BAT_SPAWN_EGG:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  BEACON:
+    enabled: true
+    price: 1.5
+    rotating-shop: true
+  BEDROCK:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  BEEF:
+    enabled: true
+    price: 2.25
+    rotating-shop: true
+  BEEHIVE:
+    enabled: true
+    price: 1.5
+    rotating-shop: true
+  BEETROOT:
+    enabled: true
+    price: 15.0
+    rotating-shop: true
+  BEETROOTS:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  BEETROOT_SEEDS:
+    enabled: true
+    price: 0.25
+    rotating-shop: true
+  BEETROOT_SOUP:
+    enabled: true
+    price: 91.0
+    rotating-shop: true
+  BEE_NEST:
+    enabled: true
+    price: 1.5
+    rotating-shop: true
+  BEE_SPAWN_EGG:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  BELL:
+    enabled: true
+    price: 1.0
+    rotating-shop: false
+  BIG_DRIPLEAF:
+    enabled: true
+    price: 1.5
+    rotating-shop: true
+  BIG_DRIPLEAF_STEM:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  BIRCH_BOAT:
+    enabled: true
+    price: 20.0
+    rotating-shop: true
+  BIRCH_BUTTON:
+    enabled: true
+    price: 4.0
+    rotating-shop: true
+  BIRCH_CHEST_BOAT:
+    enabled: true
+    price: 52.0
+    rotating-shop: true
+  BIRCH_DOOR:
+    enabled: true
+    price: 8.0
+    rotating-shop: true
+  BIRCH_FENCE:
+    enabled: true
+    price: 6.67
+    rotating-shop: true
+  BIRCH_FENCE_GATE:
+    enabled: true
+    price: 16.0
+    rotating-shop: true
+  BIRCH_HANGING_SIGN:
+    enabled: true
+    price: 16.5
+    rotating-shop: true
+  BIRCH_LEAVES:
+    enabled: true
+    price: 1.0
+    rotating-shop: true
+  BIRCH_LOG:
+    enabled: true
+    price: 16.0
+    rotating-shop: true
+  BIRCH_PLANKS:
+    enabled: true
+    price: 4.0
+    rotating-shop: true
+  BIRCH_PRESSURE_PLATE:
+    enabled: true
+    price: 8.0
+    rotating-shop: true
+  BIRCH_SAPLING:
+    enabled: true
+    price: 4.0
+    rotating-shop: true
+  BIRCH_SHELF:
+    enabled: true
+    price: 1.5
+    rotating-shop: true
+  BIRCH_SIGN:
+    enabled: true
+    price: 8.67
+    rotating-shop: true
+  BIRCH_SLAB:
+    enabled: true
+    price: 2.0
+    rotating-shop: true
+  BIRCH_STAIRS:
+    enabled: true
+    price: 6.0
+    rotating-shop: true
+  BIRCH_TRAPDOOR:
+    enabled: true
+    price: 12.0
+    rotating-shop: true
+  BIRCH_WALL_HANGING_SIGN:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  BIRCH_WALL_SIGN:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  BIRCH_WOOD:
+    enabled: true
+    price: 16.0
+    rotating-shop: true
+  BLACKSTONE:
+    enabled: true
+    price: 0.75
+    rotating-shop: true
+  BLACKSTONE_SLAB:
+    enabled: true
+    price: 0.38
+    rotating-shop: true
+  BLACKSTONE_STAIRS:
+    enabled: true
+    price: 0.75
+    rotating-shop: true
+  BLACKSTONE_WALL:
+    enabled: true
+    price: 0.75
+    rotating-shop: true
+  BLACK_BANNER:
+    enabled: true
+    price: 1.5
+    rotating-shop: false
+  BLACK_BED:
+    enabled: true
+    price: 2.0
+    rotating-shop: false
+  BLACK_BUNDLE:
+    enabled: true
+    price: 8.75
+    rotating-shop: false
+  BLACK_CANDLE:
+    enabled: true
+    price: 2.5
+    rotating-shop: true
+  BLACK_CANDLE_CAKE:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  BLACK_CARPET:
+    enabled: true
+    price: 0.5
+    rotating-shop: false
+  BLACK_CONCRETE:
+    enabled: true
+    price: 0.5
+    rotating-shop: true
+  BLACK_CONCRETE_POWDER:
+    enabled: true
+    price: 0.38
+    rotating-shop: true
+  BLACK_DYE:
+    enabled: true
+    price: 0.05
+    rotating-shop: false
+  BLACK_GLAZED_TERRACOTTA:
+    enabled: true
+    price: 0.15
+    rotating-shop: false
+  BLACK_HARNESS:
+    enabled: true
+    price: 20.0
+    rotating-shop: true
+  BLACK_SHULKER_BOX:
+    enabled: true
+    price: 15.0
+    rotating-shop: false
+  BLACK_STAINED_GLASS:
+    enabled: true
+    price: 0.1
+    rotating-shop: false
+  BLACK_STAINED_GLASS_PANE:
+    enabled: true
+    price: 0.03
+    rotating-shop: false
+  BLACK_TERRACOTTA:
+    enabled: true
+    price: 0.1
+    rotating-shop: false
+  BLACK_WALL_BANNER:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  BLACK_WOOL:
+    enabled: true
+    price: 1.0
+    rotating-shop: false
+  BLADE_POTTERY_SHERD:
+    enabled: true
+    price: 22.5
+    rotating-shop: true
+  BLAST_FURNACE:
+    enabled: true
+    price: 56.25
+    rotating-shop: true
+  BLAZE_POWDER:
+    enabled: true
+    price: 2.19
+    rotating-shop: true
+  BLAZE_ROD:
+    enabled: true
+    price: 4.38
+    rotating-shop: true
+  BLAZE_SPAWN_EGG:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  BLUE_BANNER:
+    enabled: true
+    price: 1.5
+    rotating-shop: false
+  BLUE_BED:
+    enabled: true
+    price: 2.0
+    rotating-shop: false
+  BLUE_BUNDLE:
+    enabled: true
+    price: 8.75
+    rotating-shop: false
+  BLUE_CANDLE:
+    enabled: true
+    price: 2.5
+    rotating-shop: true
+  BLUE_CANDLE_CAKE:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  BLUE_CARPET:
+    enabled: true
+    price: 0.5
+    rotating-shop: false
+  BLUE_CONCRETE:
+    enabled: true
+    price: 0.5
+    rotating-shop: true
+  BLUE_CONCRETE_POWDER:
+    enabled: true
+    price: 0.38
+    rotating-shop: true
+  BLUE_DYE:
+    enabled: true
+    price: 0.05
+    rotating-shop: false
+  BLUE_EGG:
+    enabled: true
+    price: 1.5
+    rotating-shop: true
+  BLUE_GLAZED_TERRACOTTA:
+    enabled: true
+    price: 0.15
+    rotating-shop: false
+  BLUE_HARNESS:
+    enabled: true
+    price: 20.0
+    rotating-shop: true
+  BLUE_ICE:
+    enabled: true
+    price: 121.5
+    rotating-shop: true
+  BLUE_ORCHID:
+    enabled: true
+    price: 1.25
+    rotating-shop: true
+  BLUE_SHULKER_BOX:
+    enabled: true
+    price: 15.0
+    rotating-shop: false
+  BLUE_STAINED_GLASS:
+    enabled: true
+    price: 0.1
+    rotating-shop: false
+  BLUE_STAINED_GLASS_PANE:
+    enabled: true
+    price: 0.03
+    rotating-shop: false
+  BLUE_TERRACOTTA:
+    enabled: true
+    price: 0.1
+    rotating-shop: false
+  BLUE_WALL_BANNER:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  BLUE_WOOL:
+    enabled: true
+    price: 1.0
+    rotating-shop: false
+  BOGGED_SPAWN_EGG:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  BOLT_ARMOR_TRIM_SMITHING_TEMPLATE:
+    enabled: true
+    price: 112.5
+    rotating-shop: true
+  BONE:
+    enabled: true
+    price: 1.0
+    rotating-shop: true
+  BONE_BLOCK:
+    enabled: true
+    price: 3.0
+    rotating-shop: true
+  BONE_MEAL:
+    enabled: true
+    price: 0.31
+    rotating-shop: true
+  BOOK:
+    enabled: true
+    price: 0.1
+    rotating-shop: false
+  BOOKSHELF:
+    enabled: true
+    price: 0.5
+    rotating-shop: false
+  BORDURE_INDENTED_BANNER_PATTERN:
+    enabled: true
+    price: 31.25
+    rotating-shop: true
+  BOW:
+    enabled: true
+    price: 0.25
+    rotating-shop: false
+  BOWL:
+    enabled: true
+    price: 1.0
+    rotating-shop: true
+  BRAIN_CORAL:
+    enabled: true
+    price: 3.12
+    rotating-shop: true
+  BRAIN_CORAL_BLOCK:
+    enabled: true
+    price: 6.25
+    rotating-shop: true
+  BRAIN_CORAL_FAN:
+    enabled: true
+    price: 3.12
+    rotating-shop: true
+  BRAIN_CORAL_WALL_FAN:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  BREAD:
+    enabled: true
+    price: 0.1
+    rotating-shop: false
+  BREEZE_ROD:
+    enabled: true
+    price: 6.88
+    rotating-shop: true
+  BREEZE_SPAWN_EGG:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  BREWER_POTTERY_SHERD:
+    enabled: true
+    price: 22.5
+    rotating-shop: true
+  BREWING_STAND:
+    enabled: true
+    price: 20.0
+    rotating-shop: true
+  BRICK:
+    enabled: true
+    price: 0.05
+    rotating-shop: false
+  BRICKS:
+    enabled: true
+    price: 0.2
+    rotating-shop: false
+  BRICK_SLAB:
+    enabled: true
+    price: 1.25
+    rotating-shop: true
+  BRICK_STAIRS:
+    enabled: true
+    price: 2.5
+    rotating-shop: true
+  BRICK_WALL:
+    enabled: true
+    price: 2.5
+    rotating-shop: true
+  BROWN_BANNER:
+    enabled: true
+    price: 1.5
+    rotating-shop: false
+  BROWN_BED:
+    enabled: true
+    price: 2.0
+    rotating-shop: false
+  BROWN_BUNDLE:
+    enabled: true
+    price: 8.75
+    rotating-shop: false
+  BROWN_CANDLE:
+    enabled: true
+    price: 2.5
+    rotating-shop: true
+  BROWN_CANDLE_CAKE:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  BROWN_CARPET:
+    enabled: true
+    price: 0.5
+    rotating-shop: false
+  BROWN_CONCRETE:
+    enabled: true
+    price: 0.5
+    rotating-shop: true
+  BROWN_CONCRETE_POWDER:
+    enabled: true
+    price: 0.38
+    rotating-shop: true
+  BROWN_DYE:
+    enabled: true
+    price: 0.05
+    rotating-shop: false
+  BROWN_EGG:
+    enabled: true
+    price: 1.5
+    rotating-shop: true
+  BROWN_GLAZED_TERRACOTTA:
+    enabled: true
+    price: 0.15
+    rotating-shop: false
+  BROWN_HARNESS:
+    enabled: true
+    price: 20.0
+    rotating-shop: true
+  BROWN_MUSHROOM:
+    enabled: true
+    price: 7.5
+    rotating-shop: true
+  BROWN_MUSHROOM_BLOCK:
+    enabled: true
+    price: 3.0
+    rotating-shop: true
+  BROWN_SHULKER_BOX:
+    enabled: true
+    price: 15.0
+    rotating-shop: false
+  BROWN_STAINED_GLASS:
+    enabled: true
+    price: 0.1
+    rotating-shop: false
+  BROWN_STAINED_GLASS_PANE:
+    enabled: true
+    price: 0.03
+    rotating-shop: false
+  BROWN_TERRACOTTA:
+    enabled: true
+    price: 0.1
+    rotating-shop: false
+  BROWN_WALL_BANNER:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  BROWN_WOOL:
+    enabled: true
+    price: 1.0
+    rotating-shop: false
+  BRUSH:
+    enabled: true
+    price: 8.12
+    rotating-shop: true
+  BUBBLE_COLUMN:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  BUBBLE_CORAL:
+    enabled: true
+    price: 3.12
+    rotating-shop: true
+  BUBBLE_CORAL_BLOCK:
+    enabled: true
+    price: 6.25
+    rotating-shop: true
+  BUBBLE_CORAL_FAN:
+    enabled: true
+    price: 3.12
+    rotating-shop: true
+  BUBBLE_CORAL_WALL_FAN:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  BUCKET:
+    enabled: true
+    price: 3.33
+    rotating-shop: true
+  BUDDING_AMETHYST:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  BUNDLE:
+    enabled: true
+    price: 1.5
+    rotating-shop: false
+  BURN_POTTERY_SHERD:
+    enabled: true
+    price: 22.5
+    rotating-shop: true
+  BUSH:
+    enabled: true
+    price: 1.5
+    rotating-shop: true
+  CACTUS:
+    enabled: true
+    price: 7.5
+    rotating-shop: true
+  CACTUS_FLOWER:
+    enabled: true
+    price: 1.25
+    rotating-shop: true
+  CAKE:
+    enabled: true
+    price: 0.5
+    rotating-shop: false
+  CALCITE:
+    enabled: true
+    price: 1.0
+    rotating-shop: true
+  CALIBRATED_SCULK_SENSOR:
+    enabled: true
+    price: 27.5
+    rotating-shop: true
+  CAMEL_HUSK_SPAWN_EGG:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  CAMEL_SPAWN_EGG:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  CAMPFIRE:
+    enabled: true
+    price: 0.25
+    rotating-shop: false
+  CANDLE:
+    enabled: true
+    price: 1.5
+    rotating-shop: true
+  CANDLE_CAKE:
+    enabled: true
+    price: 1.5
+    rotating-shop: true
+  CARROT:
+    enabled: true
+    price: 16.25
+    rotating-shop: true
+  CARROTS:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  CARROT_ON_A_STICK:
+    enabled: true
+    price: 1.5
+    rotating-shop: true
+  CARTOGRAPHY_TABLE:
+    enabled: true
+    price: 6.0
+    rotating-shop: true
+  CARVED_PUMPKIN:
+    enabled: true
+    price: 25.0
+    rotating-shop: true
+  CAT_SPAWN_EGG:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  CAULDRON:
+    enabled: true
+    price: 7.77
+    rotating-shop: true
+  CAVE_AIR:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  CAVE_SPIDER_SPAWN_EGG:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  CAVE_VINES:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  CAVE_VINES_PLANT:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  CHAINMAIL_BOOTS:
+    enabled: true
+    price: 0.35
+    rotating-shop: false
+  CHAINMAIL_CHESTPLATE:
+    enabled: true
+    price: 0.75
+    rotating-shop: false
+  CHAINMAIL_HELMET:
+    enabled: true
+    price: 0.4
+    rotating-shop: false
+  CHAINMAIL_LEGGINGS:
+    enabled: true
+    price: 0.65
+    rotating-shop: false
+  CHAIN_COMMAND_BLOCK:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  CHARCOAL:
+    enabled: true
+    price: 1.25
+    rotating-shop: true
+  CHERRY_BOAT:
+    enabled: true
+    price: 20.0
+    rotating-shop: true
+  CHERRY_BUTTON:
+    enabled: true
+    price: 4.0
+    rotating-shop: true
+  CHERRY_CHEST_BOAT:
+    enabled: true
+    price: 52.0
+    rotating-shop: true
+  CHERRY_DOOR:
+    enabled: true
+    price: 8.0
+    rotating-shop: true
+  CHERRY_FENCE:
+    enabled: true
+    price: 6.67
+    rotating-shop: true
+  CHERRY_FENCE_GATE:
+    enabled: true
+    price: 16.0
+    rotating-shop: true
+  CHERRY_HANGING_SIGN:
+    enabled: true
+    price: 16.5
+    rotating-shop: true
+  CHERRY_LEAVES:
+    enabled: true
+    price: 1.0
+    rotating-shop: true
+  CHERRY_LOG:
+    enabled: true
+    price: 16.0
+    rotating-shop: true
+  CHERRY_PLANKS:
+    enabled: true
+    price: 4.0
+    rotating-shop: true
+  CHERRY_PRESSURE_PLATE:
+    enabled: true
+    price: 8.0
+    rotating-shop: true
+  CHERRY_SAPLING:
+    enabled: true
+    price: 4.0
+    rotating-shop: true
+  CHERRY_SHELF:
+    enabled: true
+    price: 1.5
+    rotating-shop: true
+  CHERRY_SIGN:
+    enabled: true
+    price: 8.67
+    rotating-shop: true
+  CHERRY_SLAB:
+    enabled: true
+    price: 2.0
+    rotating-shop: true
+  CHERRY_STAIRS:
+    enabled: true
+    price: 6.0
+    rotating-shop: true
+  CHERRY_TRAPDOOR:
+    enabled: true
+    price: 12.0
+    rotating-shop: true
+  CHERRY_WALL_HANGING_SIGN:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  CHERRY_WALL_SIGN:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  CHERRY_WOOD:
+    enabled: true
+    price: 16.0
+    rotating-shop: true
+  CHEST:
+    enabled: true
+    price: 8.0
+    rotating-shop: true
+  CHEST_MINECART:
+    enabled: true
+    price: 13.55
+    rotating-shop: true
+  CHICKEN:
+    enabled: true
+    price: 2.0
+    rotating-shop: true
+  CHICKEN_SPAWN_EGG:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  CHIPPED_ANVIL:
+    enabled: true
+    price: 22.96
+    rotating-shop: true
+  CHISELED_BOOKSHELF:
+    enabled: true
+    price: 0.5
+    rotating-shop: false
+  CHISELED_COPPER:
+    enabled: true
+    price: 1.5
+    rotating-shop: true
+  CHISELED_DEEPSLATE:
+    enabled: true
+    price: 0.62
+    rotating-shop: true
+  CHISELED_NETHER_BRICKS:
+    enabled: true
+    price: 2.5
+    rotating-shop: true
+  CHISELED_POLISHED_BLACKSTONE:
+    enabled: true
+    price: 0.75
+    rotating-shop: true
+  CHISELED_QUARTZ_BLOCK:
+    enabled: true
+    price: 37.5
+    rotating-shop: true
+  CHISELED_RED_SANDSTONE:
+    enabled: true
+    price: 0.62
+    rotating-shop: true
+  CHISELED_RESIN_BRICKS:
+    enabled: true
+    price: 1.5
+    rotating-shop: true
+  CHISELED_SANDSTONE:
+    enabled: true
+    price: 0.62
+    rotating-shop: true
+  CHISELED_STONE_BRICKS:
+    enabled: true
+    price: 0.62
+    rotating-shop: true
+  CHISELED_TUFF:
+    enabled: true
+    price: 0.75
+    rotating-shop: true
+  CHISELED_TUFF_BRICKS:
+    enabled: true
+    price: 0.75
+    rotating-shop: true
+  CHORUS_FLOWER:
+    enabled: true
+    price: 50.0
+    rotating-shop: true
+  CHORUS_FRUIT:
+    enabled: true
+    price: 20.0
+    rotating-shop: true
+  CHORUS_PLANT:
+    enabled: true
+    price: 1.5
+    rotating-shop: true
+  CLAY:
+    enabled: true
+    price: 2.5
+    rotating-shop: true
+  CLAY_BALL:
+    enabled: true
+    price: 0.62
+    rotating-shop: true
+  CLOCK:
+    enabled: true
+    price: 0.25
+    rotating-shop: false
+  CLOSED_EYEBLOSSOM:
+    enabled: true
+    price: 1.5
+    rotating-shop: true
+  COAL:
+    enabled: true
+    price: 1.5
+    rotating-shop: true
+  COAL_BLOCK:
+    enabled: true
+    price: 13.5
+    rotating-shop: true
+  COAL_ORE:
+    enabled: true
+    price: 2.25
+    rotating-shop: true
+  COARSE_DIRT:
+    enabled: true
+    price: 1.5
+    rotating-shop: true
+  COAST_ARMOR_TRIM_SMITHING_TEMPLATE:
+    enabled: true
+    price: 112.5
+    rotating-shop: true
+  COBBLED_DEEPSLATE:
+    enabled: true
+    price: 0.62
+    rotating-shop: true
+  COBBLED_DEEPSLATE_SLAB:
+    enabled: true
+    price: 0.31
+    rotating-shop: true
+  COBBLED_DEEPSLATE_STAIRS:
+    enabled: true
+    price: 0.62
+    rotating-shop: true
+  COBBLED_DEEPSLATE_WALL:
+    enabled: true
+    price: 0.62
+    rotating-shop: true
+  COBBLESTONE:
+    enabled: true
+    price: 0.5
+    rotating-shop: true
+  COBBLESTONE_SLAB:
+    enabled: true
+    price: 0.25
+    rotating-shop: true
+  COBBLESTONE_STAIRS:
+    enabled: true
+    price: 0.5
+    rotating-shop: true
+  COBBLESTONE_WALL:
+    enabled: true
+    price: 0.5
+    rotating-shop: true
+  COBWEB:
+    enabled: true
+    price: 1.5
+    rotating-shop: true
+  COCOA:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  COCOA_BEANS:
+    enabled: true
+    price: 12.5
+    rotating-shop: true
+  COD:
+    enabled: true
+    price: 1.75
+    rotating-shop: true
+  COD_BUCKET:
+    enabled: true
+    price: 0.5
+    rotating-shop: false
+  COD_SPAWN_EGG:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  COMMAND_BLOCK:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  COMMAND_BLOCK_MINECART:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  COMPARATOR:
+    enabled: true
+    price: 9.38
+    rotating-shop: true
+  COMPASS:
+    enabled: true
+    price: 0.25
+    rotating-shop: false
+  COMPOSTER:
+    enabled: true
+    price: 1.5
+    rotating-shop: true
+  CONDUIT:
+    enabled: true
+    price: 1.5
+    rotating-shop: true
+  COOKED_BEEF:
+    enabled: true
+    price: 0.1
+    rotating-shop: false
+  COOKED_CHICKEN:
+    enabled: true
+    price: 0.1
+    rotating-shop: false
+  COOKED_COD:
+    enabled: true
+    price: 0.1
+    rotating-shop: false
+  COOKED_MUTTON:
+    enabled: true
+    price: 0.1
+    rotating-shop: false
+  COOKED_PORKCHOP:
+    enabled: true
+    price: 0.1
+    rotating-shop: false
+  COOKED_RABBIT:
+    enabled: true
+    price: 0.1
+    rotating-shop: false
+  COOKED_SALMON:
+    enabled: true
+    price: 0.1
+    rotating-shop: false
+  COOKIE:
+    enabled: true
+    price: 0.03
+    rotating-shop: false
+  COPPER_AXE:
+    enabled: true
+    price: 6.5
+    rotating-shop: true
+  COPPER_BARS:
+    enabled: true
+    price: 1.5
+    rotating-shop: true
+  COPPER_BLOCK:
+    enabled: true
+    price: 18.0
+    rotating-shop: true
+  COPPER_BOOTS:
+    enabled: true
+    price: 8.0
+    rotating-shop: true
+  COPPER_BULB:
+    enabled: true
+    price: 6.5
+    rotating-shop: true
+  COPPER_CHAIN:
+    enabled: true
+    price: 1.5
+    rotating-shop: true
+  COPPER_CHEST:
+    enabled: true
+    price: 1.5
+    rotating-shop: true
+  COPPER_CHESTPLATE:
+    enabled: true
+    price: 16.0
+    rotating-shop: true
+  COPPER_DOOR:
+    enabled: true
+    price: 12.0
+    rotating-shop: true
+  COPPER_GOLEM_SPAWN_EGG:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  COPPER_GOLEM_STATUE:
+    enabled: true
+    price: 1.5
+    rotating-shop: true
+  COPPER_GRATE:
+    enabled: true
+    price: 4.5
+    rotating-shop: true
+  COPPER_HELMET:
+    enabled: true
+    price: 10.0
+    rotating-shop: true
+  COPPER_HOE:
+    enabled: true
+    price: 4.5
+    rotating-shop: true
+  COPPER_HORSE_ARMOR:
+    enabled: true
+    price: 14.0
+    rotating-shop: true
+  COPPER_INGOT:
+    enabled: true
+    price: 2.0
+    rotating-shop: true
+  COPPER_LANTERN:
+    enabled: true
+    price: 1.5
+    rotating-shop: true
+  COPPER_LEGGINGS:
+    enabled: true
+    price: 14.0
+    rotating-shop: true
+  COPPER_NAUTILUS_ARMOR:
+    enabled: true
+    price: 14.0
+    rotating-shop: true
+  COPPER_NUGGET:
+    enabled: true
+    price: 0.22
+    rotating-shop: true
+  COPPER_ORE:
+    enabled: true
+    price: 3.0
+    rotating-shop: true
+  COPPER_PICKAXE:
+    enabled: true
+    price: 6.5
+    rotating-shop: true
+  COPPER_SHOVEL:
+    enabled: true
+    price: 2.25
+    rotating-shop: true
+  COPPER_SPEAR:
+    enabled: true
+    price: 1.5
+    rotating-shop: true
+  COPPER_SWORD:
+    enabled: true
+    price: 4.5
+    rotating-shop: true
+  COPPER_TORCH:
+    enabled: true
+    price: 1.5
+    rotating-shop: true
+  COPPER_TRAPDOOR:
+    enabled: true
+    price: 18.0
+    rotating-shop: true
+  COPPER_WALL_TORCH:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  CORNFLOWER:
+    enabled: true
+    price: 1.25
+    rotating-shop: true
+  COW_SPAWN_EGG:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  CRACKED_DEEPSLATE_BRICKS:
+    enabled: true
+    price: 0.62
+    rotating-shop: true
+  CRACKED_DEEPSLATE_TILES:
+    enabled: true
+    price: 0.62
+    rotating-shop: true
+  CRACKED_NETHER_BRICKS:
+    enabled: true
+    price: 2.5
+    rotating-shop: true
+  CRACKED_POLISHED_BLACKSTONE_BRICKS:
+    enabled: true
+    price: 0.75
+    rotating-shop: true
+  CRACKED_STONE_BRICKS:
+    enabled: true
+    price: 0.62
+    rotating-shop: true
+  CRAFTER:
+    enabled: true
+    price: 1.5
+    rotating-shop: true
+  CRAFTING_TABLE:
+    enabled: true
+    price: 16.0
+    rotating-shop: true
+  CREAKING_HEART:
+    enabled: true
+    price: 10.0
+    rotating-shop: true
+  CREAKING_SPAWN_EGG:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  CREEPER_BANNER_PATTERN:
+    enabled: true
+    price: 62.5
+    rotating-shop: true
+  CREEPER_HEAD:
+    enabled: true
+    price: 43.75
+    rotating-shop: true
+  CREEPER_SPAWN_EGG:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  CREEPER_WALL_HEAD:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  CRIMSON_BUTTON:
+    enabled: true
+    price: 4.0
+    rotating-shop: true
+  CRIMSON_DOOR:
+    enabled: true
+    price: 8.0
+    rotating-shop: true
+  CRIMSON_FENCE:
+    enabled: true
+    price: 6.67
+    rotating-shop: true
+  CRIMSON_FENCE_GATE:
+    enabled: true
+    price: 16.0
+    rotating-shop: true
+  CRIMSON_FUNGUS:
+    enabled: true
+    price: 20.0
+    rotating-shop: true
+  CRIMSON_HANGING_SIGN:
+    enabled: true
+    price: 16.5
+    rotating-shop: true
+  CRIMSON_HYPHAE:
+    enabled: true
+    price: 16.0
+    rotating-shop: true
+  CRIMSON_NYLIUM:
+    enabled: true
+    price: 1.5
+    rotating-shop: true
+  CRIMSON_PLANKS:
+    enabled: true
+    price: 4.0
+    rotating-shop: true
+  CRIMSON_PRESSURE_PLATE:
+    enabled: true
+    price: 8.0
+    rotating-shop: true
+  CRIMSON_ROOTS:
+    enabled: true
+    price: 1.0
+    rotating-shop: true
+  CRIMSON_SHELF:
+    enabled: true
+    price: 1.5
+    rotating-shop: true
+  CRIMSON_SIGN:
+    enabled: true
+    price: 8.67
+    rotating-shop: true
+  CRIMSON_SLAB:
+    enabled: true
+    price: 2.0
+    rotating-shop: true
+  CRIMSON_STAIRS:
+    enabled: true
+    price: 6.0
+    rotating-shop: true
+  CRIMSON_STEM:
+    enabled: true
+    price: 16.0
+    rotating-shop: true
+  CRIMSON_TRAPDOOR:
+    enabled: true
+    price: 12.0
+    rotating-shop: true
+  CRIMSON_WALL_HANGING_SIGN:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  CRIMSON_WALL_SIGN:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  CROSSBOW:
+    enabled: true
+    price: 0.5
+    rotating-shop: false
+  CRYING_OBSIDIAN:
+    enabled: true
+    price: 8.12
+    rotating-shop: true
+  CUT_COPPER:
+    enabled: true
+    price: 4.5
+    rotating-shop: true
+  CUT_COPPER_SLAB:
+    enabled: true
+    price: 2.25
+    rotating-shop: true
+  CUT_COPPER_STAIRS:
+    enabled: true
+    price: 4.5
+    rotating-shop: true
+  CUT_RED_SANDSTONE:
+    enabled: true
+    price: 0.62
+    rotating-shop: true
+  CUT_RED_SANDSTONE_SLAB:
+    enabled: true
+    price: 0.31
+    rotating-shop: true
+  CUT_SANDSTONE:
+    enabled: true
+    price: 0.62
+    rotating-shop: true
+  CUT_SANDSTONE_SLAB:
+    enabled: true
+    price: 0.31
+    rotating-shop: true
+  CYAN_BANNER:
+    enabled: true
+    price: 1.5
+    rotating-shop: false
+  CYAN_BED:
+    enabled: true
+    price: 2.0
+    rotating-shop: false
+  CYAN_BUNDLE:
+    enabled: true
+    price: 8.75
+    rotating-shop: false
+  CYAN_CANDLE:
+    enabled: true
+    price: 2.5
+    rotating-shop: true
+  CYAN_CANDLE_CAKE:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  CYAN_CARPET:
+    enabled: true
+    price: 0.5
+    rotating-shop: false
+  CYAN_CONCRETE:
+    enabled: true
+    price: 0.5
+    rotating-shop: true
+  CYAN_CONCRETE_POWDER:
+    enabled: true
+    price: 0.38
+    rotating-shop: true
+  CYAN_DYE:
+    enabled: true
+    price: 0.05
+    rotating-shop: false
+  CYAN_GLAZED_TERRACOTTA:
+    enabled: true
+    price: 0.15
+    rotating-shop: false
+  CYAN_HARNESS:
+    enabled: true
+    price: 20.0
+    rotating-shop: true
+  CYAN_SHULKER_BOX:
+    enabled: true
+    price: 15.0
+    rotating-shop: false
+  CYAN_STAINED_GLASS:
+    enabled: true
+    price: 0.1
+    rotating-shop: false
+  CYAN_STAINED_GLASS_PANE:
+    enabled: true
+    price: 0.03
+    rotating-shop: false
+  CYAN_TERRACOTTA:
+    enabled: true
+    price: 0.1
+    rotating-shop: false
+  CYAN_WALL_BANNER:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  CYAN_WOOL:
+    enabled: true
+    price: 1.0
+    rotating-shop: false
+  DAMAGED_ANVIL:
+    enabled: true
+    price: 11.48
+    rotating-shop: true
+  DANDELION:
+    enabled: true
+    price: 1.25
+    rotating-shop: true
+  DANGER_POTTERY_SHERD:
+    enabled: true
+    price: 22.5
+    rotating-shop: true
+  DARK_OAK_BOAT:
+    enabled: true
+    price: 20.0
+    rotating-shop: true
+  DARK_OAK_BUTTON:
+    enabled: true
+    price: 4.0
+    rotating-shop: true
+  DARK_OAK_CHEST_BOAT:
+    enabled: true
+    price: 52.0
+    rotating-shop: true
+  DARK_OAK_DOOR:
+    enabled: true
+    price: 8.0
+    rotating-shop: true
+  DARK_OAK_FENCE:
+    enabled: true
+    price: 6.67
+    rotating-shop: true
+  DARK_OAK_FENCE_GATE:
+    enabled: true
+    price: 16.0
+    rotating-shop: true
+  DARK_OAK_HANGING_SIGN:
+    enabled: true
+    price: 16.5
+    rotating-shop: true
+  DARK_OAK_LEAVES:
+    enabled: true
+    price: 1.0
+    rotating-shop: true
+  DARK_OAK_LOG:
+    enabled: true
+    price: 16.0
+    rotating-shop: true
+  DARK_OAK_PLANKS:
+    enabled: true
+    price: 4.0
+    rotating-shop: true
+  DARK_OAK_PRESSURE_PLATE:
+    enabled: true
+    price: 8.0
+    rotating-shop: true
+  DARK_OAK_SAPLING:
+    enabled: true
+    price: 4.0
+    rotating-shop: true
+  DARK_OAK_SHELF:
+    enabled: true
+    price: 1.5
+    rotating-shop: true
+  DARK_OAK_SIGN:
+    enabled: true
+    price: 8.67
+    rotating-shop: true
+  DARK_OAK_SLAB:
+    enabled: true
+    price: 2.0
+    rotating-shop: true
+  DARK_OAK_STAIRS:
+    enabled: true
+    price: 6.0
+    rotating-shop: true
+  DARK_OAK_TRAPDOOR:
+    enabled: true
+    price: 12.0
+    rotating-shop: true
+  DARK_OAK_WALL_HANGING_SIGN:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  DARK_OAK_WALL_SIGN:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  DARK_OAK_WOOD:
+    enabled: true
+    price: 16.0
+    rotating-shop: true
+  DARK_PRISMARINE:
+    enabled: true
+    price: 2.25
+    rotating-shop: true
+  DARK_PRISMARINE_SLAB:
+    enabled: true
+    price: 1.12
+    rotating-shop: true
+  DARK_PRISMARINE_STAIRS:
+    enabled: true
+    price: 2.25
+    rotating-shop: true
+  DAYLIGHT_DETECTOR:
+    enabled: true
+    price: 16.25
+    rotating-shop: true
+  DEAD_BRAIN_CORAL:
+    enabled: true
+    price: 3.12
+    rotating-shop: true
+  DEAD_BRAIN_CORAL_BLOCK:
+    enabled: true
+    price: 6.25
+    rotating-shop: true
+  DEAD_BRAIN_CORAL_FAN:
+    enabled: true
+    price: 3.12
+    rotating-shop: true
+  DEAD_BRAIN_CORAL_WALL_FAN:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  DEAD_BUBBLE_CORAL:
+    enabled: true
+    price: 3.12
+    rotating-shop: true
+  DEAD_BUBBLE_CORAL_BLOCK:
+    enabled: true
+    price: 6.25
+    rotating-shop: true
+  DEAD_BUBBLE_CORAL_FAN:
+    enabled: true
+    price: 3.12
+    rotating-shop: true
+  DEAD_BUBBLE_CORAL_WALL_FAN:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  DEAD_BUSH:
+    enabled: true
+    price: 1.5
+    rotating-shop: true
+  DEAD_FIRE_CORAL:
+    enabled: true
+    price: 3.12
+    rotating-shop: true
+  DEAD_FIRE_CORAL_BLOCK:
+    enabled: true
+    price: 6.25
+    rotating-shop: true
+  DEAD_FIRE_CORAL_FAN:
+    enabled: true
+    price: 3.12
+    rotating-shop: true
+  DEAD_FIRE_CORAL_WALL_FAN:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  DEAD_HORN_CORAL:
+    enabled: true
+    price: 3.12
+    rotating-shop: true
+  DEAD_HORN_CORAL_BLOCK:
+    enabled: true
+    price: 6.25
+    rotating-shop: true
+  DEAD_HORN_CORAL_FAN:
+    enabled: true
+    price: 3.12
+    rotating-shop: true
+  DEAD_HORN_CORAL_WALL_FAN:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  DEAD_TUBE_CORAL:
+    enabled: true
+    price: 3.12
+    rotating-shop: true
+  DEAD_TUBE_CORAL_BLOCK:
+    enabled: true
+    price: 6.25
+    rotating-shop: true
+  DEAD_TUBE_CORAL_FAN:
+    enabled: true
+    price: 3.12
+    rotating-shop: true
+  DEAD_TUBE_CORAL_WALL_FAN:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  DEBUG_STICK:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  DECORATED_POT:
+    enabled: true
+    price: 92.5
+    rotating-shop: true
+  DEEPSLATE:
+    enabled: true
+    price: 0.62
+    rotating-shop: true
+  DEEPSLATE_BRICKS:
+    enabled: true
+    price: 0.62
+    rotating-shop: true
+  DEEPSLATE_BRICK_SLAB:
+    enabled: true
+    price: 0.31
+    rotating-shop: true
+  DEEPSLATE_BRICK_STAIRS:
+    enabled: true
+    price: 0.62
+    rotating-shop: true
+  DEEPSLATE_BRICK_WALL:
+    enabled: true
+    price: 0.62
+    rotating-shop: true
+  DEEPSLATE_COAL_ORE:
+    enabled: true
+    price: 2.5
+    rotating-shop: true
+  DEEPSLATE_COPPER_ORE:
+    enabled: true
+    price: 3.25
+    rotating-shop: true
+  DEEPSLATE_DIAMOND_ORE:
+    enabled: true
+    price: 93.75
+    rotating-shop: true
+  DEEPSLATE_EMERALD_ORE:
+    enabled: true
+    price: 31.25
+    rotating-shop: true
+  DEEPSLATE_GOLD_ORE:
+    enabled: true
+    price: 11.25
+    rotating-shop: true
+  DEEPSLATE_IRON_ORE:
+    enabled: true
+    price: 10.0
+    rotating-shop: true
+  DEEPSLATE_LAPIS_ORE:
+    enabled: true
+    price: 10.25
+    rotating-shop: true
+  DEEPSLATE_REDSTONE_ORE:
+    enabled: true
+    price: 5.5
+    rotating-shop: true
+  DEEPSLATE_TILES:
+    enabled: true
+    price: 0.62
+    rotating-shop: true
+  DEEPSLATE_TILE_SLAB:
+    enabled: true
+    price: 0.31
+    rotating-shop: true
+  DEEPSLATE_TILE_STAIRS:
+    enabled: true
+    price: 0.62
+    rotating-shop: true
+  DEEPSLATE_TILE_WALL:
+    enabled: true
+    price: 0.62
+    rotating-shop: true
+  DETECTOR_RAIL:
+    enabled: true
+    price: 1.25
+    rotating-shop: true
+  DIAMOND:
+    enabled: true
+    price: 200.0
+    rotating-shop: true
+  DIAMOND_AXE:
+    enabled: true
+    price: 100.0
+    rotating-shop: false
+  DIAMOND_BLOCK:
+    enabled: true
+    price: 1800.0
+    rotating-shop: false
+  DIAMOND_BOOTS:
+    enabled: true
+    price: 100.0
+    rotating-shop: false
+  DIAMOND_CHESTPLATE:
+    enabled: true
+    price: 100.0
+    rotating-shop: false
+  DIAMOND_HELMET:
+    enabled: true
+    price: 100.0
+    rotating-shop: false
+  DIAMOND_HOE:
+    enabled: true
+    price: 100.0
+    rotating-shop: false
+  DIAMOND_HORSE_ARMOR:
+    enabled: true
+    price: 568.75
+    rotating-shop: false
+  DIAMOND_LEGGINGS:
+    enabled: true
+    price: 100.0
+    rotating-shop: false
+  DIAMOND_NAUTILUS_ARMOR:
+    enabled: true
+    price: 100.0
+    rotating-shop: false
+  DIAMOND_ORE:
+    enabled: true
+    price: 87.5
+    rotating-shop: true
+  DIAMOND_PICKAXE:
+    enabled: true
+    price: 100.0
+    rotating-shop: false
+  DIAMOND_SHOVEL:
+    enabled: true
+    price: 100.0
+    rotating-shop: false
+  DIAMOND_SPEAR:
+    enabled: true
+    price: 300.0
+    rotating-shop: true
+  DIAMOND_SWORD:
+    enabled: true
+    price: 100.0
+    rotating-shop: false
+  DIORITE:
+    enabled: true
+    price: 0.62
+    rotating-shop: true
+  DIORITE_SLAB:
+    enabled: true
+    price: 0.31
+    rotating-shop: true
+  DIORITE_STAIRS:
+    enabled: true
+    price: 0.62
+    rotating-shop: true
+  DIORITE_WALL:
+    enabled: true
+    price: 0.62
+    rotating-shop: true
+  DIRT:
+    enabled: true
+    price: 1.5
+    rotating-shop: true
+  DIRT_PATH:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  DISC_FRAGMENT_5:
+    enabled: true
+    price: 1.5
+    rotating-shop: true
+  DISPENSER:
+    enabled: true
+    price: 8.75
+    rotating-shop: true
+  DOLPHIN_SPAWN_EGG:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  DONKEY_SPAWN_EGG:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  DRAGON_BREATH:
+    enabled: true
+    price: 31.25
+    rotating-shop: true
+  DRAGON_EGG:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  DRAGON_HEAD:
+    enabled: true
+    price: 43.75
+    rotating-shop: true
+  DRAGON_WALL_HEAD:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  DRIED_GHAST:
+    enabled: true
+    price: 1.5
+    rotating-shop: true
+  DRIED_KELP:
+    enabled: true
+    price: 4.5
+    rotating-shop: true
+  DRIED_KELP_BLOCK:
+    enabled: true
+    price: 40.5
+    rotating-shop: true
+  DRIPSTONE_BLOCK:
+    enabled: true
+    price: 3.0
+    rotating-shop: true
+  DROPPER:
+    enabled: true
+    price: 5.0
+    rotating-shop: true
+  DROWNED_SPAWN_EGG:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  DUNE_ARMOR_TRIM_SMITHING_TEMPLATE:
+    enabled: true
+    price: 112.5
+    rotating-shop: true
+  ECHO_SHARD:
+    enabled: true
+    price: 56.25
+    rotating-shop: true
+  EGG:
+    enabled: true
+    price: 1.25
+    rotating-shop: true
+  ELDER_GUARDIAN_SPAWN_EGG:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  ELYTRA:
+    enabled: true
+    price: 6250.0
+    rotating-shop: false
+  EMERALD:
+    enabled: true
+    price: 1.0
+    rotating-shop: false
+  EMERALD_BLOCK:
+    enabled: true
+    price: 9.0
+    rotating-shop: false
+  EMERALD_ORE:
+    enabled: true
+    price: 27.5
+    rotating-shop: true
+  ENCHANTED_BOOK:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  ENCHANTED_GOLDEN_APPLE:
+    enabled: true
+    price: 3125.0
+    rotating-shop: false
+  ENCHANTING_TABLE:
+    enabled: true
+    price: 50.0
+    rotating-shop: true
+  ENDERMAN_SPAWN_EGG:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  ENDERMITE_SPAWN_EGG:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  ENDER_CHEST:
+    enabled: true
+    price: 1.5
+    rotating-shop: true
+  ENDER_DRAGON_SPAWN_EGG:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  ENDER_EYE:
+    enabled: true
+    price: 1.5
+    rotating-shop: true
+  ENDER_PEARL:
+    enabled: true
+    price: 0.25
+    rotating-shop: false
+  END_CRYSTAL:
+    enabled: true
+    price: 10.0
+    rotating-shop: true
+  END_GATEWAY:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  END_PORTAL:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  END_PORTAL_FRAME:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  END_ROD:
+    enabled: true
+    price: 7.5
+    rotating-shop: true
+  END_STONE:
+    enabled: true
+    price: 2.25
+    rotating-shop: true
+  END_STONE_BRICKS:
+    enabled: true
+    price: 2.25
+    rotating-shop: true
+  END_STONE_BRICK_SLAB:
+    enabled: true
+    price: 0.31
+    rotating-shop: true
+  END_STONE_BRICK_STAIRS:
+    enabled: true
+    price: 0.62
+    rotating-shop: true
+  END_STONE_BRICK_WALL:
+    enabled: true
+    price: 0.62
+    rotating-shop: true
+  EVOKER_SPAWN_EGG:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  EXPERIENCE_BOTTLE:
+    enabled: true
+    price: 0.25
+    rotating-shop: false
+  EXPLORER_POTTERY_SHERD:
+    enabled: true
+    price: 22.5
+    rotating-shop: true
+  EXPOSED_CHISELED_COPPER:
+    enabled: true
+    price: 1.5
+    rotating-shop: true
+  EXPOSED_COPPER:
+    enabled: true
+    price: 18.0
+    rotating-shop: true
+  EXPOSED_COPPER_BARS:
+    enabled: true
+    price: 1.5
+    rotating-shop: true
+  EXPOSED_COPPER_BULB:
+    enabled: true
+    price: 6.5
+    rotating-shop: true
+  EXPOSED_COPPER_CHAIN:
+    enabled: true
+    price: 1.5
+    rotating-shop: true
+  EXPOSED_COPPER_CHEST:
+    enabled: true
+    price: 1.5
+    rotating-shop: true
+  EXPOSED_COPPER_DOOR:
+    enabled: true
+    price: 12.0
+    rotating-shop: true
+  EXPOSED_COPPER_GOLEM_STATUE:
+    enabled: true
+    price: 1.5
+    rotating-shop: true
+  EXPOSED_COPPER_GRATE:
+    enabled: true
+    price: 4.5
+    rotating-shop: true
+  EXPOSED_COPPER_LANTERN:
+    enabled: true
+    price: 1.5
+    rotating-shop: true
+  EXPOSED_COPPER_TRAPDOOR:
+    enabled: true
+    price: 18.0
+    rotating-shop: true
+  EXPOSED_CUT_COPPER:
+    enabled: true
+    price: 4.5
+    rotating-shop: true
+  EXPOSED_CUT_COPPER_SLAB:
+    enabled: true
+    price: 2.25
+    rotating-shop: true
+  EXPOSED_CUT_COPPER_STAIRS:
+    enabled: true
+    price: 4.5
+    rotating-shop: true
+  EXPOSED_LIGHTNING_ROD:
+    enabled: true
+    price: 1.5
+    rotating-shop: true
+  EYE_ARMOR_TRIM_SMITHING_TEMPLATE:
+    enabled: true
+    price: 112.5
+    rotating-shop: true
+  FARMLAND:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  FEATHER:
+    enabled: true
+    price: 1.0
+    rotating-shop: true
+  FERMENTED_SPIDER_EYE:
+    enabled: true
+    price: 3.25
+    rotating-shop: true
+  FERN:
+    enabled: true
+    price: 1.5
+    rotating-shop: true
+  FIELD_MASONED_BANNER_PATTERN:
+    enabled: true
+    price: 31.25
+    rotating-shop: true
+  FILLED_MAP:
+    enabled: true
+    price: 0.1
+    rotating-shop: false
+  FIRE:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  FIREFLY_BUSH:
+    enabled: true
+    price: 1.5
+    rotating-shop: true
+  FIREWORK_ROCKET:
+    enabled: true
+    price: 1.5
+    rotating-shop: true
+  FIREWORK_STAR:
+    enabled: true
+    price: 1.5
+    rotating-shop: true
+  FIRE_CHARGE:
+    enabled: true
+    price: 1.5
+    rotating-shop: true
+  FIRE_CORAL:
+    enabled: true
+    price: 3.12
+    rotating-shop: true
+  FIRE_CORAL_BLOCK:
+    enabled: true
+    price: 6.25
+    rotating-shop: true
+  FIRE_CORAL_FAN:
+    enabled: true
+    price: 3.12
+    rotating-shop: true
+  FIRE_CORAL_WALL_FAN:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  FISHING_ROD:
+    enabled: true
+    price: 0.25
+    rotating-shop: false
+  FLETCHING_TABLE:
+    enabled: true
+    price: 6.0
+    rotating-shop: true
+  FLINT:
+    enabled: true
+    price: 0.05
+    rotating-shop: false
+  FLINT_AND_STEEL:
+    enabled: true
+    price: 1.5
+    rotating-shop: true
+  FLOWERING_AZALEA:
+    enabled: true
+    price: 1.5
+    rotating-shop: true
+  FLOWERING_AZALEA_LEAVES:
+    enabled: true
+    price: 0.25
+    rotating-shop: true
+  FLOWER_BANNER_PATTERN:
+    enabled: true
+    price: 62.5
+    rotating-shop: true
+  FLOWER_POT:
+    enabled: true
+    price: 1.5
+    rotating-shop: true
+  FLOW_ARMOR_TRIM_SMITHING_TEMPLATE:
+    enabled: true
+    price: 112.5
+    rotating-shop: true
+  FLOW_BANNER_PATTERN:
+    enabled: true
+    price: 31.25
+    rotating-shop: true
+  FLOW_POTTERY_SHERD:
+    enabled: true
+    price: 22.5
+    rotating-shop: true
+  FOX_SPAWN_EGG:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  FRIEND_POTTERY_SHERD:
+    enabled: true
+    price: 22.5
+    rotating-shop: true
+  FROGSPAWN:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  FROG_SPAWN_EGG:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  FROSTED_ICE:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  FURNACE:
+    enabled: true
+    price: 4.0
+    rotating-shop: true
+  FURNACE_MINECART:
+    enabled: true
+    price: 9.55
+    rotating-shop: true
+  GHAST_SPAWN_EGG:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  GHAST_TEAR:
+    enabled: true
+    price: 11.25
+    rotating-shop: true
+  GILDED_BLACKSTONE:
+    enabled: true
+    price: 6.88
+    rotating-shop: true
+  GLASS:
+    enabled: true
+    price: 0.1
+    rotating-shop: false
+  GLASS_BOTTLE:
+    enabled: true
+    price: 1.5
+    rotating-shop: true
+  GLASS_PANE:
+    enabled: true
+    price: 0.03
+    rotating-shop: false
+  GLISTERING_MELON_SLICE:
+    enabled: true
+    price: 0.25
+    rotating-shop: false
+  GLOBE_BANNER_PATTERN:
+    enabled: true
+    price: 31.25
+    rotating-shop: true
+  GLOWSTONE:
+    enabled: true
+    price: 0.25
+    rotating-shop: false
+  GLOWSTONE_DUST:
+    enabled: true
+    price: 0.05
+    rotating-shop: false
+  GLOW_BERRIES:
+    enabled: true
+    price: 15.0
+    rotating-shop: true
+  GLOW_INK_SAC:
+    enabled: true
+    price: 1.5
+    rotating-shop: true
+  GLOW_ITEM_FRAME:
+    enabled: true
+    price: 6.5
+    rotating-shop: true
+  GLOW_LICHEN:
+    enabled: true
+    price: 1.5
+    rotating-shop: true
+  GLOW_SQUID_SPAWN_EGG:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  GOAT_HORN:
+    enabled: true
+    price: 1.5
+    rotating-shop: true
+  GOAT_SPAWN_EGG:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  GOLDEN_APPLE:
+    enabled: true
+    price: 112.5
+    rotating-shop: false
+  GOLDEN_AXE:
+    enabled: true
+    price: 26.75
+    rotating-shop: true
+  GOLDEN_BOOTS:
+    enabled: true
+    price: 35.0
+    rotating-shop: true
+  GOLDEN_CARROT:
+    enabled: true
+    price: 0.25
+    rotating-shop: false
+  GOLDEN_CHESTPLATE:
+    enabled: true
+    price: 70.0
+    rotating-shop: true
+  GOLDEN_HELMET:
+    enabled: true
+    price: 43.75
+    rotating-shop: true
+  GOLDEN_HOE:
+    enabled: true
+    price: 18.0
+    rotating-shop: true
+  GOLDEN_HORSE_ARMOR:
+    enabled: true
+    price: 61.25
+    rotating-shop: true
+  GOLDEN_LEGGINGS:
+    enabled: true
+    price: 61.25
+    rotating-shop: true
+  GOLDEN_NAUTILUS_ARMOR:
+    enabled: true
+    price: 61.25
+    rotating-shop: true
+  GOLDEN_PICKAXE:
+    enabled: true
+    price: 26.75
+    rotating-shop: true
+  GOLDEN_SHOVEL:
+    enabled: true
+    price: 9.0
+    rotating-shop: true
+  GOLDEN_SPEAR:
+    enabled: true
+    price: 1.5
+    rotating-shop: true
+  GOLDEN_SWORD:
+    enabled: true
+    price: 18.0
+    rotating-shop: true
+  GOLD_BLOCK:
+    enabled: true
+    price: 78.75
+    rotating-shop: true
+  GOLD_INGOT:
+    enabled: true
+    price: 8.75
+    rotating-shop: true
+  GOLD_NUGGET:
+    enabled: true
+    price: 0.97
+    rotating-shop: true
+  GOLD_ORE:
+    enabled: true
+    price: 10.62
+    rotating-shop: true
+  GRANITE:
+    enabled: true
+    price: 0.62
+    rotating-shop: true
+  GRANITE_SLAB:
+    enabled: true
+    price: 0.31
+    rotating-shop: true
+  GRANITE_STAIRS:
+    enabled: true
+    price: 0.62
+    rotating-shop: true
+  GRANITE_WALL:
+    enabled: true
+    price: 0.62
+    rotating-shop: true
+  GRASS_BLOCK:
+    enabled: true
+    price: 5.62
+    rotating-shop: true
+  GRAVEL:
+    enabled: true
+    price: 0.38
+    rotating-shop: true
+  GRAY_BANNER:
+    enabled: true
+    price: 1.5
+    rotating-shop: false
+  GRAY_BED:
+    enabled: true
+    price: 2.0
+    rotating-shop: false
+  GRAY_BUNDLE:
+    enabled: true
+    price: 8.75
+    rotating-shop: false
+  GRAY_CANDLE:
+    enabled: true
+    price: 2.5
+    rotating-shop: true
+  GRAY_CANDLE_CAKE:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  GRAY_CARPET:
+    enabled: true
+    price: 0.5
+    rotating-shop: false
+  GRAY_CONCRETE:
+    enabled: true
+    price: 0.5
+    rotating-shop: true
+  GRAY_CONCRETE_POWDER:
+    enabled: true
+    price: 0.38
+    rotating-shop: true
+  GRAY_DYE:
+    enabled: true
+    price: 0.05
+    rotating-shop: false
+  GRAY_GLAZED_TERRACOTTA:
+    enabled: true
+    price: 0.15
+    rotating-shop: false
+  GRAY_HARNESS:
+    enabled: true
+    price: 20.0
+    rotating-shop: true
+  GRAY_SHULKER_BOX:
+    enabled: true
+    price: 15.0
+    rotating-shop: false
+  GRAY_STAINED_GLASS:
+    enabled: true
+    price: 0.1
+    rotating-shop: false
+  GRAY_STAINED_GLASS_PANE:
+    enabled: true
+    price: 0.03
+    rotating-shop: false
+  GRAY_TERRACOTTA:
+    enabled: true
+    price: 0.1
+    rotating-shop: false
+  GRAY_WALL_BANNER:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  GRAY_WOOL:
+    enabled: true
+    price: 1.0
+    rotating-shop: false
+  GREEN_BANNER:
+    enabled: true
+    price: 1.5
+    rotating-shop: false
+  GREEN_BED:
+    enabled: true
+    price: 2.0
+    rotating-shop: false
+  GREEN_BUNDLE:
+    enabled: true
+    price: 8.75
+    rotating-shop: false
+  GREEN_CANDLE:
+    enabled: true
+    price: 2.5
+    rotating-shop: true
+  GREEN_CANDLE_CAKE:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  GREEN_CARPET:
+    enabled: true
+    price: 0.5
+    rotating-shop: false
+  GREEN_CONCRETE:
+    enabled: true
+    price: 0.5
+    rotating-shop: true
+  GREEN_CONCRETE_POWDER:
+    enabled: true
+    price: 0.38
+    rotating-shop: true
+  GREEN_DYE:
+    enabled: true
+    price: 0.05
+    rotating-shop: false
+  GREEN_GLAZED_TERRACOTTA:
+    enabled: true
+    price: 0.15
+    rotating-shop: false
+  GREEN_HARNESS:
+    enabled: true
+    price: 20.0
+    rotating-shop: true
+  GREEN_SHULKER_BOX:
+    enabled: true
+    price: 15.0
+    rotating-shop: false
+  GREEN_STAINED_GLASS:
+    enabled: true
+    price: 0.1
+    rotating-shop: false
+  GREEN_STAINED_GLASS_PANE:
+    enabled: true
+    price: 0.03
+    rotating-shop: false
+  GREEN_TERRACOTTA:
+    enabled: true
+    price: 0.1
+    rotating-shop: false
+  GREEN_WALL_BANNER:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  GREEN_WOOL:
+    enabled: true
+    price: 1.0
+    rotating-shop: false
+  GRINDSTONE:
+    enabled: true
+    price: 15.0
+    rotating-shop: true
+  GUARDIAN_SPAWN_EGG:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  GUNPOWDER:
+    enabled: true
+    price: 1.25
+    rotating-shop: true
+  GUSTER_BANNER_PATTERN:
+    enabled: true
+    price: 31.25
+    rotating-shop: true
+  GUSTER_POTTERY_SHERD:
+    enabled: true
+    price: 22.5
+    rotating-shop: true
+  HANGING_ROOTS:
+    enabled: true
+    price: 1.5
+    rotating-shop: true
+  HAPPY_GHAST_SPAWN_EGG:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  HAY_BLOCK:
+    enabled: true
+    price: 135.0
+    rotating-shop: true
+  HEARTBREAK_POTTERY_SHERD:
+    enabled: true
+    price: 22.5
+    rotating-shop: true
+  HEART_OF_THE_SEA:
+    enabled: true
+    price: 375.0
+    rotating-shop: false
+  HEART_POTTERY_SHERD:
+    enabled: true
+    price: 22.5
+    rotating-shop: true
+  HEAVY_CORE:
+    enabled: true
+    price: 560.0
+    rotating-shop: false
+  HEAVY_WEIGHTED_PRESSURE_PLATE:
+    enabled: true
+    price: 1.25
+    rotating-shop: true
+  HOGLIN_SPAWN_EGG:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  HONEYCOMB:
+    enabled: true
+    price: 2.25
+    rotating-shop: true
+  HONEYCOMB_BLOCK:
+    enabled: true
+    price: 9.0
+    rotating-shop: true
+  HONEY_BLOCK:
+    enabled: true
+    price: 12.5
+    rotating-shop: true
+  HONEY_BOTTLE:
+    enabled: true
+    price: 3.12
+    rotating-shop: true
+  HOPPER:
+    enabled: true
+    price: 13.55
+    rotating-shop: true
+  HOPPER_MINECART:
+    enabled: true
+    price: 19.1
+    rotating-shop: true
+  HORN_CORAL:
+    enabled: true
+    price: 3.12
+    rotating-shop: true
+  HORN_CORAL_BLOCK:
+    enabled: true
+    price: 6.25
+    rotating-shop: true
+  HORN_CORAL_FAN:
+    enabled: true
+    price: 3.12
+    rotating-shop: true
+  HORN_CORAL_WALL_FAN:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  HORSE_SPAWN_EGG:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  HOST_ARMOR_TRIM_SMITHING_TEMPLATE:
+    enabled: true
+    price: 112.5
+    rotating-shop: true
+  HOWL_POTTERY_SHERD:
+    enabled: true
+    price: 22.5
+    rotating-shop: true
+  HUSK_SPAWN_EGG:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  ICE:
+    enabled: true
+    price: 1.5
+    rotating-shop: true
+  INFESTED_CHISELED_STONE_BRICKS:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  INFESTED_COBBLESTONE:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  INFESTED_CRACKED_STONE_BRICKS:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  INFESTED_DEEPSLATE:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  INFESTED_MOSSY_STONE_BRICKS:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  INFESTED_STONE:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  INFESTED_STONE_BRICKS:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  INK_SAC:
+    enabled: true
+    price: 1.0
+    rotating-shop: true
+  IRON_AXE:
+    enabled: true
+    price: 0.5
+    rotating-shop: false
+  IRON_BARS:
+    enabled: true
+    price: 0.42
+    rotating-shop: true
+  IRON_BLOCK:
+    enabled: true
+    price: 10.0
+    rotating-shop: true
+  IRON_BOOTS:
+    enabled: true
+    price: 0.35
+    rotating-shop: false
+  IRON_CHAIN:
+    enabled: true
+    price: 1.35
+    rotating-shop: true
+  IRON_CHESTPLATE:
+    enabled: true
+    price: 0.75
+    rotating-shop: false
+  IRON_DOOR:
+    enabled: true
+    price: 2.22
+    rotating-shop: true
+  IRON_GOLEM_SPAWN_EGG:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  IRON_HELMET:
+    enabled: true
+    price: 0.4
+    rotating-shop: false
+  IRON_HOE:
+    enabled: true
+    price: 0.3
+    rotating-shop: false
+  IRON_HORSE_ARMOR:
+    enabled: true
+    price: 7.77
+    rotating-shop: true
+  IRON_INGOT:
+    enabled: true
+    price: 1.11
+    rotating-shop: true
+  IRON_LEGGINGS:
+    enabled: true
+    price: 0.65
+    rotating-shop: false
+  IRON_NAUTILUS_ARMOR:
+    enabled: true
+    price: 7.77
+    rotating-shop: true
+  IRON_NUGGET:
+    enabled: true
+    price: 0.12
+    rotating-shop: true
+  IRON_ORE:
+    enabled: true
+    price: 10.0
+    rotating-shop: true
+  IRON_PICKAXE:
+    enabled: true
+    price: 0.5
+    rotating-shop: false
+  IRON_SHOVEL:
+    enabled: true
+    price: 0.2
+    rotating-shop: false
+  IRON_SPEAR:
+    enabled: true
+    price: 1.5
+    rotating-shop: true
+  IRON_SWORD:
+    enabled: true
+    price: 0.3
+    rotating-shop: false
+  IRON_TRAPDOOR:
+    enabled: true
+    price: 4.44
+    rotating-shop: true
+  ITEM_FRAME:
+    enabled: true
+    price: 10.0
+    rotating-shop: false
+  JACK_O_LANTERN:
+    enabled: true
+    price: 1.5
+    rotating-shop: true
+  JIGSAW:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  JUKEBOX:
+    enabled: true
+    price: 89.25
+    rotating-shop: true
+  JUNGLE_BOAT:
+    enabled: true
+    price: 20.0
+    rotating-shop: true
+  JUNGLE_BUTTON:
+    enabled: true
+    price: 4.0
+    rotating-shop: true
+  JUNGLE_CHEST_BOAT:
+    enabled: true
+    price: 52.0
+    rotating-shop: true
+  JUNGLE_DOOR:
+    enabled: true
+    price: 8.0
+    rotating-shop: true
+  JUNGLE_FENCE:
+    enabled: true
+    price: 6.67
+    rotating-shop: true
+  JUNGLE_FENCE_GATE:
+    enabled: true
+    price: 16.0
+    rotating-shop: true
+  JUNGLE_HANGING_SIGN:
+    enabled: true
+    price: 16.5
+    rotating-shop: true
+  JUNGLE_LEAVES:
+    enabled: true
+    price: 1.0
+    rotating-shop: true
+  JUNGLE_LOG:
+    enabled: true
+    price: 16.0
+    rotating-shop: true
+  JUNGLE_PLANKS:
+    enabled: true
+    price: 4.0
+    rotating-shop: true
+  JUNGLE_PRESSURE_PLATE:
+    enabled: true
+    price: 8.0
+    rotating-shop: true
+  JUNGLE_SAPLING:
+    enabled: true
+    price: 4.0
+    rotating-shop: true
+  JUNGLE_SHELF:
+    enabled: true
+    price: 1.5
+    rotating-shop: true
+  JUNGLE_SIGN:
+    enabled: true
+    price: 8.67
+    rotating-shop: true
+  JUNGLE_SLAB:
+    enabled: true
+    price: 2.0
+    rotating-shop: true
+  JUNGLE_STAIRS:
+    enabled: true
+    price: 6.0
+    rotating-shop: true
+  JUNGLE_TRAPDOOR:
+    enabled: true
+    price: 12.0
+    rotating-shop: true
+  JUNGLE_WALL_HANGING_SIGN:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  JUNGLE_WALL_SIGN:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  JUNGLE_WOOD:
+    enabled: true
+    price: 16.0
+    rotating-shop: true
+  KELP:
+    enabled: true
+    price: 3.75
+    rotating-shop: true
+  KELP_PLANT:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  KNOWLEDGE_BOOK:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  LADDER:
+    enabled: true
+    price: 1.5
+    rotating-shop: true
+  LANTERN:
+    enabled: true
+    price: 0.2
+    rotating-shop: false
+  LAPIS_BLOCK:
+    enabled: true
+    price: 20.25
+    rotating-shop: true
+  LAPIS_LAZULI:
+    enabled: true
+    price: 0.1
+    rotating-shop: false
+  LAPIS_ORE:
+    enabled: true
+    price: 9.38
+    rotating-shop: true
+  LARGE_AMETHYST_BUD:
+    enabled: true
+    price: 25.0
+    rotating-shop: true
+  LARGE_FERN:
+    enabled: true
+    price: 1.5
+    rotating-shop: true
+  LAVA:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  LAVA_BUCKET:
+    enabled: true
+    price: 3.75
+    rotating-shop: true
+  LAVA_CAULDRON:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  LEAD:
+    enabled: true
+    price: 6.25
+    rotating-shop: true
+  LEAF_LITTER:
+    enabled: true
+    price: 1.25
+    rotating-shop: true
+  LEATHER:
+    enabled: true
+    price: 2.25
+    rotating-shop: true
+  LEATHER_BOOTS:
+    enabled: true
+    price: 0.1
+    rotating-shop: false
+  LEATHER_CHESTPLATE:
+    enabled: true
+    price: 0.25
+    rotating-shop: false
+  LEATHER_HELMET:
+    enabled: true
+    price: 0.15
+    rotating-shop: false
+  LEATHER_HORSE_ARMOR:
+    enabled: true
+    price: 0.25
+    rotating-shop: false
+  LEATHER_LEGGINGS:
+    enabled: true
+    price: 0.2
+    rotating-shop: false
+  LECTERN:
+    enabled: true
+    price: 0.25
+    rotating-shop: false
+  LEVER:
+    enabled: true
+    price: 1.12
+    rotating-shop: true
+  LIGHT:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  LIGHTNING_ROD:
+    enabled: true
+    price: 6.0
+    rotating-shop: true
+  LIGHT_BLUE_BANNER:
+    enabled: true
+    price: 1.5
+    rotating-shop: false
+  LIGHT_BLUE_BED:
+    enabled: true
+    price: 2.0
+    rotating-shop: false
+  LIGHT_BLUE_BUNDLE:
+    enabled: true
+    price: 8.75
+    rotating-shop: false
+  LIGHT_BLUE_CANDLE:
+    enabled: true
+    price: 2.5
+    rotating-shop: true
+  LIGHT_BLUE_CANDLE_CAKE:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  LIGHT_BLUE_CARPET:
+    enabled: true
+    price: 0.5
+    rotating-shop: false
+  LIGHT_BLUE_CONCRETE:
+    enabled: true
+    price: 0.5
+    rotating-shop: true
+  LIGHT_BLUE_CONCRETE_POWDER:
+    enabled: true
+    price: 0.38
+    rotating-shop: true
+  LIGHT_BLUE_DYE:
+    enabled: true
+    price: 0.05
+    rotating-shop: false
+  LIGHT_BLUE_GLAZED_TERRACOTTA:
+    enabled: true
+    price: 0.15
+    rotating-shop: false
+  LIGHT_BLUE_HARNESS:
+    enabled: true
+    price: 20.0
+    rotating-shop: true
+  LIGHT_BLUE_SHULKER_BOX:
+    enabled: true
+    price: 15.0
+    rotating-shop: false
+  LIGHT_BLUE_STAINED_GLASS:
+    enabled: true
+    price: 0.1
+    rotating-shop: false
+  LIGHT_BLUE_STAINED_GLASS_PANE:
+    enabled: true
+    price: 0.03
+    rotating-shop: false
+  LIGHT_BLUE_TERRACOTTA:
+    enabled: true
+    price: 0.1
+    rotating-shop: false
+  LIGHT_BLUE_WALL_BANNER:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  LIGHT_BLUE_WOOL:
+    enabled: true
+    price: 1.0
+    rotating-shop: false
+  LIGHT_GRAY_BANNER:
+    enabled: true
+    price: 1.5
+    rotating-shop: false
+  LIGHT_GRAY_BED:
+    enabled: true
+    price: 2.0
+    rotating-shop: false
+  LIGHT_GRAY_BUNDLE:
+    enabled: true
+    price: 8.75
+    rotating-shop: false
+  LIGHT_GRAY_CANDLE:
+    enabled: true
+    price: 2.5
+    rotating-shop: true
+  LIGHT_GRAY_CANDLE_CAKE:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  LIGHT_GRAY_CARPET:
+    enabled: true
+    price: 0.5
+    rotating-shop: false
+  LIGHT_GRAY_CONCRETE:
+    enabled: true
+    price: 0.5
+    rotating-shop: true
+  LIGHT_GRAY_CONCRETE_POWDER:
+    enabled: true
+    price: 0.38
+    rotating-shop: true
+  LIGHT_GRAY_DYE:
+    enabled: true
+    price: 0.05
+    rotating-shop: false
+  LIGHT_GRAY_GLAZED_TERRACOTTA:
+    enabled: true
+    price: 0.15
+    rotating-shop: false
+  LIGHT_GRAY_HARNESS:
+    enabled: true
+    price: 20.0
+    rotating-shop: true
+  LIGHT_GRAY_SHULKER_BOX:
+    enabled: true
+    price: 15.0
+    rotating-shop: false
+  LIGHT_GRAY_STAINED_GLASS:
+    enabled: true
+    price: 0.1
+    rotating-shop: false
+  LIGHT_GRAY_STAINED_GLASS_PANE:
+    enabled: true
+    price: 0.03
+    rotating-shop: false
+  LIGHT_GRAY_TERRACOTTA:
+    enabled: true
+    price: 0.1
+    rotating-shop: false
+  LIGHT_GRAY_WALL_BANNER:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  LIGHT_GRAY_WOOL:
+    enabled: true
+    price: 1.0
+    rotating-shop: false
+  LIGHT_WEIGHTED_PRESSURE_PLATE:
+    enabled: true
+    price: 1.25
+    rotating-shop: true
+  LILAC:
+    enabled: true
+    price: 1.25
+    rotating-shop: true
+  LILY_OF_THE_VALLEY:
+    enabled: true
+    price: 1.25
+    rotating-shop: true
+  LILY_PAD:
+    enabled: true
+    price: 1.5
+    rotating-shop: true
+  LIME_BANNER:
+    enabled: true
+    price: 1.5
+    rotating-shop: false
+  LIME_BED:
+    enabled: true
+    price: 2.0
+    rotating-shop: false
+  LIME_BUNDLE:
+    enabled: true
+    price: 8.75
+    rotating-shop: false
+  LIME_CANDLE:
+    enabled: true
+    price: 2.5
+    rotating-shop: true
+  LIME_CANDLE_CAKE:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  LIME_CARPET:
+    enabled: true
+    price: 0.5
+    rotating-shop: false
+  LIME_CONCRETE:
+    enabled: true
+    price: 0.5
+    rotating-shop: true
+  LIME_CONCRETE_POWDER:
+    enabled: true
+    price: 0.38
+    rotating-shop: true
+  LIME_DYE:
+    enabled: true
+    price: 0.05
+    rotating-shop: false
+  LIME_GLAZED_TERRACOTTA:
+    enabled: true
+    price: 0.15
+    rotating-shop: false
+  LIME_HARNESS:
+    enabled: true
+    price: 20.0
+    rotating-shop: true
+  LIME_SHULKER_BOX:
+    enabled: true
+    price: 15.0
+    rotating-shop: false
+  LIME_STAINED_GLASS:
+    enabled: true
+    price: 0.1
+    rotating-shop: false
+  LIME_STAINED_GLASS_PANE:
+    enabled: true
+    price: 0.03
+    rotating-shop: false
+  LIME_TERRACOTTA:
+    enabled: true
+    price: 0.1
+    rotating-shop: false
+  LIME_WALL_BANNER:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  LIME_WOOL:
+    enabled: true
+    price: 1.0
+    rotating-shop: false
+  LINGERING_POTION:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  LLAMA_SPAWN_EGG:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  LODESTONE:
+    enabled: true
+    price: 1.5
+    rotating-shop: true
+  LOOM:
+    enabled: true
+    price: 5.0
+    rotating-shop: true
+  MACE:
+    enabled: true
+    price: 560.0
+    rotating-shop: true
+  MAGENTA_BANNER:
+    enabled: true
+    price: 1.5
+    rotating-shop: false
+  MAGENTA_BED:
+    enabled: true
+    price: 2.0
+    rotating-shop: false
+  MAGENTA_BUNDLE:
+    enabled: true
+    price: 8.75
+    rotating-shop: false
+  MAGENTA_CANDLE:
+    enabled: true
+    price: 2.5
+    rotating-shop: true
+  MAGENTA_CANDLE_CAKE:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  MAGENTA_CARPET:
+    enabled: true
+    price: 0.5
+    rotating-shop: false
+  MAGENTA_CONCRETE:
+    enabled: true
+    price: 0.5
+    rotating-shop: true
+  MAGENTA_CONCRETE_POWDER:
+    enabled: true
+    price: 0.38
+    rotating-shop: true
+  MAGENTA_DYE:
+    enabled: true
+    price: 0.05
+    rotating-shop: false
+  MAGENTA_GLAZED_TERRACOTTA:
+    enabled: true
+    price: 0.15
+    rotating-shop: false
+  MAGENTA_HARNESS:
+    enabled: true
+    price: 20.0
+    rotating-shop: true
+  MAGENTA_SHULKER_BOX:
+    enabled: true
+    price: 15.0
+    rotating-shop: false
+  MAGENTA_STAINED_GLASS:
+    enabled: true
+    price: 0.1
+    rotating-shop: false
+  MAGENTA_STAINED_GLASS_PANE:
+    enabled: true
+    price: 0.03
+    rotating-shop: false
+  MAGENTA_TERRACOTTA:
+    enabled: true
+    price: 0.1
+    rotating-shop: false
+  MAGENTA_WALL_BANNER:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  MAGENTA_WOOL:
+    enabled: true
+    price: 1.0
+    rotating-shop: false
+  MAGMA_BLOCK:
+    enabled: true
+    price: 5.62
+    rotating-shop: true
+  MAGMA_CREAM:
+    enabled: true
+    price: 2.75
+    rotating-shop: true
+  MAGMA_CUBE_SPAWN_EGG:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  MANGROVE_BOAT:
+    enabled: true
+    price: 20.0
+    rotating-shop: true
+  MANGROVE_BUTTON:
+    enabled: true
+    price: 4.0
+    rotating-shop: true
+  MANGROVE_CHEST_BOAT:
+    enabled: true
+    price: 52.0
+    rotating-shop: true
+  MANGROVE_DOOR:
+    enabled: true
+    price: 8.0
+    rotating-shop: true
+  MANGROVE_FENCE:
+    enabled: true
+    price: 6.67
+    rotating-shop: true
+  MANGROVE_FENCE_GATE:
+    enabled: true
+    price: 16.0
+    rotating-shop: true
+  MANGROVE_HANGING_SIGN:
+    enabled: true
+    price: 16.5
+    rotating-shop: true
+  MANGROVE_LEAVES:
+    enabled: true
+    price: 1.0
+    rotating-shop: true
+  MANGROVE_LOG:
+    enabled: true
+    price: 16.0
+    rotating-shop: true
+  MANGROVE_PLANKS:
+    enabled: true
+    price: 4.0
+    rotating-shop: true
+  MANGROVE_PRESSURE_PLATE:
+    enabled: true
+    price: 8.0
+    rotating-shop: true
+  MANGROVE_PROPAGULE:
+    enabled: true
+    price: 4.0
+    rotating-shop: true
+  MANGROVE_ROOTS:
+    enabled: true
+    price: 1.0
+    rotating-shop: true
+  MANGROVE_SHELF:
+    enabled: true
+    price: 1.5
+    rotating-shop: true
+  MANGROVE_SIGN:
+    enabled: true
+    price: 8.67
+    rotating-shop: true
+  MANGROVE_SLAB:
+    enabled: true
+    price: 2.0
+    rotating-shop: true
+  MANGROVE_STAIRS:
+    enabled: true
+    price: 6.0
+    rotating-shop: true
+  MANGROVE_TRAPDOOR:
+    enabled: true
+    price: 12.0
+    rotating-shop: true
+  MANGROVE_WALL_HANGING_SIGN:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  MANGROVE_WALL_SIGN:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  MANGROVE_WOOD:
+    enabled: true
+    price: 16.0
+    rotating-shop: true
+  MAP:
+    enabled: true
+    price: 0.1
+    rotating-shop: false
+  MEDIUM_AMETHYST_BUD:
+    enabled: true
+    price: 25.0
+    rotating-shop: true
+  MELON:
+    enabled: true
+    price: 33.75
+    rotating-shop: true
+  MELON_SEEDS:
+    enabled: true
+    price: 0.25
+    rotating-shop: true
+  MELON_SLICE:
+    enabled: true
+    price: 3.75
+    rotating-shop: true
+  MELON_STEM:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  MILK_BUCKET:
+    enabled: true
+    price: 3.33
+    rotating-shop: true
+  MINECART:
+    enabled: true
+    price: 5.55
+    rotating-shop: true
+  MINER_POTTERY_SHERD:
+    enabled: true
+    price: 22.5
+    rotating-shop: true
+  MOJANG_BANNER_PATTERN:
+    enabled: true
+    price: 62.5
+    rotating-shop: true
+  MOOSHROOM_SPAWN_EGG:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  MOSSY_COBBLESTONE:
+    enabled: true
+    price: 0.5
+    rotating-shop: true
+  MOSSY_COBBLESTONE_SLAB:
+    enabled: true
+    price: 0.25
+    rotating-shop: true
+  MOSSY_COBBLESTONE_STAIRS:
+    enabled: true
+    price: 0.5
+    rotating-shop: true
+  MOSSY_COBBLESTONE_WALL:
+    enabled: true
+    price: 0.5
+    rotating-shop: true
+  MOSSY_STONE_BRICKS:
+    enabled: true
+    price: 0.62
+    rotating-shop: true
+  MOSSY_STONE_BRICK_SLAB:
+    enabled: true
+    price: 0.31
+    rotating-shop: true
+  MOSSY_STONE_BRICK_STAIRS:
+    enabled: true
+    price: 0.62
+    rotating-shop: true
+  MOSSY_STONE_BRICK_WALL:
+    enabled: true
+    price: 0.62
+    rotating-shop: true
+  MOSS_BLOCK:
+    enabled: true
+    price: 5.62
+    rotating-shop: true
+  MOSS_CARPET:
+    enabled: true
+    price: 0.75
+    rotating-shop: true
+  MOURNER_POTTERY_SHERD:
+    enabled: true
+    price: 22.5
+    rotating-shop: true
+  MOVING_PISTON:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  MUD:
+    enabled: true
+    price: 0.75
+    rotating-shop: true
+  MUDDY_MANGROVE_ROOTS:
+    enabled: true
+    price: 1.5
+    rotating-shop: true
+  MUD_BRICKS:
+    enabled: true
+    price: 1.5
+    rotating-shop: true
+  MUD_BRICK_SLAB:
+    enabled: true
+    price: 0.31
+    rotating-shop: true
+  MUD_BRICK_STAIRS:
+    enabled: true
+    price: 0.62
+    rotating-shop: true
+  MUD_BRICK_WALL:
+    enabled: true
+    price: 0.62
+    rotating-shop: true
+  MULE_SPAWN_EGG:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  MUSHROOM_STEM:
+    enabled: true
+    price: 3.0
+    rotating-shop: true
+  MUSHROOM_STEW:
+    enabled: true
+    price: 3.5
+    rotating-shop: true
+  MUSIC_DISC_11:
+    enabled: true
+    price: 43.75
+    rotating-shop: true
+  MUSIC_DISC_13:
+    enabled: true
+    price: 31.25
+    rotating-shop: true
+  MUSIC_DISC_5:
+    enabled: true
+    price: 87.5
+    rotating-shop: true
+  MUSIC_DISC_BLOCKS:
+    enabled: true
+    price: 37.5
+    rotating-shop: true
+  MUSIC_DISC_CAT:
+    enabled: true
+    price: 31.25
+    rotating-shop: true
+  MUSIC_DISC_CHIRP:
+    enabled: true
+    price: 37.5
+    rotating-shop: true
+  MUSIC_DISC_CREATOR:
+    enabled: true
+    price: 87.5
+    rotating-shop: true
+  MUSIC_DISC_CREATOR_MUSIC_BOX:
+    enabled: true
+    price: 87.5
+    rotating-shop: true
+  MUSIC_DISC_FAR:
+    enabled: true
+    price: 37.5
+    rotating-shop: true
+  MUSIC_DISC_LAVA_CHICKEN:
+    enabled: true
+    price: 87.5
+    rotating-shop: true
+  MUSIC_DISC_MALL:
+    enabled: true
+    price: 37.5
+    rotating-shop: true
+  MUSIC_DISC_MELLOHI:
+    enabled: true
+    price: 37.5
+    rotating-shop: true
+  MUSIC_DISC_OTHERSIDE:
+    enabled: true
+    price: 112.5
+    rotating-shop: true
+  MUSIC_DISC_PIGSTEP:
+    enabled: true
+    price: 112.5
+    rotating-shop: true
+  MUSIC_DISC_PRECIPICE:
+    enabled: true
+    price: 87.5
+    rotating-shop: true
+  MUSIC_DISC_RELIC:
+    enabled: true
+    price: 112.5
+    rotating-shop: true
+  MUSIC_DISC_STAL:
+    enabled: true
+    price: 37.5
+    rotating-shop: true
+  MUSIC_DISC_STRAD:
+    enabled: true
+    price: 37.5
+    rotating-shop: true
+  MUSIC_DISC_TEARS:
+    enabled: true
+    price: 87.5
+    rotating-shop: true
+  MUSIC_DISC_WAIT:
+    enabled: true
+    price: 43.75
+    rotating-shop: true
+  MUSIC_DISC_WARD:
+    enabled: true
+    price: 37.5
+    rotating-shop: true
+  MUTTON:
+    enabled: true
+    price: 2.0
+    rotating-shop: true
+  MYCELIUM:
+    enabled: true
+    price: 1.5
+    rotating-shop: true
+  NAME_TAG:
+    enabled: true
+    price: 0.5
+    rotating-shop: false
+  NAUTILUS_SHELL:
+    enabled: true
+    price: 100.0
+    rotating-shop: true
+  NAUTILUS_SPAWN_EGG:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  NETHERITE_AXE:
+    enabled: true
+    price: 1000.0
+    rotating-shop: false
+  NETHERITE_BLOCK:
+    enabled: true
+    price: 9000.0
+    rotating-shop: false
+  NETHERITE_BOOTS:
+    enabled: true
+    price: 1000.0
+    rotating-shop: false
+  NETHERITE_CHESTPLATE:
+    enabled: true
+    price: 1000.0
+    rotating-shop: false
+  NETHERITE_HELMET:
+    enabled: true
+    price: 1000.0
+    rotating-shop: false
+  NETHERITE_HOE:
+    enabled: true
+    price: 1000.0
+    rotating-shop: false
+  NETHERITE_HORSE_ARMOR:
+    enabled: true
+    price: 43.75
+    rotating-shop: true
+  NETHERITE_INGOT:
+    enabled: true
+    price: 1000.0
+    rotating-shop: false
+  NETHERITE_LEGGINGS:
+    enabled: true
+    price: 1000.0
+    rotating-shop: false
+  NETHERITE_NAUTILUS_ARMOR:
+    enabled: true
+    price: 1000.0
+    rotating-shop: false
+  NETHERITE_PICKAXE:
+    enabled: true
+    price: 1000.0
+    rotating-shop: false
+  NETHERITE_SCRAP:
+    enabled: true
+    price: 312.5
+    rotating-shop: false
+  NETHERITE_SHOVEL:
+    enabled: true
+    price: 1000.0
+    rotating-shop: false
+  NETHERITE_SPEAR:
+    enabled: true
+    price: 1000.0
+    rotating-shop: true
+  NETHERITE_SWORD:
+    enabled: true
+    price: 1000.0
+    rotating-shop: false
+  NETHERITE_UPGRADE_SMITHING_TEMPLATE:
+    enabled: true
+    price: 625.0
+    rotating-shop: false
+  NETHERRACK:
+    enabled: true
+    price: 0.38
+    rotating-shop: true
+  NETHER_BRICK:
+    enabled: true
+    price: 1.5
+    rotating-shop: true
+  NETHER_BRICKS:
+    enabled: true
+    price: 2.5
+    rotating-shop: true
+  NETHER_BRICK_FENCE:
+    enabled: true
+    price: 2.5
+    rotating-shop: true
+  NETHER_BRICK_SLAB:
+    enabled: true
+    price: 1.25
+    rotating-shop: true
+  NETHER_BRICK_STAIRS:
+    enabled: true
+    price: 2.5
+    rotating-shop: true
+  NETHER_BRICK_WALL:
+    enabled: true
+    price: 2.5
+    rotating-shop: true
+  NETHER_GOLD_ORE:
+    enabled: true
+    price: 5.62
+    rotating-shop: true
+  NETHER_PORTAL:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  NETHER_QUARTZ_ORE:
+    enabled: true
+    price: 13.14
+    rotating-shop: true
+  NETHER_SPROUTS:
+    enabled: true
+    price: 0.25
+    rotating-shop: true
+  NETHER_STAR:
+    enabled: true
+    price: 750.0
+    rotating-shop: false
+  NETHER_WART:
+    enabled: true
+    price: 20.0
+    rotating-shop: true
+  NETHER_WART_BLOCK:
+    enabled: true
+    price: 180.0
+    rotating-shop: true
+  NOTE_BLOCK:
+    enabled: true
+    price: 5.0
+    rotating-shop: true
+  OAK_BOAT:
+    enabled: true
+    price: 20.0
+    rotating-shop: true
+  OAK_BUTTON:
+    enabled: true
+    price: 4.0
+    rotating-shop: true
+  OAK_CHEST_BOAT:
+    enabled: true
+    price: 52.0
+    rotating-shop: true
+  OAK_DOOR:
+    enabled: true
+    price: 8.0
+    rotating-shop: true
+  OAK_FENCE:
+    enabled: true
+    price: 6.67
+    rotating-shop: true
+  OAK_FENCE_GATE:
+    enabled: true
+    price: 16.0
+    rotating-shop: true
+  OAK_HANGING_SIGN:
+    enabled: true
+    price: 16.5
+    rotating-shop: true
+  OAK_LEAVES:
+    enabled: true
+    price: 1.0
+    rotating-shop: true
+  OAK_LOG:
+    enabled: true
+    price: 16.0
+    rotating-shop: true
+  OAK_PLANKS:
+    enabled: true
+    price: 4.0
+    rotating-shop: true
+  OAK_PRESSURE_PLATE:
+    enabled: true
+    price: 8.0
+    rotating-shop: true
+  OAK_SAPLING:
+    enabled: true
+    price: 4.0
+    rotating-shop: true
+  OAK_SHELF:
+    enabled: true
+    price: 1.5
+    rotating-shop: true
+  OAK_SIGN:
+    enabled: true
+    price: 8.67
+    rotating-shop: true
+  OAK_SLAB:
+    enabled: true
+    price: 2.0
+    rotating-shop: true
+  OAK_STAIRS:
+    enabled: true
+    price: 6.0
+    rotating-shop: true
+  OAK_TRAPDOOR:
+    enabled: true
+    price: 12.0
+    rotating-shop: true
+  OAK_WALL_HANGING_SIGN:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  OAK_WALL_SIGN:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  OAK_WOOD:
+    enabled: true
+    price: 16.0
+    rotating-shop: true
+  OBSERVER:
+    enabled: true
+    price: 13.75
+    rotating-shop: true
+  OBSIDIAN:
+    enabled: true
+    price: 5.62
+    rotating-shop: true
+  OCELOT_SPAWN_EGG:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  OCHRE_FROGLIGHT:
+    enabled: true
+    price: 1.5
+    rotating-shop: true
+  OMINOUS_BOTTLE:
+    enabled: true
+    price: 1.5
+    rotating-shop: true
+  OMINOUS_TRIAL_KEY:
+    enabled: true
+    price: 25.0
+    rotating-shop: true
+  OPEN_EYEBLOSSOM:
+    enabled: true
+    price: 1.5
+    rotating-shop: true
+  ORANGE_BANNER:
+    enabled: true
+    price: 1.5
+    rotating-shop: false
+  ORANGE_BED:
+    enabled: true
+    price: 2.0
+    rotating-shop: false
+  ORANGE_BUNDLE:
+    enabled: true
+    price: 8.75
+    rotating-shop: false
+  ORANGE_CANDLE:
+    enabled: true
+    price: 2.5
+    rotating-shop: true
+  ORANGE_CANDLE_CAKE:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  ORANGE_CARPET:
+    enabled: true
+    price: 0.5
+    rotating-shop: false
+  ORANGE_CONCRETE:
+    enabled: true
+    price: 0.5
+    rotating-shop: true
+  ORANGE_CONCRETE_POWDER:
+    enabled: true
+    price: 0.38
+    rotating-shop: true
+  ORANGE_DYE:
+    enabled: true
+    price: 0.05
+    rotating-shop: false
+  ORANGE_GLAZED_TERRACOTTA:
+    enabled: true
+    price: 0.15
+    rotating-shop: false
+  ORANGE_HARNESS:
+    enabled: true
+    price: 20.0
+    rotating-shop: true
+  ORANGE_SHULKER_BOX:
+    enabled: true
+    price: 15.0
+    rotating-shop: false
+  ORANGE_STAINED_GLASS:
+    enabled: true
+    price: 0.1
+    rotating-shop: false
+  ORANGE_STAINED_GLASS_PANE:
+    enabled: true
+    price: 0.03
+    rotating-shop: false
+  ORANGE_TERRACOTTA:
+    enabled: true
+    price: 0.1
+    rotating-shop: false
+  ORANGE_TULIP:
+    enabled: true
+    price: 1.25
+    rotating-shop: true
+  ORANGE_WALL_BANNER:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  ORANGE_WOOL:
+    enabled: true
+    price: 1.0
+    rotating-shop: false
+  OXEYE_DAISY:
+    enabled: true
+    price: 1.25
+    rotating-shop: true
+  OXIDIZED_CHISELED_COPPER:
+    enabled: true
+    price: 1.5
+    rotating-shop: true
+  OXIDIZED_COPPER:
+    enabled: true
+    price: 18.0
+    rotating-shop: true
+  OXIDIZED_COPPER_BARS:
+    enabled: true
+    price: 1.5
+    rotating-shop: true
+  OXIDIZED_COPPER_BULB:
+    enabled: true
+    price: 6.5
+    rotating-shop: true
+  OXIDIZED_COPPER_CHAIN:
+    enabled: true
+    price: 1.5
+    rotating-shop: true
+  OXIDIZED_COPPER_CHEST:
+    enabled: true
+    price: 1.5
+    rotating-shop: true
+  OXIDIZED_COPPER_DOOR:
+    enabled: true
+    price: 12.0
+    rotating-shop: true
+  OXIDIZED_COPPER_GOLEM_STATUE:
+    enabled: true
+    price: 1.5
+    rotating-shop: true
+  OXIDIZED_COPPER_GRATE:
+    enabled: true
+    price: 4.5
+    rotating-shop: true
+  OXIDIZED_COPPER_LANTERN:
+    enabled: true
+    price: 1.5
+    rotating-shop: true
+  OXIDIZED_COPPER_TRAPDOOR:
+    enabled: true
+    price: 18.0
+    rotating-shop: true
+  OXIDIZED_CUT_COPPER:
+    enabled: true
+    price: 4.5
+    rotating-shop: true
+  OXIDIZED_CUT_COPPER_SLAB:
+    enabled: true
+    price: 2.25
+    rotating-shop: true
+  OXIDIZED_CUT_COPPER_STAIRS:
+    enabled: true
+    price: 4.5
+    rotating-shop: true
+  OXIDIZED_LIGHTNING_ROD:
+    enabled: true
+    price: 1.5
+    rotating-shop: true
+  PACKED_ICE:
+    enabled: true
+    price: 13.5
+    rotating-shop: true
+  PACKED_MUD:
+    enabled: true
+    price: 1.5
+    rotating-shop: true
+  PAINTING:
+    enabled: true
+    price: 0.1
+    rotating-shop: false
+  PALE_HANGING_MOSS:
+    enabled: true
+    price: 1.5
+    rotating-shop: true
+  PALE_MOSS_BLOCK:
+    enabled: true
+    price: 5.62
+    rotating-shop: true
+  PALE_MOSS_CARPET:
+    enabled: true
+    price: 0.75
+    rotating-shop: true
+  PALE_OAK_BOAT:
+    enabled: true
+    price: 20.0
+    rotating-shop: true
+  PALE_OAK_BUTTON:
+    enabled: true
+    price: 4.0
+    rotating-shop: true
+  PALE_OAK_CHEST_BOAT:
+    enabled: true
+    price: 52.0
+    rotating-shop: true
+  PALE_OAK_DOOR:
+    enabled: true
+    price: 8.0
+    rotating-shop: true
+  PALE_OAK_FENCE:
+    enabled: true
+    price: 6.67
+    rotating-shop: true
+  PALE_OAK_FENCE_GATE:
+    enabled: true
+    price: 16.0
+    rotating-shop: true
+  PALE_OAK_HANGING_SIGN:
+    enabled: true
+    price: 16.5
+    rotating-shop: true
+  PALE_OAK_LEAVES:
+    enabled: true
+    price: 1.0
+    rotating-shop: true
+  PALE_OAK_LOG:
+    enabled: true
+    price: 16.0
+    rotating-shop: true
+  PALE_OAK_PLANKS:
+    enabled: true
+    price: 4.0
+    rotating-shop: true
+  PALE_OAK_PRESSURE_PLATE:
+    enabled: true
+    price: 8.0
+    rotating-shop: true
+  PALE_OAK_SAPLING:
+    enabled: true
+    price: 4.0
+    rotating-shop: true
+  PALE_OAK_SHELF:
+    enabled: true
+    price: 1.5
+    rotating-shop: true
+  PALE_OAK_SIGN:
+    enabled: true
+    price: 8.67
+    rotating-shop: true
+  PALE_OAK_SLAB:
+    enabled: true
+    price: 2.0
+    rotating-shop: true
+  PALE_OAK_STAIRS:
+    enabled: true
+    price: 6.0
+    rotating-shop: true
+  PALE_OAK_TRAPDOOR:
+    enabled: true
+    price: 12.0
+    rotating-shop: true
+  PALE_OAK_WALL_HANGING_SIGN:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  PALE_OAK_WALL_SIGN:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  PALE_OAK_WOOD:
+    enabled: true
+    price: 16.0
+    rotating-shop: true
+  PANDA_SPAWN_EGG:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  PAPER:
+    enabled: true
+    price: 12.5
+    rotating-shop: true
+  PARCHED_SPAWN_EGG:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  PARROT_SPAWN_EGG:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  PEARLESCENT_FROGLIGHT:
+    enabled: true
+    price: 1.5
+    rotating-shop: true
+  PEONY:
+    enabled: true
+    price: 1.25
+    rotating-shop: true
+  PETRIFIED_OAK_SLAB:
+    enabled: true
+    price: 0.31
+    rotating-shop: true
+  PHANTOM_MEMBRANE:
+    enabled: true
+    price: 5.62
+    rotating-shop: true
+  PHANTOM_SPAWN_EGG:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  PIGLIN_BANNER_PATTERN:
+    enabled: true
+    price: 31.25
+    rotating-shop: true
+  PIGLIN_BRUTE_SPAWN_EGG:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  PIGLIN_HEAD:
+    enabled: true
+    price: 43.75
+    rotating-shop: true
+  PIGLIN_SPAWN_EGG:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  PIGLIN_WALL_HEAD:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  PIG_SPAWN_EGG:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  PILLAGER_SPAWN_EGG:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  PINK_BANNER:
+    enabled: true
+    price: 1.5
+    rotating-shop: false
+  PINK_BED:
+    enabled: true
+    price: 2.0
+    rotating-shop: false
+  PINK_BUNDLE:
+    enabled: true
+    price: 8.75
+    rotating-shop: false
+  PINK_CANDLE:
+    enabled: true
+    price: 2.5
+    rotating-shop: true
+  PINK_CANDLE_CAKE:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  PINK_CARPET:
+    enabled: true
+    price: 0.5
+    rotating-shop: false
+  PINK_CONCRETE:
+    enabled: true
+    price: 0.5
+    rotating-shop: true
+  PINK_CONCRETE_POWDER:
+    enabled: true
+    price: 0.38
+    rotating-shop: true
+  PINK_DYE:
+    enabled: true
+    price: 0.05
+    rotating-shop: false
+  PINK_GLAZED_TERRACOTTA:
+    enabled: true
+    price: 0.15
+    rotating-shop: false
+  PINK_HARNESS:
+    enabled: true
+    price: 20.0
+    rotating-shop: true
+  PINK_PETALS:
+    enabled: true
+    price: 1.25
+    rotating-shop: true
+  PINK_SHULKER_BOX:
+    enabled: true
+    price: 15.0
+    rotating-shop: false
+  PINK_STAINED_GLASS:
+    enabled: true
+    price: 0.1
+    rotating-shop: false
+  PINK_STAINED_GLASS_PANE:
+    enabled: true
+    price: 0.03
+    rotating-shop: false
+  PINK_TERRACOTTA:
+    enabled: true
+    price: 0.1
+    rotating-shop: false
+  PINK_TULIP:
+    enabled: true
+    price: 1.25
+    rotating-shop: true
+  PINK_WALL_BANNER:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  PINK_WOOL:
+    enabled: true
+    price: 1.0
+    rotating-shop: false
+  PISTON:
+    enabled: true
+    price: 7.11
+    rotating-shop: true
+  PISTON_HEAD:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  PITCHER_CROP:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  PITCHER_PLANT:
+    enabled: true
+    price: 1.5
+    rotating-shop: true
+  PITCHER_POD:
+    enabled: true
+    price: 1.5
+    rotating-shop: true
+  PLAYER_HEAD:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  PLAYER_WALL_HEAD:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  PLENTY_POTTERY_SHERD:
+    enabled: true
+    price: 22.5
+    rotating-shop: true
+  PODZOL:
+    enabled: true
+    price: 1.5
+    rotating-shop: true
+  POINTED_DRIPSTONE:
+    enabled: true
+    price: 1.0
+    rotating-shop: true
+  POISONOUS_POTATO:
+    enabled: true
+    price: 0.25
+    rotating-shop: true
+  POLAR_BEAR_SPAWN_EGG:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  POLISHED_ANDESITE:
+    enabled: true
+    price: 0.62
+    rotating-shop: true
+  POLISHED_ANDESITE_SLAB:
+    enabled: true
+    price: 0.31
+    rotating-shop: true
+  POLISHED_ANDESITE_STAIRS:
+    enabled: true
+    price: 0.62
+    rotating-shop: true
+  POLISHED_BASALT:
+    enabled: true
+    price: 1.5
+    rotating-shop: true
+  POLISHED_BLACKSTONE:
+    enabled: true
+    price: 0.75
+    rotating-shop: true
+  POLISHED_BLACKSTONE_BRICKS:
+    enabled: true
+    price: 0.75
+    rotating-shop: true
+  POLISHED_BLACKSTONE_BRICK_SLAB:
+    enabled: true
+    price: 0.38
+    rotating-shop: true
+  POLISHED_BLACKSTONE_BRICK_STAIRS:
+    enabled: true
+    price: 0.75
+    rotating-shop: true
+  POLISHED_BLACKSTONE_BRICK_WALL:
+    enabled: true
+    price: 0.75
+    rotating-shop: true
+  POLISHED_BLACKSTONE_BUTTON:
+    enabled: true
+    price: 0.75
+    rotating-shop: true
+  POLISHED_BLACKSTONE_PRESSURE_PLATE:
+    enabled: true
+    price: 0.75
+    rotating-shop: true
+  POLISHED_BLACKSTONE_SLAB:
+    enabled: true
+    price: 0.38
+    rotating-shop: true
+  POLISHED_BLACKSTONE_STAIRS:
+    enabled: true
+    price: 0.75
+    rotating-shop: true
+  POLISHED_BLACKSTONE_WALL:
+    enabled: true
+    price: 0.75
+    rotating-shop: true
+  POLISHED_DEEPSLATE:
+    enabled: true
+    price: 0.62
+    rotating-shop: true
+  POLISHED_DEEPSLATE_SLAB:
+    enabled: true
+    price: 0.31
+    rotating-shop: true
+  POLISHED_DEEPSLATE_STAIRS:
+    enabled: true
+    price: 0.62
+    rotating-shop: true
+  POLISHED_DEEPSLATE_WALL:
+    enabled: true
+    price: 0.62
+    rotating-shop: true
+  POLISHED_DIORITE:
+    enabled: true
+    price: 0.62
+    rotating-shop: true
+  POLISHED_DIORITE_SLAB:
+    enabled: true
+    price: 0.31
+    rotating-shop: true
+  POLISHED_DIORITE_STAIRS:
+    enabled: true
+    price: 0.62
+    rotating-shop: true
+  POLISHED_GRANITE:
+    enabled: true
+    price: 0.62
+    rotating-shop: true
+  POLISHED_GRANITE_SLAB:
+    enabled: true
+    price: 0.31
+    rotating-shop: true
+  POLISHED_GRANITE_STAIRS:
+    enabled: true
+    price: 0.62
+    rotating-shop: true
+  POLISHED_TUFF:
+    enabled: true
+    price: 0.75
+    rotating-shop: true
+  POLISHED_TUFF_SLAB:
+    enabled: true
+    price: 0.38
+    rotating-shop: true
+  POLISHED_TUFF_STAIRS:
+    enabled: true
+    price: 0.75
+    rotating-shop: true
+  POLISHED_TUFF_WALL:
+    enabled: true
+    price: 0.75
+    rotating-shop: true
+  POPPED_CHORUS_FRUIT:
+    enabled: true
+    price: 5.0
+    rotating-shop: true
+  POPPY:
+    enabled: true
+    price: 1.25
+    rotating-shop: true
+  PORKCHOP:
+    enabled: true
+    price: 2.25
+    rotating-shop: true
+  POTATO:
+    enabled: true
+    price: 16.25
+    rotating-shop: true
+  POTATOES:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  POTION:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  POTTED_ACACIA_SAPLING:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  POTTED_ALLIUM:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  POTTED_AZALEA_BUSH:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  POTTED_AZURE_BLUET:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  POTTED_BAMBOO:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  POTTED_BIRCH_SAPLING:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  POTTED_BLUE_ORCHID:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  POTTED_BROWN_MUSHROOM:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  POTTED_CACTUS:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  POTTED_CHERRY_SAPLING:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  POTTED_CLOSED_EYEBLOSSOM:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  POTTED_CORNFLOWER:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  POTTED_CRIMSON_FUNGUS:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  POTTED_CRIMSON_ROOTS:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  POTTED_DANDELION:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  POTTED_DARK_OAK_SAPLING:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  POTTED_DEAD_BUSH:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  POTTED_FERN:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  POTTED_FLOWERING_AZALEA_BUSH:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  POTTED_JUNGLE_SAPLING:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  POTTED_LILY_OF_THE_VALLEY:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  POTTED_MANGROVE_PROPAGULE:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  POTTED_OAK_SAPLING:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  POTTED_OPEN_EYEBLOSSOM:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  POTTED_ORANGE_TULIP:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  POTTED_OXEYE_DAISY:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  POTTED_PALE_OAK_SAPLING:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  POTTED_PINK_TULIP:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  POTTED_POPPY:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  POTTED_RED_MUSHROOM:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  POTTED_RED_TULIP:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  POTTED_SPRUCE_SAPLING:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  POTTED_TORCHFLOWER:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  POTTED_WARPED_FUNGUS:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  POTTED_WARPED_ROOTS:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  POTTED_WHITE_TULIP:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  POTTED_WITHER_ROSE:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  POWDER_SNOW:
+    enabled: true
+    price: 1.5
+    rotating-shop: true
+  POWDER_SNOW_BUCKET:
+    enabled: true
+    price: 3.75
+    rotating-shop: true
+  POWDER_SNOW_CAULDRON:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  POWERED_RAIL:
+    enabled: true
+    price: 7.5
+    rotating-shop: true
+  PRISMARINE:
+    enabled: true
+    price: 2.25
+    rotating-shop: true
+  PRISMARINE_BRICKS:
+    enabled: true
+    price: 2.25
+    rotating-shop: true
+  PRISMARINE_BRICK_SLAB:
+    enabled: true
+    price: 1.12
+    rotating-shop: true
+  PRISMARINE_BRICK_STAIRS:
+    enabled: true
+    price: 2.25
+    rotating-shop: true
+  PRISMARINE_CRYSTALS:
+    enabled: true
+    price: 2.5
+    rotating-shop: true
+  PRISMARINE_SHARD:
+    enabled: true
+    price: 2.25
+    rotating-shop: true
+  PRISMARINE_SLAB:
+    enabled: true
+    price: 1.12
+    rotating-shop: true
+  PRISMARINE_STAIRS:
+    enabled: true
+    price: 2.25
+    rotating-shop: true
+  PRISMARINE_WALL:
+    enabled: true
+    price: 2.25
+    rotating-shop: true
+  PRIZE_POTTERY_SHERD:
+    enabled: true
+    price: 22.5
+    rotating-shop: true
+  PUFFERFISH:
+    enabled: true
+    price: 2.25
+    rotating-shop: true
+  PUFFERFISH_BUCKET:
+    enabled: true
+    price: 4.0
+    rotating-shop: true
+  PUFFERFISH_SPAWN_EGG:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  PUMPKIN:
+    enabled: true
+    price: 25.0
+    rotating-shop: true
+  PUMPKIN_PIE:
+    enabled: true
+    price: 0.25
+    rotating-shop: false
+  PUMPKIN_SEEDS:
+    enabled: true
+    price: 0.25
+    rotating-shop: true
+  PUMPKIN_STEM:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  PURPLE_BANNER:
+    enabled: true
+    price: 1.5
+    rotating-shop: false
+  PURPLE_BED:
+    enabled: true
+    price: 2.0
+    rotating-shop: false
+  PURPLE_BUNDLE:
+    enabled: true
+    price: 8.75
+    rotating-shop: false
+  PURPLE_CANDLE:
+    enabled: true
+    price: 2.5
+    rotating-shop: true
+  PURPLE_CANDLE_CAKE:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  PURPLE_CARPET:
+    enabled: true
+    price: 0.5
+    rotating-shop: false
+  PURPLE_CONCRETE:
+    enabled: true
+    price: 0.5
+    rotating-shop: true
+  PURPLE_CONCRETE_POWDER:
+    enabled: true
+    price: 0.38
+    rotating-shop: true
+  PURPLE_DYE:
+    enabled: true
+    price: 0.05
+    rotating-shop: false
+  PURPLE_GLAZED_TERRACOTTA:
+    enabled: true
+    price: 0.15
+    rotating-shop: false
+  PURPLE_HARNESS:
+    enabled: true
+    price: 20.0
+    rotating-shop: true
+  PURPLE_SHULKER_BOX:
+    enabled: true
+    price: 15.0
+    rotating-shop: false
+  PURPLE_STAINED_GLASS:
+    enabled: true
+    price: 0.1
+    rotating-shop: false
+  PURPLE_STAINED_GLASS_PANE:
+    enabled: true
+    price: 0.03
+    rotating-shop: false
+  PURPLE_TERRACOTTA:
+    enabled: true
+    price: 0.1
+    rotating-shop: false
+  PURPLE_WALL_BANNER:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  PURPLE_WOOL:
+    enabled: true
+    price: 1.0
+    rotating-shop: false
+  PURPUR_BLOCK:
+    enabled: true
+    price: 5.0
+    rotating-shop: true
+  PURPUR_PILLAR:
+    enabled: true
+    price: 5.0
+    rotating-shop: true
+  PURPUR_SLAB:
+    enabled: true
+    price: 2.5
+    rotating-shop: true
+  PURPUR_STAIRS:
+    enabled: true
+    price: 5.0
+    rotating-shop: true
+  QUARTZ:
+    enabled: true
+    price: 9.36
+    rotating-shop: true
+  QUARTZ_BLOCK:
+    enabled: true
+    price: 0.75
+    rotating-shop: false
+  QUARTZ_BRICKS:
+    enabled: true
+    price: 0.75
+    rotating-shop: false
+  QUARTZ_PILLAR:
+    enabled: true
+    price: 0.75
+    rotating-shop: false
+  QUARTZ_SLAB:
+    enabled: true
+    price: 4.68
+    rotating-shop: true
+  QUARTZ_STAIRS:
+    enabled: true
+    price: 9.36
+    rotating-shop: true
+  RABBIT:
+    enabled: true
+    price: 2.5
+    rotating-shop: true
+  RABBIT_FOOT:
+    enabled: true
+    price: 5.62
+    rotating-shop: true
+  RABBIT_HIDE:
+    enabled: true
+    price: 1.25
+    rotating-shop: true
+  RABBIT_SPAWN_EGG:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  RABBIT_STEW:
+    enabled: true
+    price: 0.25
+    rotating-shop: false
+  RAIL:
+    enabled: true
+    price: 0.45
+    rotating-shop: true
+  RAISER_ARMOR_TRIM_SMITHING_TEMPLATE:
+    enabled: true
+    price: 112.5
+    rotating-shop: true
+  RAVAGER_SPAWN_EGG:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  RAW_COPPER:
+    enabled: true
+    price: 1.75
+    rotating-shop: true
+  RAW_COPPER_BLOCK:
+    enabled: true
+    price: 15.75
+    rotating-shop: true
+  RAW_GOLD:
+    enabled: true
+    price: 7.75
+    rotating-shop: true
+  RAW_GOLD_BLOCK:
+    enabled: true
+    price: 69.75
+    rotating-shop: true
+  RAW_IRON:
+    enabled: true
+    price: 1.0
+    rotating-shop: true
+  RAW_IRON_BLOCK:
+    enabled: true
+    price: 9.0
+    rotating-shop: true
+  RECOVERY_COMPASS:
+    enabled: true
+    price: 462.5
+    rotating-shop: false
+  REDSTONE:
+    enabled: true
+    price: 0.1
+    rotating-shop: false
+  REDSTONE_BLOCK:
+    enabled: true
+    price: 9.0
+    rotating-shop: true
+  REDSTONE_LAMP:
+    enabled: true
+    price: 1.5
+    rotating-shop: true
+  REDSTONE_ORE:
+    enabled: true
+    price: 5.0
+    rotating-shop: true
+  REDSTONE_TORCH:
+    enabled: true
+    price: 1.5
+    rotating-shop: true
+  REDSTONE_WALL_TORCH:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  REDSTONE_WIRE:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  RED_BANNER:
+    enabled: true
+    price: 1.5
+    rotating-shop: false
+  RED_BED:
+    enabled: true
+    price: 2.0
+    rotating-shop: false
+  RED_BUNDLE:
+    enabled: true
+    price: 8.75
+    rotating-shop: false
+  RED_CANDLE:
+    enabled: true
+    price: 2.5
+    rotating-shop: true
+  RED_CANDLE_CAKE:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  RED_CARPET:
+    enabled: true
+    price: 0.5
+    rotating-shop: false
+  RED_CONCRETE:
+    enabled: true
+    price: 0.5
+    rotating-shop: true
+  RED_CONCRETE_POWDER:
+    enabled: true
+    price: 0.38
+    rotating-shop: true
+  RED_DYE:
+    enabled: true
+    price: 0.05
+    rotating-shop: false
+  RED_GLAZED_TERRACOTTA:
+    enabled: true
+    price: 0.15
+    rotating-shop: false
+  RED_HARNESS:
+    enabled: true
+    price: 20.0
+    rotating-shop: true
+  RED_MUSHROOM:
+    enabled: true
+    price: 7.5
+    rotating-shop: true
+  RED_MUSHROOM_BLOCK:
+    enabled: true
+    price: 3.0
+    rotating-shop: true
+  RED_NETHER_BRICKS:
+    enabled: true
+    price: 2.5
+    rotating-shop: true
+  RED_NETHER_BRICK_SLAB:
+    enabled: true
+    price: 1.25
+    rotating-shop: true
+  RED_NETHER_BRICK_STAIRS:
+    enabled: true
+    price: 2.5
+    rotating-shop: true
+  RED_NETHER_BRICK_WALL:
+    enabled: true
+    price: 2.5
+    rotating-shop: true
+  RED_SAND:
+    enabled: true
+    price: 0.25
+    rotating-shop: true
+  RED_SANDSTONE:
+    enabled: true
+    price: 0.62
+    rotating-shop: true
+  RED_SANDSTONE_SLAB:
+    enabled: true
+    price: 0.31
+    rotating-shop: true
+  RED_SANDSTONE_STAIRS:
+    enabled: true
+    price: 0.62
+    rotating-shop: true
+  RED_SANDSTONE_WALL:
+    enabled: true
+    price: 0.62
+    rotating-shop: true
+  RED_SHULKER_BOX:
+    enabled: true
+    price: 15.0
+    rotating-shop: false
+  RED_STAINED_GLASS:
+    enabled: true
+    price: 0.1
+    rotating-shop: false
+  RED_STAINED_GLASS_PANE:
+    enabled: true
+    price: 0.03
+    rotating-shop: false
+  RED_TERRACOTTA:
+    enabled: true
+    price: 0.1
+    rotating-shop: false
+  RED_TULIP:
+    enabled: true
+    price: 1.25
+    rotating-shop: true
+  RED_WALL_BANNER:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  RED_WOOL:
+    enabled: true
+    price: 1.0
+    rotating-shop: false
+  REINFORCED_DEEPSLATE:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  REPEATER:
+    enabled: true
+    price: 3.5
+    rotating-shop: true
+  REPEATING_COMMAND_BLOCK:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  RESIN_BLOCK:
+    enabled: true
+    price: 27.0
+    rotating-shop: true
+  RESIN_BRICK:
+    enabled: true
+    price: 3.0
+    rotating-shop: true
+  RESIN_BRICKS:
+    enabled: true
+    price: 12.0
+    rotating-shop: true
+  RESIN_BRICK_SLAB:
+    enabled: true
+    price: 0.31
+    rotating-shop: true
+  RESIN_BRICK_STAIRS:
+    enabled: true
+    price: 0.62
+    rotating-shop: true
+  RESIN_BRICK_WALL:
+    enabled: true
+    price: 0.62
+    rotating-shop: true
+  RESIN_CLUMP:
+    enabled: true
+    price: 3.0
+    rotating-shop: true
+  RESPAWN_ANCHOR:
+    enabled: true
+    price: 1.5
+    rotating-shop: true
+  RIB_ARMOR_TRIM_SMITHING_TEMPLATE:
+    enabled: true
+    price: 112.5
+    rotating-shop: true
+  ROOTED_DIRT:
+    enabled: true
+    price: 1.5
+    rotating-shop: true
+  ROSE_BUSH:
+    enabled: true
+    price: 1.25
+    rotating-shop: true
+  ROTTEN_FLESH:
+    enabled: true
+    price: 0.5
+    rotating-shop: true
+  SADDLE:
+    enabled: true
+    price: 0.5
+    rotating-shop: false
+  SALMON:
+    enabled: true
+    price: 2.0
+    rotating-shop: true
+  SALMON_BUCKET:
+    enabled: true
+    price: 4.0
+    rotating-shop: true
+  SALMON_SPAWN_EGG:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  SAND:
+    enabled: true
+    price: 0.25
+    rotating-shop: true
+  SANDSTONE:
+    enabled: true
+    price: 0.62
+    rotating-shop: true
+  SANDSTONE_SLAB:
+    enabled: true
+    price: 0.31
+    rotating-shop: true
+  SANDSTONE_STAIRS:
+    enabled: true
+    price: 0.62
+    rotating-shop: true
+  SANDSTONE_WALL:
+    enabled: true
+    price: 0.62
+    rotating-shop: true
+  SCAFFOLDING:
+    enabled: true
+    price: 1.5
+    rotating-shop: true
+  SCRAPE_POTTERY_SHERD:
+    enabled: true
+    price: 22.5
+    rotating-shop: true
+  SCULK:
+    enabled: true
+    price: 1.5
+    rotating-shop: true
+  SCULK_CATALYST:
+    enabled: true
+    price: 1.5
+    rotating-shop: true
+  SCULK_SENSOR:
+    enabled: true
+    price: 1.5
+    rotating-shop: true
+  SCULK_SHRIEKER:
+    enabled: true
+    price: 1.5
+    rotating-shop: true
+  SCULK_VEIN:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  SEAGRASS:
+    enabled: true
+    price: 1.5
+    rotating-shop: true
+  SEA_LANTERN:
+    enabled: true
+    price: 1.5
+    rotating-shop: true
+  SEA_PICKLE:
+    enabled: true
+    price: 6.5
+    rotating-shop: true
+  SENTRY_ARMOR_TRIM_SMITHING_TEMPLATE:
+    enabled: true
+    price: 112.5
+    rotating-shop: true
+  SHAPER_ARMOR_TRIM_SMITHING_TEMPLATE:
+    enabled: true
+    price: 112.5
+    rotating-shop: true
+  SHEAF_POTTERY_SHERD:
+    enabled: true
+    price: 22.5
+    rotating-shop: true
+  SHEARS:
+    enabled: true
+    price: 0.25
+    rotating-shop: false
+  SHEEP_SPAWN_EGG:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  SHELTER_POTTERY_SHERD:
+    enabled: true
+    price: 22.5
+    rotating-shop: true
+  SHIELD:
+    enabled: true
+    price: 1.5
+    rotating-shop: true
+  SHORT_DRY_GRASS:
+    enabled: true
+    price: 1.5
+    rotating-shop: true
+  SHORT_GRASS:
+    enabled: true
+    price: 1.5
+    rotating-shop: true
+  SHROOMLIGHT:
+    enabled: true
+    price: 1.5
+    rotating-shop: true
+  SHULKER_BOX:
+    enabled: true
+    price: 10.0
+    rotating-shop: false
+  SHULKER_SHELL:
+    enabled: true
+    price: 5.0
+    rotating-shop: true
+  SHULKER_SPAWN_EGG:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  SILENCE_ARMOR_TRIM_SMITHING_TEMPLATE:
+    enabled: true
+    price: 112.5
+    rotating-shop: true
+  SILVERFISH_SPAWN_EGG:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  SKELETON_HORSE_SPAWN_EGG:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  SKELETON_SKULL:
+    enabled: true
+    price: 43.75
+    rotating-shop: true
+  SKELETON_SPAWN_EGG:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  SKELETON_WALL_SKULL:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  SKULL_BANNER_PATTERN:
+    enabled: true
+    price: 62.5
+    rotating-shop: true
+  SKULL_POTTERY_SHERD:
+    enabled: true
+    price: 22.5
+    rotating-shop: true
+  SLIME_BALL:
+    enabled: true
+    price: 2.25
+    rotating-shop: true
+  SLIME_BLOCK:
+    enabled: true
+    price: 20.25
+    rotating-shop: true
+  SLIME_SPAWN_EGG:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  SMALL_AMETHYST_BUD:
+    enabled: true
+    price: 25.0
+    rotating-shop: true
+  SMALL_DRIPLEAF:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  SMITHING_TABLE:
+    enabled: true
+    price: 15.25
+    rotating-shop: true
+  SMOKER:
+    enabled: true
+    price: 8.0
+    rotating-shop: true
+  SMOOTH_BASALT:
+    enabled: true
+    price: 1.0
+    rotating-shop: true
+  SMOOTH_QUARTZ:
+    enabled: true
+    price: 0.75
+    rotating-shop: false
+  SMOOTH_QUARTZ_SLAB:
+    enabled: true
+    price: 4.68
+    rotating-shop: true
+  SMOOTH_QUARTZ_STAIRS:
+    enabled: true
+    price: 9.36
+    rotating-shop: true
+  SMOOTH_RED_SANDSTONE:
+    enabled: true
+    price: 0.62
+    rotating-shop: true
+  SMOOTH_RED_SANDSTONE_SLAB:
+    enabled: true
+    price: 0.31
+    rotating-shop: true
+  SMOOTH_RED_SANDSTONE_STAIRS:
+    enabled: true
+    price: 0.62
+    rotating-shop: true
+  SMOOTH_SANDSTONE:
+    enabled: true
+    price: 0.62
+    rotating-shop: true
+  SMOOTH_SANDSTONE_SLAB:
+    enabled: true
+    price: 0.31
+    rotating-shop: true
+  SMOOTH_SANDSTONE_STAIRS:
+    enabled: true
+    price: 0.62
+    rotating-shop: true
+  SMOOTH_STONE:
+    enabled: true
+    price: 0.62
+    rotating-shop: true
+  SMOOTH_STONE_SLAB:
+    enabled: true
+    price: 0.31
+    rotating-shop: true
+  SNIFFER_EGG:
+    enabled: true
+    price: 1.5
+    rotating-shop: true
+  SNIFFER_SPAWN_EGG:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  SNORT_POTTERY_SHERD:
+    enabled: true
+    price: 22.5
+    rotating-shop: true
+  SNOUT_ARMOR_TRIM_SMITHING_TEMPLATE:
+    enabled: true
+    price: 112.5
+    rotating-shop: true
+  SNOW:
+    enabled: true
+    price: 1.5
+    rotating-shop: true
+  SNOWBALL:
+    enabled: true
+    price: 0.25
+    rotating-shop: true
+  SNOW_BLOCK:
+    enabled: true
+    price: 1.0
+    rotating-shop: true
+  SNOW_GOLEM_SPAWN_EGG:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  SOUL_CAMPFIRE:
+    enabled: true
+    price: 1.5
+    rotating-shop: true
+  SOUL_FIRE:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  SOUL_LANTERN:
+    enabled: true
+    price: 7.25
+    rotating-shop: true
+  SOUL_SAND:
+    enabled: true
+    price: 0.75
+    rotating-shop: true
+  SOUL_SOIL:
+    enabled: true
+    price: 0.75
+    rotating-shop: true
+  SOUL_TORCH:
+    enabled: true
+    price: 0.75
+    rotating-shop: true
+  SOUL_WALL_TORCH:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  SPAWNER:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  SPECTRAL_ARROW:
+    enabled: true
+    price: 1.75
+    rotating-shop: true
+  SPIDER_EYE:
+    enabled: true
+    price: 1.0
+    rotating-shop: true
+  SPIDER_SPAWN_EGG:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  SPIRE_ARMOR_TRIM_SMITHING_TEMPLATE:
+    enabled: true
+    price: 112.5
+    rotating-shop: true
+  SPLASH_POTION:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  SPONGE:
+    enabled: true
+    price: 1.5
+    rotating-shop: true
+  SPORE_BLOSSOM:
+    enabled: true
+    price: 1.5
+    rotating-shop: true
+  SPRUCE_BOAT:
+    enabled: true
+    price: 20.0
+    rotating-shop: true
+  SPRUCE_BUTTON:
+    enabled: true
+    price: 4.0
+    rotating-shop: true
+  SPRUCE_CHEST_BOAT:
+    enabled: true
+    price: 52.0
+    rotating-shop: true
+  SPRUCE_DOOR:
+    enabled: true
+    price: 8.0
+    rotating-shop: true
+  SPRUCE_FENCE:
+    enabled: true
+    price: 6.67
+    rotating-shop: true
+  SPRUCE_FENCE_GATE:
+    enabled: true
+    price: 16.0
+    rotating-shop: true
+  SPRUCE_HANGING_SIGN:
+    enabled: true
+    price: 16.5
+    rotating-shop: true
+  SPRUCE_LEAVES:
+    enabled: true
+    price: 1.0
+    rotating-shop: true
+  SPRUCE_LOG:
+    enabled: true
+    price: 16.0
+    rotating-shop: true
+  SPRUCE_PLANKS:
+    enabled: true
+    price: 4.0
+    rotating-shop: true
+  SPRUCE_PRESSURE_PLATE:
+    enabled: true
+    price: 8.0
+    rotating-shop: true
+  SPRUCE_SAPLING:
+    enabled: true
+    price: 4.0
+    rotating-shop: true
+  SPRUCE_SHELF:
+    enabled: true
+    price: 1.5
+    rotating-shop: true
+  SPRUCE_SIGN:
+    enabled: true
+    price: 8.67
+    rotating-shop: true
+  SPRUCE_SLAB:
+    enabled: true
+    price: 2.0
+    rotating-shop: true
+  SPRUCE_STAIRS:
+    enabled: true
+    price: 6.0
+    rotating-shop: true
+  SPRUCE_TRAPDOOR:
+    enabled: true
+    price: 12.0
+    rotating-shop: true
+  SPRUCE_WALL_HANGING_SIGN:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  SPRUCE_WALL_SIGN:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  SPRUCE_WOOD:
+    enabled: true
+    price: 16.0
+    rotating-shop: true
+  SPYGLASS:
+    enabled: true
+    price: 6.25
+    rotating-shop: true
+  SQUID_SPAWN_EGG:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  STICK:
+    enabled: true
+    price: 0.5
+    rotating-shop: true
+  STICKY_PISTON:
+    enabled: true
+    price: 9.36
+    rotating-shop: true
+  STONE:
+    enabled: true
+    price: 5.0
+    rotating-shop: true
+  STONECUTTER:
+    enabled: true
+    price: 2.98
+    rotating-shop: true
+  STONE_AXE:
+    enabled: true
+    price: 2.0
+    rotating-shop: true
+  STONE_BRICKS:
+    enabled: true
+    price: 0.62
+    rotating-shop: true
+  STONE_BRICK_SLAB:
+    enabled: true
+    price: 0.31
+    rotating-shop: true
+  STONE_BRICK_STAIRS:
+    enabled: true
+    price: 0.62
+    rotating-shop: true
+  STONE_BRICK_WALL:
+    enabled: true
+    price: 0.62
+    rotating-shop: true
+  STONE_BUTTON:
+    enabled: true
+    price: 0.62
+    rotating-shop: true
+  STONE_HOE:
+    enabled: true
+    price: 1.5
+    rotating-shop: true
+  STONE_PICKAXE:
+    enabled: true
+    price: 2.0
+    rotating-shop: true
+  STONE_PRESSURE_PLATE:
+    enabled: true
+    price: 0.62
+    rotating-shop: true
+  STONE_SHOVEL:
+    enabled: true
+    price: 0.75
+    rotating-shop: true
+  STONE_SLAB:
+    enabled: true
+    price: 0.31
+    rotating-shop: true
+  STONE_SPEAR:
+    enabled: true
+    price: 1.5
+    rotating-shop: true
+  STONE_STAIRS:
+    enabled: true
+    price: 0.62
+    rotating-shop: true
+  STONE_SWORD:
+    enabled: true
+    price: 1.5
+    rotating-shop: true
+  STRAY_SPAWN_EGG:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  STRIDER_SPAWN_EGG:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  STRING:
+    enabled: true
+    price: 0.88
+    rotating-shop: true
+  STRIPPED_ACACIA_LOG:
+    enabled: true
+    price: 16.0
+    rotating-shop: true
+  STRIPPED_ACACIA_WOOD:
+    enabled: true
+    price: 16.0
+    rotating-shop: true
+  STRIPPED_BAMBOO_BLOCK:
+    enabled: true
+    price: 16.0
+    rotating-shop: true
+  STRIPPED_BIRCH_LOG:
+    enabled: true
+    price: 16.0
+    rotating-shop: true
+  STRIPPED_BIRCH_WOOD:
+    enabled: true
+    price: 16.0
+    rotating-shop: true
+  STRIPPED_CHERRY_LOG:
+    enabled: true
+    price: 16.0
+    rotating-shop: true
+  STRIPPED_CHERRY_WOOD:
+    enabled: true
+    price: 16.0
+    rotating-shop: true
+  STRIPPED_CRIMSON_HYPHAE:
+    enabled: true
+    price: 16.0
+    rotating-shop: true
+  STRIPPED_CRIMSON_STEM:
+    enabled: true
+    price: 16.0
+    rotating-shop: true
+  STRIPPED_DARK_OAK_LOG:
+    enabled: true
+    price: 16.0
+    rotating-shop: true
+  STRIPPED_DARK_OAK_WOOD:
+    enabled: true
+    price: 16.0
+    rotating-shop: true
+  STRIPPED_JUNGLE_LOG:
+    enabled: true
+    price: 16.0
+    rotating-shop: true
+  STRIPPED_JUNGLE_WOOD:
+    enabled: true
+    price: 16.0
+    rotating-shop: true
+  STRIPPED_MANGROVE_LOG:
+    enabled: true
+    price: 16.0
+    rotating-shop: true
+  STRIPPED_MANGROVE_WOOD:
+    enabled: true
+    price: 16.0
+    rotating-shop: true
+  STRIPPED_OAK_LOG:
+    enabled: true
+    price: 16.0
+    rotating-shop: true
+  STRIPPED_OAK_WOOD:
+    enabled: true
+    price: 16.0
+    rotating-shop: true
+  STRIPPED_PALE_OAK_LOG:
+    enabled: true
+    price: 16.0
+    rotating-shop: true
+  STRIPPED_PALE_OAK_WOOD:
+    enabled: true
+    price: 16.0
+    rotating-shop: true
+  STRIPPED_SPRUCE_LOG:
+    enabled: true
+    price: 16.0
+    rotating-shop: true
+  STRIPPED_SPRUCE_WOOD:
+    enabled: true
+    price: 16.0
+    rotating-shop: true
+  STRIPPED_WARPED_HYPHAE:
+    enabled: true
+    price: 16.0
+    rotating-shop: true
+  STRIPPED_WARPED_STEM:
+    enabled: true
+    price: 16.0
+    rotating-shop: true
+  STRUCTURE_BLOCK:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  STRUCTURE_VOID:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  SUGAR:
+    enabled: true
+    price: 12.5
+    rotating-shop: true
+  SUGAR_CANE:
+    enabled: true
+    price: 12.5
+    rotating-shop: true
+  SUNFLOWER:
+    enabled: true
+    price: 1.25
+    rotating-shop: true
+  SUSPICIOUS_GRAVEL:
+    enabled: true
+    price: 1.5
+    rotating-shop: true
+  SUSPICIOUS_SAND:
+    enabled: true
+    price: 1.5
+    rotating-shop: true
+  SUSPICIOUS_STEW:
+    enabled: true
+    price: 1.5
+    rotating-shop: true
+  SWEET_BERRIES:
+    enabled: true
+    price: 15.0
+    rotating-shop: true
+  SWEET_BERRY_BUSH:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  TADPOLE_BUCKET:
+    enabled: true
+    price: 4.0
+    rotating-shop: true
+  TADPOLE_SPAWN_EGG:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  TALL_DRY_GRASS:
+    enabled: true
+    price: 1.5
+    rotating-shop: true
+  TALL_GRASS:
+    enabled: true
+    price: 1.5
+    rotating-shop: true
+  TALL_SEAGRASS:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  TARGET:
+    enabled: true
+    price: 12.5
+    rotating-shop: true
+  TERRACOTTA:
+    enabled: true
+    price: 0.1
+    rotating-shop: false
+  TEST_BLOCK:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  TEST_INSTANCE_BLOCK:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  TIDE_ARMOR_TRIM_SMITHING_TEMPLATE:
+    enabled: true
+    price: 112.5
+    rotating-shop: true
+  TINTED_GLASS:
+    enabled: true
+    price: 0.38
+    rotating-shop: true
+  TIPPED_ARROW:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  TNT:
+    enabled: true
+    price: 4.38
+    rotating-shop: true
+  TNT_MINECART:
+    enabled: true
+    price: 9.93
+    rotating-shop: true
+  TORCH:
+    enabled: true
+    price: 0.62
+    rotating-shop: true
+  TORCHFLOWER:
+    enabled: true
+    price: 1.5
+    rotating-shop: true
+  TORCHFLOWER_CROP:
+    enabled: true
+    price: 1.5
+    rotating-shop: true
+  TORCHFLOWER_SEEDS:
+    enabled: true
+    price: 1.5
+    rotating-shop: true
+  TOTEM_OF_UNDYING:
+    enabled: true
+    price: 190.0
+    rotating-shop: false
+  TRADER_LLAMA_SPAWN_EGG:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  TRAPPED_CHEST:
+    enabled: true
+    price: 10.0
+    rotating-shop: true
+  TRIAL_KEY:
+    enabled: true
+    price: 10.0
+    rotating-shop: true
+  TRIAL_SPAWNER:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  TRIDENT:
+    enabled: true
+    price: 440.0
+    rotating-shop: false
+  TRIPWIRE:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  TRIPWIRE_HOOK:
+    enabled: true
+    price: 5.61
+    rotating-shop: true
+  TROPICAL_FISH:
+    enabled: true
+    price: 2.25
+    rotating-shop: true
+  TROPICAL_FISH_BUCKET:
+    enabled: true
+    price: 4.0
+    rotating-shop: true
+  TROPICAL_FISH_SPAWN_EGG:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  TUBE_CORAL:
+    enabled: true
+    price: 3.12
+    rotating-shop: true
+  TUBE_CORAL_BLOCK:
+    enabled: true
+    price: 6.25
+    rotating-shop: true
+  TUBE_CORAL_FAN:
+    enabled: true
+    price: 3.12
+    rotating-shop: true
+  TUBE_CORAL_WALL_FAN:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  TUFF:
+    enabled: true
+    price: 0.75
+    rotating-shop: true
+  TUFF_BRICKS:
+    enabled: true
+    price: 0.75
+    rotating-shop: true
+  TUFF_BRICK_SLAB:
+    enabled: true
+    price: 0.38
+    rotating-shop: true
+  TUFF_BRICK_STAIRS:
+    enabled: true
+    price: 0.75
+    rotating-shop: true
+  TUFF_BRICK_WALL:
+    enabled: true
+    price: 0.75
+    rotating-shop: true
+  TUFF_SLAB:
+    enabled: true
+    price: 0.38
+    rotating-shop: true
+  TUFF_STAIRS:
+    enabled: true
+    price: 0.75
+    rotating-shop: true
+  TUFF_WALL:
+    enabled: true
+    price: 0.75
+    rotating-shop: true
+  TURTLE_EGG:
+    enabled: true
+    price: 1.5
+    rotating-shop: true
+  TURTLE_HELMET:
+    enabled: true
+    price: 9.38
+    rotating-shop: true
+  TURTLE_SCUTE:
+    enabled: true
+    price: 12.5
+    rotating-shop: true
+  TURTLE_SPAWN_EGG:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  TWISTING_VINES:
+    enabled: true
+    price: 1.5
+    rotating-shop: true
+  TWISTING_VINES_PLANT:
+    enabled: true
+    price: 1.5
+    rotating-shop: true
+  VAULT:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  VERDANT_FROGLIGHT:
+    enabled: true
+    price: 1.5
+    rotating-shop: true
+  VEX_ARMOR_TRIM_SMITHING_TEMPLATE:
+    enabled: true
+    price: 112.5
+    rotating-shop: true
+  VEX_SPAWN_EGG:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  VILLAGER_SPAWN_EGG:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  VINDICATOR_SPAWN_EGG:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  VINE:
+    enabled: true
+    price: 1.5
+    rotating-shop: true
+  VOID_AIR:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  WALL_TORCH:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  WANDERING_TRADER_SPAWN_EGG:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  WARDEN_SPAWN_EGG:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  WARD_ARMOR_TRIM_SMITHING_TEMPLATE:
+    enabled: true
+    price: 112.5
+    rotating-shop: true
+  WARPED_BUTTON:
+    enabled: true
+    price: 4.0
+    rotating-shop: true
+  WARPED_DOOR:
+    enabled: true
+    price: 8.0
+    rotating-shop: true
+  WARPED_FENCE:
+    enabled: true
+    price: 6.67
+    rotating-shop: true
+  WARPED_FENCE_GATE:
+    enabled: true
+    price: 16.0
+    rotating-shop: true
+  WARPED_FUNGUS:
+    enabled: true
+    price: 20.0
+    rotating-shop: true
+  WARPED_FUNGUS_ON_A_STICK:
+    enabled: true
+    price: 1.5
+    rotating-shop: true
+  WARPED_HANGING_SIGN:
+    enabled: true
+    price: 16.5
+    rotating-shop: true
+  WARPED_HYPHAE:
+    enabled: true
+    price: 16.0
+    rotating-shop: true
+  WARPED_NYLIUM:
+    enabled: true
+    price: 1.5
+    rotating-shop: true
+  WARPED_PLANKS:
+    enabled: true
+    price: 4.0
+    rotating-shop: true
+  WARPED_PRESSURE_PLATE:
+    enabled: true
+    price: 8.0
+    rotating-shop: true
+  WARPED_ROOTS:
+    enabled: true
+    price: 1.0
+    rotating-shop: true
+  WARPED_SHELF:
+    enabled: true
+    price: 1.5
+    rotating-shop: true
+  WARPED_SIGN:
+    enabled: true
+    price: 8.67
+    rotating-shop: true
+  WARPED_SLAB:
+    enabled: true
+    price: 2.0
+    rotating-shop: true
+  WARPED_STAIRS:
+    enabled: true
+    price: 6.0
+    rotating-shop: true
+  WARPED_STEM:
+    enabled: true
+    price: 16.0
+    rotating-shop: true
+  WARPED_TRAPDOOR:
+    enabled: true
+    price: 12.0
+    rotating-shop: true
+  WARPED_WALL_HANGING_SIGN:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  WARPED_WALL_SIGN:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  WARPED_WART_BLOCK:
+    enabled: true
+    price: 5.62
+    rotating-shop: true
+  WATER:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  WATER_BUCKET:
+    enabled: true
+    price: 3.33
+    rotating-shop: true
+  WATER_CAULDRON:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  WAXED_CHISELED_COPPER:
+    enabled: true
+    price: 1.5
+    rotating-shop: true
+  WAXED_COPPER_BARS:
+    enabled: true
+    price: 1.5
+    rotating-shop: true
+  WAXED_COPPER_BLOCK:
+    enabled: true
+    price: 18.0
+    rotating-shop: true
+  WAXED_COPPER_BULB:
+    enabled: true
+    price: 6.5
+    rotating-shop: true
+  WAXED_COPPER_CHAIN:
+    enabled: true
+    price: 1.5
+    rotating-shop: true
+  WAXED_COPPER_CHEST:
+    enabled: true
+    price: 1.5
+    rotating-shop: true
+  WAXED_COPPER_DOOR:
+    enabled: true
+    price: 12.0
+    rotating-shop: true
+  WAXED_COPPER_GOLEM_STATUE:
+    enabled: true
+    price: 1.5
+    rotating-shop: true
+  WAXED_COPPER_GRATE:
+    enabled: true
+    price: 4.5
+    rotating-shop: true
+  WAXED_COPPER_LANTERN:
+    enabled: true
+    price: 1.5
+    rotating-shop: true
+  WAXED_COPPER_TRAPDOOR:
+    enabled: true
+    price: 18.0
+    rotating-shop: true
+  WAXED_CUT_COPPER:
+    enabled: true
+    price: 4.5
+    rotating-shop: true
+  WAXED_CUT_COPPER_SLAB:
+    enabled: true
+    price: 2.25
+    rotating-shop: true
+  WAXED_CUT_COPPER_STAIRS:
+    enabled: true
+    price: 4.5
+    rotating-shop: true
+  WAXED_EXPOSED_CHISELED_COPPER:
+    enabled: true
+    price: 1.5
+    rotating-shop: true
+  WAXED_EXPOSED_COPPER:
+    enabled: true
+    price: 18.0
+    rotating-shop: true
+  WAXED_EXPOSED_COPPER_BARS:
+    enabled: true
+    price: 1.5
+    rotating-shop: true
+  WAXED_EXPOSED_COPPER_BULB:
+    enabled: true
+    price: 6.5
+    rotating-shop: true
+  WAXED_EXPOSED_COPPER_CHAIN:
+    enabled: true
+    price: 1.5
+    rotating-shop: true
+  WAXED_EXPOSED_COPPER_CHEST:
+    enabled: true
+    price: 1.5
+    rotating-shop: true
+  WAXED_EXPOSED_COPPER_DOOR:
+    enabled: true
+    price: 12.0
+    rotating-shop: true
+  WAXED_EXPOSED_COPPER_GOLEM_STATUE:
+    enabled: true
+    price: 1.5
+    rotating-shop: true
+  WAXED_EXPOSED_COPPER_GRATE:
+    enabled: true
+    price: 4.5
+    rotating-shop: true
+  WAXED_EXPOSED_COPPER_LANTERN:
+    enabled: true
+    price: 1.5
+    rotating-shop: true
+  WAXED_EXPOSED_COPPER_TRAPDOOR:
+    enabled: true
+    price: 18.0
+    rotating-shop: true
+  WAXED_EXPOSED_CUT_COPPER:
+    enabled: true
+    price: 4.5
+    rotating-shop: true
+  WAXED_EXPOSED_CUT_COPPER_SLAB:
+    enabled: true
+    price: 2.25
+    rotating-shop: true
+  WAXED_EXPOSED_CUT_COPPER_STAIRS:
+    enabled: true
+    price: 4.5
+    rotating-shop: true
+  WAXED_EXPOSED_LIGHTNING_ROD:
+    enabled: true
+    price: 1.5
+    rotating-shop: true
+  WAXED_LIGHTNING_ROD:
+    enabled: true
+    price: 1.5
+    rotating-shop: true
+  WAXED_OXIDIZED_CHISELED_COPPER:
+    enabled: true
+    price: 1.5
+    rotating-shop: true
+  WAXED_OXIDIZED_COPPER:
+    enabled: true
+    price: 18.0
+    rotating-shop: true
+  WAXED_OXIDIZED_COPPER_BARS:
+    enabled: true
+    price: 1.5
+    rotating-shop: true
+  WAXED_OXIDIZED_COPPER_BULB:
+    enabled: true
+    price: 6.5
+    rotating-shop: true
+  WAXED_OXIDIZED_COPPER_CHAIN:
+    enabled: true
+    price: 1.5
+    rotating-shop: true
+  WAXED_OXIDIZED_COPPER_CHEST:
+    enabled: true
+    price: 1.5
+    rotating-shop: true
+  WAXED_OXIDIZED_COPPER_DOOR:
+    enabled: true
+    price: 12.0
+    rotating-shop: true
+  WAXED_OXIDIZED_COPPER_GOLEM_STATUE:
+    enabled: true
+    price: 1.5
+    rotating-shop: true
+  WAXED_OXIDIZED_COPPER_GRATE:
+    enabled: true
+    price: 4.5
+    rotating-shop: true
+  WAXED_OXIDIZED_COPPER_LANTERN:
+    enabled: true
+    price: 1.5
+    rotating-shop: true
+  WAXED_OXIDIZED_COPPER_TRAPDOOR:
+    enabled: true
+    price: 18.0
+    rotating-shop: true
+  WAXED_OXIDIZED_CUT_COPPER:
+    enabled: true
+    price: 4.5
+    rotating-shop: true
+  WAXED_OXIDIZED_CUT_COPPER_SLAB:
+    enabled: true
+    price: 2.25
+    rotating-shop: true
+  WAXED_OXIDIZED_CUT_COPPER_STAIRS:
+    enabled: true
+    price: 4.5
+    rotating-shop: true
+  WAXED_OXIDIZED_LIGHTNING_ROD:
+    enabled: true
+    price: 1.5
+    rotating-shop: true
+  WAXED_WEATHERED_CHISELED_COPPER:
+    enabled: true
+    price: 1.5
+    rotating-shop: true
+  WAXED_WEATHERED_COPPER:
+    enabled: true
+    price: 18.0
+    rotating-shop: true
+  WAXED_WEATHERED_COPPER_BARS:
+    enabled: true
+    price: 1.5
+    rotating-shop: true
+  WAXED_WEATHERED_COPPER_BULB:
+    enabled: true
+    price: 6.5
+    rotating-shop: true
+  WAXED_WEATHERED_COPPER_CHAIN:
+    enabled: true
+    price: 1.5
+    rotating-shop: true
+  WAXED_WEATHERED_COPPER_CHEST:
+    enabled: true
+    price: 1.5
+    rotating-shop: true
+  WAXED_WEATHERED_COPPER_DOOR:
+    enabled: true
+    price: 12.0
+    rotating-shop: true
+  WAXED_WEATHERED_COPPER_GOLEM_STATUE:
+    enabled: true
+    price: 1.5
+    rotating-shop: true
+  WAXED_WEATHERED_COPPER_GRATE:
+    enabled: true
+    price: 4.5
+    rotating-shop: true
+  WAXED_WEATHERED_COPPER_LANTERN:
+    enabled: true
+    price: 1.5
+    rotating-shop: true
+  WAXED_WEATHERED_COPPER_TRAPDOOR:
+    enabled: true
+    price: 18.0
+    rotating-shop: true
+  WAXED_WEATHERED_CUT_COPPER:
+    enabled: true
+    price: 4.5
+    rotating-shop: true
+  WAXED_WEATHERED_CUT_COPPER_SLAB:
+    enabled: true
+    price: 2.25
+    rotating-shop: true
+  WAXED_WEATHERED_CUT_COPPER_STAIRS:
+    enabled: true
+    price: 4.5
+    rotating-shop: true
+  WAXED_WEATHERED_LIGHTNING_ROD:
+    enabled: true
+    price: 1.5
+    rotating-shop: true
+  WAYFINDER_ARMOR_TRIM_SMITHING_TEMPLATE:
+    enabled: true
+    price: 112.5
+    rotating-shop: true
+  WEATHERED_CHISELED_COPPER:
+    enabled: true
+    price: 1.5
+    rotating-shop: true
+  WEATHERED_COPPER:
+    enabled: true
+    price: 18.0
+    rotating-shop: true
+  WEATHERED_COPPER_BARS:
+    enabled: true
+    price: 1.5
+    rotating-shop: true
+  WEATHERED_COPPER_BULB:
+    enabled: true
+    price: 6.5
+    rotating-shop: true
+  WEATHERED_COPPER_CHAIN:
+    enabled: true
+    price: 1.5
+    rotating-shop: true
+  WEATHERED_COPPER_CHEST:
+    enabled: true
+    price: 1.5
+    rotating-shop: true
+  WEATHERED_COPPER_DOOR:
+    enabled: true
+    price: 12.0
+    rotating-shop: true
+  WEATHERED_COPPER_GOLEM_STATUE:
+    enabled: true
+    price: 1.5
+    rotating-shop: true
+  WEATHERED_COPPER_GRATE:
+    enabled: true
+    price: 4.5
+    rotating-shop: true
+  WEATHERED_COPPER_LANTERN:
+    enabled: true
+    price: 1.5
+    rotating-shop: true
+  WEATHERED_COPPER_TRAPDOOR:
+    enabled: true
+    price: 18.0
+    rotating-shop: true
+  WEATHERED_CUT_COPPER:
+    enabled: true
+    price: 4.5
+    rotating-shop: true
+  WEATHERED_CUT_COPPER_SLAB:
+    enabled: true
+    price: 2.25
+    rotating-shop: true
+  WEATHERED_CUT_COPPER_STAIRS:
+    enabled: true
+    price: 4.5
+    rotating-shop: true
+  WEATHERED_LIGHTNING_ROD:
+    enabled: true
+    price: 1.5
+    rotating-shop: true
+  WEEPING_VINES:
+    enabled: true
+    price: 1.5
+    rotating-shop: true
+  WEEPING_VINES_PLANT:
+    enabled: true
+    price: 1.5
+    rotating-shop: true
+  WET_SPONGE:
+    enabled: true
+    price: 1.5
+    rotating-shop: true
+  WHEAT:
+    enabled: true
+    price: 15.0
+    rotating-shop: true
+  WHEAT_SEEDS:
+    enabled: true
+    price: 0.25
+    rotating-shop: true
+  WHITE_BANNER:
+    enabled: true
+    price: 1.5
+    rotating-shop: false
+  WHITE_BED:
+    enabled: true
+    price: 2.0
+    rotating-shop: false
+  WHITE_BUNDLE:
+    enabled: true
+    price: 8.75
+    rotating-shop: false
+  WHITE_CANDLE:
+    enabled: true
+    price: 2.5
+    rotating-shop: true
+  WHITE_CANDLE_CAKE:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  WHITE_CARPET:
+    enabled: true
+    price: 0.5
+    rotating-shop: false
+  WHITE_CONCRETE:
+    enabled: true
+    price: 0.5
+    rotating-shop: true
+  WHITE_CONCRETE_POWDER:
+    enabled: true
+    price: 0.38
+    rotating-shop: true
+  WHITE_DYE:
+    enabled: true
+    price: 0.05
+    rotating-shop: false
+  WHITE_GLAZED_TERRACOTTA:
+    enabled: true
+    price: 0.15
+    rotating-shop: false
+  WHITE_HARNESS:
+    enabled: true
+    price: 20.0
+    rotating-shop: true
+  WHITE_SHULKER_BOX:
+    enabled: true
+    price: 15.0
+    rotating-shop: false
+  WHITE_STAINED_GLASS:
+    enabled: true
+    price: 0.1
+    rotating-shop: false
+  WHITE_STAINED_GLASS_PANE:
+    enabled: true
+    price: 0.03
+    rotating-shop: false
+  WHITE_TERRACOTTA:
+    enabled: true
+    price: 0.1
+    rotating-shop: false
+  WHITE_TULIP:
+    enabled: true
+    price: 1.25
+    rotating-shop: true
+  WHITE_WALL_BANNER:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  WHITE_WOOL:
+    enabled: true
+    price: 1.0
+    rotating-shop: false
+  WILDFLOWERS:
+    enabled: true
+    price: 1.25
+    rotating-shop: true
+  WILD_ARMOR_TRIM_SMITHING_TEMPLATE:
+    enabled: true
+    price: 112.5
+    rotating-shop: true
+  WIND_CHARGE:
+    enabled: true
+    price: 3.0
+    rotating-shop: true
+  WITCH_SPAWN_EGG:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  WITHER_ROSE:
+    enabled: true
+    price: 7.5
+    rotating-shop: true
+  WITHER_SKELETON_SKULL:
+    enabled: true
+    price: 43.75
+    rotating-shop: true
+  WITHER_SKELETON_SPAWN_EGG:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  WITHER_SKELETON_WALL_SKULL:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  WITHER_SPAWN_EGG:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  WOLF_ARMOR:
+    enabled: true
+    price: 1.5
+    rotating-shop: true
+  WOLF_SPAWN_EGG:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  WOODEN_AXE:
+    enabled: true
+    price: 3.5
+    rotating-shop: true
+  WOODEN_HOE:
+    enabled: true
+    price: 2.5
+    rotating-shop: true
+  WOODEN_PICKAXE:
+    enabled: true
+    price: 3.5
+    rotating-shop: true
+  WOODEN_SHOVEL:
+    enabled: true
+    price: 1.25
+    rotating-shop: true
+  WOODEN_SPEAR:
+    enabled: true
+    price: 1.5
+    rotating-shop: true
+  WOODEN_SWORD:
+    enabled: true
+    price: 2.5
+    rotating-shop: true
+  WRITABLE_BOOK:
+    enabled: true
+    price: 1.5
+    rotating-shop: true
+  WRITTEN_BOOK:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  YELLOW_BANNER:
+    enabled: true
+    price: 1.5
+    rotating-shop: false
+  YELLOW_BED:
+    enabled: true
+    price: 2.0
+    rotating-shop: false
+  YELLOW_BUNDLE:
+    enabled: true
+    price: 8.75
+    rotating-shop: false
+  YELLOW_CANDLE:
+    enabled: true
+    price: 2.5
+    rotating-shop: true
+  YELLOW_CANDLE_CAKE:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  YELLOW_CARPET:
+    enabled: true
+    price: 0.5
+    rotating-shop: false
+  YELLOW_CONCRETE:
+    enabled: true
+    price: 0.5
+    rotating-shop: true
+  YELLOW_CONCRETE_POWDER:
+    enabled: true
+    price: 0.38
+    rotating-shop: true
+  YELLOW_DYE:
+    enabled: true
+    price: 0.05
+    rotating-shop: false
+  YELLOW_GLAZED_TERRACOTTA:
+    enabled: true
+    price: 0.15
+    rotating-shop: false
+  YELLOW_HARNESS:
+    enabled: true
+    price: 20.0
+    rotating-shop: true
+  YELLOW_SHULKER_BOX:
+    enabled: true
+    price: 15.0
+    rotating-shop: false
+  YELLOW_STAINED_GLASS:
+    enabled: true
+    price: 0.1
+    rotating-shop: false
+  YELLOW_STAINED_GLASS_PANE:
+    enabled: true
+    price: 0.03
+    rotating-shop: false
+  YELLOW_TERRACOTTA:
+    enabled: true
+    price: 0.1
+    rotating-shop: false
+  YELLOW_WALL_BANNER:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  YELLOW_WOOL:
+    enabled: true
+    price: 1.0
+    rotating-shop: false
+  ZOGLIN_SPAWN_EGG:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  ZOMBIE_HEAD:
+    enabled: true
+    price: 43.75
+    rotating-shop: true
+  ZOMBIE_HORSE_SPAWN_EGG:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  ZOMBIE_NAUTILUS_SPAWN_EGG:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  ZOMBIE_SPAWN_EGG:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  ZOMBIE_VILLAGER_SPAWN_EGG:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  ZOMBIE_WALL_HEAD:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+  ZOMBIFIED_PIGLIN_SPAWN_EGG:
+    enabled: false
+    price: 0.0
+    rotating-shop: false
+
+# Editable prices for single-enchant enchanted books only.
+# Combined enchanted books are calculated by adding these entries together.
+# Enchanted tools and armor use their material price plus these enchant prices.
+enchantments:
+  PROTECTION:
+    1:
+      enabled: true
+      price: 100.0
+      rotating-shop: false
+    2:
+      enabled: true
+      price: 200.0
+      rotating-shop: false
+    3:
+      enabled: true
+      price: 400.0
+      rotating-shop: false
+    4:
+      enabled: true
+      price: 600.0
+      rotating-shop: false
+  FIRE_PROTECTION:
+    1:
+      enabled: true
+      price: 100.0
+      rotating-shop: false
+    2:
+      enabled: true
+      price: 200.0
+      rotating-shop: false
+    3:
+      enabled: true
+      price: 400.0
+      rotating-shop: false
+    4:
+      enabled: true
+      price: 600.0
+      rotating-shop: false
+  FEATHER_FALLING:
+    1:
+      enabled: true
+      price: 100.0
+      rotating-shop: false
+    2:
+      enabled: true
+      price: 200.0
+      rotating-shop: false
+    3:
+      enabled: true
+      price: 400.0
+      rotating-shop: false
+    4:
+      enabled: true
+      price: 600.0
+      rotating-shop: false
+  BLAST_PROTECTION:
+    1:
+      enabled: true
+      price: 100.0
+      rotating-shop: false
+    2:
+      enabled: true
+      price: 200.0
+      rotating-shop: false
+    3:
+      enabled: true
+      price: 400.0
+      rotating-shop: false
+    4:
+      enabled: true
+      price: 600.0
+      rotating-shop: false
+  PROJECTILE_PROTECTION:
+    1:
+      enabled: true
+      price: 100.0
+      rotating-shop: false
+    2:
+      enabled: true
+      price: 200.0
+      rotating-shop: false
+    3:
+      enabled: true
+      price: 400.0
+      rotating-shop: false
+    4:
+      enabled: true
+      price: 600.0
+      rotating-shop: false
+  RESPIRATION:
+    1:
+      enabled: true
+      price: 100.0
+      rotating-shop: false
+    2:
+      enabled: true
+      price: 200.0
+      rotating-shop: false
+    3:
+      enabled: true
+      price: 400.0
+      rotating-shop: false
+  AQUA_AFFINITY:
+    1:
+      enabled: true
+      price: 100.0
+      rotating-shop: false
+  THORNS:
+    1:
+      enabled: true
+      price: 100.0
+      rotating-shop: false
+    2:
+      enabled: true
+      price: 200.0
+      rotating-shop: false
+    3:
+      enabled: true
+      price: 400.0
+      rotating-shop: false
+  DEPTH_STRIDER:
+    1:
+      enabled: true
+      price: 100.0
+      rotating-shop: false
+    2:
+      enabled: true
+      price: 200.0
+      rotating-shop: false
+    3:
+      enabled: true
+      price: 400.0
+      rotating-shop: false
+  FROST_WALKER:
+    1:
+      enabled: true
+      price: 100.0
+      rotating-shop: false
+    2:
+      enabled: true
+      price: 200.0
+      rotating-shop: false
+  BINDING_CURSE:
+    1:
+      enabled: true
+      price: 100.0
+      rotating-shop: false
+  SHARPNESS:
+    1:
+      enabled: true
+      price: 100.0
+      rotating-shop: false
+    2:
+      enabled: true
+      price: 200.0
+      rotating-shop: false
+    3:
+      enabled: true
+      price: 400.0
+      rotating-shop: false
+    4:
+      enabled: true
+      price: 600.0
+      rotating-shop: false
+    5:
+      enabled: true
+      price: 1000.0
+      rotating-shop: false
+  SMITE:
+    1:
+      enabled: true
+      price: 100.0
+      rotating-shop: false
+    2:
+      enabled: true
+      price: 200.0
+      rotating-shop: false
+    3:
+      enabled: true
+      price: 400.0
+      rotating-shop: false
+    4:
+      enabled: true
+      price: 600.0
+      rotating-shop: false
+    5:
+      enabled: true
+      price: 1000.0
+      rotating-shop: false
+  BANE_OF_ARTHROPODS:
+    1:
+      enabled: true
+      price: 100.0
+      rotating-shop: false
+    2:
+      enabled: true
+      price: 200.0
+      rotating-shop: false
+    3:
+      enabled: true
+      price: 400.0
+      rotating-shop: false
+    4:
+      enabled: true
+      price: 600.0
+      rotating-shop: false
+    5:
+      enabled: true
+      price: 1000.0
+      rotating-shop: false
+  KNOCKBACK:
+    1:
+      enabled: true
+      price: 100.0
+      rotating-shop: false
+    2:
+      enabled: true
+      price: 200.0
+      rotating-shop: false
+  FIRE_ASPECT:
+    1:
+      enabled: true
+      price: 100.0
+      rotating-shop: false
+    2:
+      enabled: true
+      price: 200.0
+      rotating-shop: false
+  LOOTING:
+    1:
+      enabled: true
+      price: 100.0
+      rotating-shop: false
+    2:
+      enabled: true
+      price: 200.0
+      rotating-shop: false
+    3:
+      enabled: true
+      price: 400.0
+      rotating-shop: false
+  SWEEPING_EDGE:
+    1:
+      enabled: true
+      price: 100.0
+      rotating-shop: false
+    2:
+      enabled: true
+      price: 200.0
+      rotating-shop: false
+    3:
+      enabled: true
+      price: 400.0
+      rotating-shop: false
+  EFFICIENCY:
+    1:
+      enabled: true
+      price: 100.0
+      rotating-shop: false
+    2:
+      enabled: true
+      price: 200.0
+      rotating-shop: false
+    3:
+      enabled: true
+      price: 400.0
+      rotating-shop: false
+    4:
+      enabled: true
+      price: 600.0
+      rotating-shop: false
+    5:
+      enabled: true
+      price: 1000.0
+      rotating-shop: false
+  SILK_TOUCH:
+    1:
+      enabled: true
+      price: 100.0
+      rotating-shop: false
+  UNBREAKING:
+    1:
+      enabled: true
+      price: 100.0
+      rotating-shop: false
+    2:
+      enabled: true
+      price: 200.0
+      rotating-shop: false
+    3:
+      enabled: true
+      price: 400.0
+      rotating-shop: false
+  FORTUNE:
+    1:
+      enabled: true
+      price: 100.0
+      rotating-shop: false
+    2:
+      enabled: true
+      price: 200.0
+      rotating-shop: false
+    3:
+      enabled: true
+      price: 400.0
+      rotating-shop: false
+  POWER:
+    1:
+      enabled: true
+      price: 100.0
+      rotating-shop: false
+    2:
+      enabled: true
+      price: 200.0
+      rotating-shop: false
+    3:
+      enabled: true
+      price: 400.0
+      rotating-shop: false
+    4:
+      enabled: true
+      price: 600.0
+      rotating-shop: false
+    5:
+      enabled: true
+      price: 1000.0
+      rotating-shop: false
+  PUNCH:
+    1:
+      enabled: true
+      price: 100.0
+      rotating-shop: false
+    2:
+      enabled: true
+      price: 200.0
+      rotating-shop: false
+  FLAME:
+    1:
+      enabled: true
+      price: 100.0
+      rotating-shop: false
+  INFINITY:
+    1:
+      enabled: true
+      price: 100.0
+      rotating-shop: false
+  LUCK_OF_THE_SEA:
+    1:
+      enabled: true
+      price: 100.0
+      rotating-shop: false
+    2:
+      enabled: true
+      price: 200.0
+      rotating-shop: false
+    3:
+      enabled: true
+      price: 400.0
+      rotating-shop: false
+  LURE:
+    1:
+      enabled: true
+      price: 100.0
+      rotating-shop: false
+    2:
+      enabled: true
+      price: 200.0
+      rotating-shop: false
+    3:
+      enabled: true
+      price: 400.0
+      rotating-shop: false
+  LOYALTY:
+    1:
+      enabled: true
+      price: 100.0
+      rotating-shop: false
+    2:
+      enabled: true
+      price: 200.0
+      rotating-shop: false
+    3:
+      enabled: true
+      price: 400.0
+      rotating-shop: false
+  IMPALING:
+    1:
+      enabled: true
+      price: 100.0
+      rotating-shop: false
+    2:
+      enabled: true
+      price: 200.0
+      rotating-shop: false
+    3:
+      enabled: true
+      price: 400.0
+      rotating-shop: false
+    4:
+      enabled: true
+      price: 600.0
+      rotating-shop: false
+    5:
+      enabled: true
+      price: 1000.0
+      rotating-shop: false
+  RIPTIDE:
+    1:
+      enabled: true
+      price: 100.0
+      rotating-shop: false
+    2:
+      enabled: true
+      price: 200.0
+      rotating-shop: false
+    3:
+      enabled: true
+      price: 400.0
+      rotating-shop: false
+  CHANNELING:
+    1:
+      enabled: true
+      price: 100.0
+      rotating-shop: false
+  MULTISHOT:
+    1:
+      enabled: true
+      price: 100.0
+      rotating-shop: false
+  QUICK_CHARGE:
+    1:
+      enabled: true
+      price: 100.0
+      rotating-shop: false
+    2:
+      enabled: true
+      price: 200.0
+      rotating-shop: false
+    3:
+      enabled: true
+      price: 400.0
+      rotating-shop: false
+  PIERCING:
+    1:
+      enabled: true
+      price: 100.0
+      rotating-shop: false
+    2:
+      enabled: true
+      price: 200.0
+      rotating-shop: false
+    3:
+      enabled: true
+      price: 400.0
+      rotating-shop: false
+    4:
+      enabled: true
+      price: 600.0
+      rotating-shop: false
+  DENSITY:
+    1:
+      enabled: true
+      price: 100.0
+      rotating-shop: false
+    2:
+      enabled: true
+      price: 200.0
+      rotating-shop: false
+    3:
+      enabled: true
+      price: 400.0
+      rotating-shop: false
+    4:
+      enabled: true
+      price: 600.0
+      rotating-shop: false
+    5:
+      enabled: true
+      price: 1000.0
+      rotating-shop: false
+  BREACH:
+    1:
+      enabled: true
+      price: 100.0
+      rotating-shop: false
+    2:
+      enabled: true
+      price: 200.0
+      rotating-shop: false
+    3:
+      enabled: true
+      price: 400.0
+      rotating-shop: false
+    4:
+      enabled: true
+      price: 600.0
+      rotating-shop: false
+  WIND_BURST:
+    1:
+      enabled: true
+      price: 100.0
+      rotating-shop: false
+    2:
+      enabled: true
+      price: 200.0
+      rotating-shop: false
+    3:
+      enabled: true
+      price: 400.0
+      rotating-shop: false
+  MENDING:
+    1:
+      enabled: true
+      price: 100.0
+      rotating-shop: false
+  VANISHING_CURSE:
+    1:
+      enabled: true
+      price: 100.0
+      rotating-shop: false
+  SOUL_SPEED:
+    1:
+      enabled: true
+      price: 100.0
+      rotating-shop: false
+    2:
+      enabled: true
+      price: 200.0
+      rotating-shop: false
+    3:
+      enabled: true
+      price: 400.0
+      rotating-shop: false
+  SWIFT_SNEAK:
+    1:
+      enabled: true
+      price: 100.0
+      rotating-shop: false
+    2:
+      enabled: true
+      price: 200.0
+      rotating-shop: false
+    3:
+      enabled: true
+      price: 400.0
+      rotating-shop: false
+  LUNGE:
+    1:
+      enabled: true
+      price: 100.0
+      rotating-shop: false
+    2:
+      enabled: true
+      price: 200.0
+      rotating-shop: false
+    3:
+      enabled: true
+      price: 400.0
+      rotating-shop: false
+
+# Editable prices for potion base types only.
+# Prices represent one drinkable potion. Brewing ingredients are divided by 3 because one brewing step affects three bottles.
+# Splash, lingering, and tipped-arrow values are calculated at sell time from these prices plus gunpowder, dragon breath, and arrows.
+potions:
+  AWKWARD:
+    enabled: true
+    price: 8.17
+    rotating-shop: false
+  FIRE_RESISTANCE:
+    enabled: true
+    price: 9.08
+    rotating-shop: false
+  HARMING:
+    enabled: true
+    price: 9.58
+    rotating-shop: false
+  HEALING:
+    enabled: true
+    price: 11.08
+    rotating-shop: false
+  INFESTED:
+    enabled: true
+    price: 8.37
+    rotating-shop: false
+  INVISIBILITY:
+    enabled: true
+    price: 12.58
+    rotating-shop: false
+  LEAPING:
+    enabled: true
+    price: 10.04
+    rotating-shop: false
+  LONG_FIRE_RESISTANCE:
+    enabled: true
+    price: 9.42
+    rotating-shop: false
+  LONG_INVISIBILITY:
+    enabled: true
+    price: 12.92
+    rotating-shop: false
+  LONG_LEAPING:
+    enabled: true
+    price: 10.37
+    rotating-shop: false
+  LONG_NIGHT_VISION:
+    enabled: true
+    price: 11.83
+    rotating-shop: false
+  LONG_POISON:
+    enabled: true
+    price: 8.83
+    rotating-shop: false
+  LONG_REGENERATION:
+    enabled: true
+    price: 12.25
+    rotating-shop: false
+  LONG_SLOW_FALLING:
+    enabled: true
+    price: 10.37
+    rotating-shop: false
+  LONG_SLOWNESS:
+    enabled: true
+    price: 11.46
+    rotating-shop: false
+  LONG_STRENGTH:
+    enabled: true
+    price: 9.23
+    rotating-shop: false
+  LONG_SWIFTNESS:
+    enabled: true
+    price: 12.67
+    rotating-shop: false
+  LONG_TURTLE_MASTER:
+    enabled: true
+    price: 12.67
+    rotating-shop: false
+  LONG_WATER_BREATHING:
+    enabled: true
+    price: 9.25
+    rotating-shop: false
+  LONG_WEAKNESS:
+    enabled: true
+    price: 2.92
+    rotating-shop: false
+  LUCK:
+    enabled: true
+    price: 13.17
+    rotating-shop: false
+  MUNDANE:
+    enabled: true
+    price: 1.83
+    rotating-shop: false
+  NIGHT_VISION:
+    enabled: true
+    price: 11.5
+    rotating-shop: false
+  OOZING:
+    enabled: true
+    price: 14.92
+    rotating-shop: false
+  POISON:
+    enabled: true
+    price: 8.5
+    rotating-shop: false
+  REGENERATION:
+    enabled: true
+    price: 11.92
+    rotating-shop: false
+  SLOW_FALLING:
+    enabled: true
+    price: 10.04
+    rotating-shop: false
+  SLOWNESS:
+    enabled: true
+    price: 11.12
+    rotating-shop: false
+  STRENGTH:
+    enabled: true
+    price: 8.9
+    rotating-shop: false
+  STRONG_HARMING:
+    enabled: true
+    price: 9.92
+    rotating-shop: false
+  STRONG_HEALING:
+    enabled: true
+    price: 11.42
+    rotating-shop: false
+  STRONG_LEAPING:
+    enabled: true
+    price: 10.37
+    rotating-shop: false
+  STRONG_POISON:
+    enabled: true
+    price: 8.83
+    rotating-shop: false
+  STRONG_REGENERATION:
+    enabled: true
+    price: 12.25
+    rotating-shop: false
+  STRONG_SLOWNESS:
+    enabled: true
+    price: 11.46
+    rotating-shop: false
+  STRONG_STRENGTH:
+    enabled: true
+    price: 9.23
+    rotating-shop: false
+  STRONG_SWIFTNESS:
+    enabled: true
+    price: 12.67
+    rotating-shop: false
+  STRONG_TURTLE_MASTER:
+    enabled: true
+    price: 12.67
+    rotating-shop: false
+  SWIFTNESS:
+    enabled: true
+    price: 12.33
+    rotating-shop: false
+  THICK:
+    enabled: true
+    price: 1.83
+    rotating-shop: false
+  TURTLE_MASTER:
+    enabled: true
+    price: 12.33
+    rotating-shop: false
+  WATER:
+    enabled: true
+    price: 1.5
+    rotating-shop: false
+  WATER_BREATHING:
+    enabled: true
+    price: 8.92
+    rotating-shop: false
+  WEAKNESS:
+    enabled: true
+    price: 2.58
+    rotating-shop: false
+  WEAVING:
+    enabled: true
+    price: 8.67
+    rotating-shop: false
+  WIND_CHARGED:
+    enabled: true
+    price: 10.46
+    rotating-shop: false

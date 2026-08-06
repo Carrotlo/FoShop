@@ -1,0 +1,38 @@
+id: blocks
+title: "&8Blocks"
+size: 27
+icon: STONE
+slot: 13
+enabled: true
+description:
+  - "&#a7b8b0Basic building materials."
+  - "&#3ecf8eClick to browse blocks."
+
+items:
+  stone:
+    material: STONE
+    slot: 10
+    amount: 16
+    buy-price: 100.0
+    sell-price: 25.0
+
+  oak_log:
+    material: OAK_LOG
+    slot: 12
+    amount: 16
+    buy-price: 120.0
+    sell-price: 30.0
+
+  glass:
+    material: GLASS
+    slot: 14
+    amount: 16
+    buy-price: 180.0
+    sell-price: 45.0
+
+  cobblestone:
+    material: COBBLESTONE
+    slot: 16
+    amount: 32
+    buy-price: 90.0
+    sell-price: 20.0
