@@ -14,6 +14,10 @@ import me.foesio.core.editor.EditorSettingSaver;
 import me.foesio.core.editor.EditorDialogInputs;
 import me.foesio.core.editor.EditorItemFactory;
 import me.foesio.core.gui.GuiButtonConfig;
+import me.foesio.core.gui.EntryBrowserClick;
+import me.foesio.core.gui.EntryBrowserHolder;
+import me.foesio.core.gui.EntryBrowserMenus;
+import me.foesio.core.gui.EntryBrowserRequest;
 import me.foesio.core.inventory.InventoryDepositResult;
 import me.foesio.core.inventory.OverflowPolicy;
 import me.foesio.core.material.MaterialTypes;
@@ -101,11 +105,6 @@ public class GuiService implements Listener {
             28, 29, 30, 31, 32, 33, 34,
             37, 38, 39, 40, 41, 42, 43
     };
-    private static final int[] EDITOR_CONTENT_SLOTS = {
-            10, 11, 12, 13, 14, 15, 16,
-            19, 20, 21, 22, 23, 24, 25,
-            28, 29, 30, 31, 32, 33, 34
-    };
     private static final int[] GLOBAL_PRICE_SLOTS = {
             10, 11, 12, 13, 14, 15, 16,
             19, 20, 21, 22, 23, 24, 25,
@@ -144,6 +143,7 @@ public class GuiService implements Listener {
     private final EditorSettingSaver configSettingSaver;
     private final ChatPromptManager chatPrompts;
     private final Map<UUID, Integer> rotatingItemSectionPages = new HashMap<>();
+    private final Map<UUID, Integer> sectionItemBrowserPages = new HashMap<>();
     private final Set<UUID> sellingInProgress = new HashSet<>();
     private final Set<UUID> suppressConfirmDeleteClose = new HashSet<>();
     private final Set<UUID> suppressConfirmRemoveBoosterClose = new HashSet<>();
@@ -364,7 +364,7 @@ public class GuiService implements Listener {
         }
 
         setPreviousPageButton(inventory, 45, currentPage, totalPages);
-        inventory.setItem(47, EditorItemFactory.cycle("Sort: " + activeSort.display(), activeSort.name(), WORTH_SORT_OPTIONS));
+        inventory.setItem(47, EditorItemFactory.cycle(plugin.getMessages(), "Sort: " + activeSort.display(), activeSort.name(), WORTH_SORT_OPTIONS));
         if (editor) {
             inventory.setItem(49, GUI_BUTTONS.back());
         }
@@ -535,7 +535,7 @@ public class GuiService implements Listener {
         inventory.setItem(15, toggleItem("Sell Action Bar", plugin.getFoConfig().isSellActionBarEnabled(), "Show action bar after SellGUI sale."));
         inventory.setItem(16, toggleItem("Transaction Log", plugin.getFoConfig().isSellTransactionLogEnabled(), "Write SellGUI sale history."));
 
-        inventory.setItem(19, EditorItemFactory.cycle("Receipt Mode", Integer.toString(plugin.getFoConfig().getSellReceiptType()), RECEIPT_TYPE_OPTIONS));
+        inventory.setItem(19, EditorItemFactory.cycle(plugin.getMessages(), "Receipt Mode", Integer.toString(plugin.getFoConfig().getSellReceiptType()), RECEIPT_TYPE_OPTIONS));
         inventory.setItem(20, createItem(Material.IRON_BARS, "&#03fc88Blocked Gamemodes", List.of("&#ffffffCurrent: &#03fc88" + String.join(", ", effectiveStringListSetting("sellgui.blocked-gamemodes")), "&#ffffffClick to edit list.")));
         inventory.setItem(21, toggleItem("Sell Sounds", plugin.getFoConfig().isSellSoundsEnabled(), "Play SellGUI sounds."));
         inventory.setItem(22, toggleItem("Sound Warnings", plugin.getFoConfig().isSellSoundErrorNotification(), "Log invalid configured sounds."));
@@ -804,63 +804,43 @@ public class GuiService implements Listener {
                         || section.title().toLowerCase(Locale.ROOT).contains(search))
                 .sorted(Comparator.comparingInt(ShopSection::slot).thenComparing(ShopSection::id))
                 .toList();
+        List<EntryBrowserRequest.Entry> entries = sections.stream()
+                .map(this::sectionBrowserEntry)
+                .toList();
+        EntryBrowserMenus.open(player, EntryBrowserRequest.builder()
+                .title("Section Editor")
+                .entries(entries)
+                .page(page)
+                .filter(search)
+                .buttons(GUI_BUTTONS)
+                .showBack(true)
+                .addButton(createItem(Material.ANVIL, "&#03fc88New Section", List.of(
+                        "&#ffffffCreate a new shop section.",
+                        "&#a7b8b0Click then type section id in chat."
+                )))
+                .build());
+    }
 
-        int totalPages = Math.max(1, (int) Math.ceil(sections.size() / (double) PAGE_SLOTS.length));
-        int currentPage = Math.clamp(page, 0, totalPages - 1);
-
-        SectionEditorHolder holder = new SectionEditorHolder(currentPage, totalPages, search);
-        Inventory inventory = Bukkit.createInventory(holder, 54, plugin.getFoConfig().sectionTitleSmallCaps("&8Section Editor"));
-        holder.setInventory(inventory);
-
-        fillBackground(inventory);
-
-        int start = currentPage * PAGE_SLOTS.length;
-        for (int i = 0; i < PAGE_SLOTS.length; i++) {
-            int index = start + i;
-            if (index >= sections.size()) {
-                break;
+    private EntryBrowserRequest.Entry sectionBrowserEntry(ShopSection section) {
+        ItemStack sectionIcon = section.iconItem() == null ? new ItemStack(section.icon()) : section.iconItem().clone();
+        ItemMeta sectionMeta = sectionIcon.getItemMeta();
+        if (sectionMeta != null) {
+            if (!sectionMeta.hasDisplayName()) {
+                sectionMeta.setDisplayName(Text.colorize("&#03fc88" + section.id()));
+            } else {
+                sectionMeta.setDisplayName(Text.colorize(sectionMeta.getDisplayName()));
             }
-
-            ShopSection section = sections.get(index);
-            int slot = PAGE_SLOTS[i];
-            holder.slotToSection.put(slot, section.id());
-
-            ItemStack sectionIcon = section.iconItem() == null ? new ItemStack(section.icon()) : section.iconItem().clone();
-            ItemMeta sectionMeta = sectionIcon.getItemMeta();
-            if (sectionMeta != null) {
-                if (!sectionMeta.hasDisplayName()) {
-                    sectionMeta.setDisplayName(Text.colorize("&#03fc88" + section.id()));
-                } else {
-                    sectionMeta.setDisplayName(Text.colorize(sectionMeta.getDisplayName()));
-                }
-                String status = section.enabled() ? "&#3ecf8eEnabled" : "&#ff5d73Disabled";
-                sectionMeta.setLore(List.of(
-                        Text.colorize("&#ffffffLeft-click: manage products"),
-                        Text.colorize("&#ffffffClick: open section editor"),
-                        Text.colorize("&#a7b8b0Status: " + status),
-                        Text.colorize("&#a7b8b0Items: &#03fc88" + section.items().size()),
-                        Text.colorize("&#a7b8b0Description lines: &#03fc88" + section.description().size())
-                ));
-                sectionMeta.addItemFlags(ItemFlag.HIDE_ATTRIBUTES);
-                sectionIcon.setItemMeta(sectionMeta);
-            }
-            inventory.setItem(slot, sectionIcon);
+            String status = section.enabled() ? "&#3ecf8eEnabled" : "&#ff5d73Disabled";
+            sectionMeta.setLore(List.of(
+                    Text.colorize("&#ffffffOpen section editor"),
+                    Text.colorize("&#a7b8b0Status: " + status),
+                    Text.colorize("&#a7b8b0Items: &#03fc88" + section.items().size()),
+                    Text.colorize("&#a7b8b0Description lines: &#03fc88" + section.description().size())
+            ));
+            sectionMeta.addItemFlags(ItemFlag.HIDE_ATTRIBUTES);
+            sectionIcon.setItemMeta(sectionMeta);
         }
-
-        for (int slot : EDITOR_CONTENT_SLOTS) {
-            if (!holder.slotToSection.containsKey(slot)) {
-                inventory.setItem(slot, new ItemStack(Material.LIGHT_GRAY_STAINED_GLASS_PANE));
-            }
-        }
-
-        inventory.setItem(SIX_ROW_BACK_SLOT, GUI_BUTTONS.back());
-        inventory.setItem(47, createItem(Material.ANVIL, "&#03fc88New Section", List.of("&#ffffffCreate a new shop section.", "&#a7b8b0Click then type section id in chat.")));
-        setPreviousPageButton(inventory, 48, currentPage, totalPages);
-        setNextPageButton(inventory, 50, currentPage, totalPages);
-        inventory.setItem(51, GUI_BUTTONS.search(search));
-        setClearSearchButton(inventory, 52, "sections", search);
-
-        player.openInventory(inventory);
+        return EntryBrowserRequest.Entry.of(section.id(), sectionIcon);
     }
 
     private void openSectionDetailEditor(Player player, String sectionId, int sectionPage) {
@@ -937,59 +917,37 @@ public class GuiService implements Listener {
                         || item.type().name().toLowerCase(Locale.ROOT).contains(search))
                 .sorted(Comparator.comparingInt(ShopItem::slot).thenComparing(ShopItem::id))
                 .toList();
+        sectionItemBrowserPages.put(player.getUniqueId(), sectionPage);
+        List<EntryBrowserRequest.Entry> entries = items.stream()
+                .map(this::itemBrowserEntry)
+                .toList();
+        EntryBrowserMenus.open(player, EntryBrowserRequest.builder()
+                .title("Items: " + sectionId)
+                .entries(entries)
+                .page(page)
+                .filter(search)
+                .buttons(GUI_BUTTONS)
+                .showBack(true)
+                .addButton(createItem(Material.ANVIL, "&#03fc88Add Product From Cursor", List.of(
+                        "&#ffffffHold an item on your cursor.",
+                        "&#ffffffClick to add it as a product.",
+                        "&#a7b8b0Prices default to disabled (-1)."
+                )))
+                .build());
+    }
 
-        int totalPages = Math.max(1, (int) Math.ceil(items.size() / (double) PAGE_SLOTS.length));
-        int currentPage = Math.clamp(page, 0, totalPages - 1);
-
-        SectionItemsHolder holder = new SectionItemsHolder(sectionId, currentPage, totalPages, sectionPage, search);
-        Inventory inventory = Bukkit.createInventory(holder, 54, plugin.getFoConfig().sectionTitleSmallCaps("&8Items: " + sectionId));
-        holder.setInventory(inventory);
-
-        fillBackground(inventory);
-
-        int start = currentPage * PAGE_SLOTS.length;
-        for (int i = 0; i < PAGE_SLOTS.length; i++) {
-            int index = start + i;
-            if (index >= items.size()) {
-                break;
-            }
-
-            ShopItem item = items.get(index);
-            int slot = PAGE_SLOTS[i];
-            holder.slotToItem.put(slot, item.id());
-
-            inventory.setItem(slot, createItem(
-                    item.material(),
-                    "&#03fc88" + item.id(),
-                    List.of(
-                            "&#ffffffMaterial: &#03fc88" + item.material().name(),
-                            "&#ffffffAmount: &#03fc88" + item.amount(),
-                            "&#ffffffStack cap: &#03fc88" + item.effectiveStackSize(),
-                            "&#ffffffGUI Slot: &#03fc88" + item.slot(),
-                            "&#ffffffBuy: &#03fc88" + formatPrice(item.buyPrice()),
-                            "&#ffffffSell: &#03fc88" + formatPrice(item.sellPrice()),
-                            "&#ffffffLeft-click: edit product"
-                    )));
-        }
-
-        for (int slot : EDITOR_CONTENT_SLOTS) {
-            if (!holder.slotToItem.containsKey(slot)) {
-                inventory.setItem(slot, new ItemStack(Material.LIGHT_GRAY_STAINED_GLASS_PANE));
-            }
-        }
-
-        inventory.setItem(SIX_ROW_BACK_SLOT, GUI_BUTTONS.back());
-        inventory.setItem(47, createItem(Material.ANVIL, "&#03fc88Add Product From Cursor", List.of(
-                "&#ffffffHold an item on your cursor.",
-                "&#ffffffClick to add it as a product.",
-                "&#a7b8b0Prices default to disabled (-1)."
-        )));
-        setPreviousPageButton(inventory, 48, currentPage, totalPages);
-        setNextPageButton(inventory, 50, currentPage, totalPages);
-        inventory.setItem(51, GUI_BUTTONS.search(search));
-        setClearSearchButton(inventory, 52, "products", search);
-
-        player.openInventory(inventory);
+    private EntryBrowserRequest.Entry itemBrowserEntry(ShopItem item) {
+        return EntryBrowserRequest.Entry.of(item.id(), createItem(
+                item.material(),
+                "&#03fc88" + item.id(),
+                List.of(
+                        "&#ffffffMaterial: &#03fc88" + item.material().name(),
+                        "&#ffffffAmount: &#03fc88" + item.amount(),
+                        "&#ffffffStack cap: &#03fc88" + item.effectiveStackSize(),
+                        "&#ffffffGUI Slot: &#03fc88" + item.slot(),
+                        "&#ffffffBuy: &#03fc88" + formatPrice(item.buyPrice()),
+                        "&#ffffffSell: &#03fc88" + formatPrice(item.sellPrice())
+                )));
     }
 
     private void openItemEditor(Player player, String sectionId, String itemId, int page, int sectionPage) {
@@ -1030,7 +988,7 @@ public class GuiService implements Listener {
         inventory.setItem(15, createItem(Material.EMERALD, "&#03fc88Edit Buy Price", List.of("&#ffffffCurrent: &#03fc88" + formatPrice(item.buyPrice()), "&#a7b8b0Type number or -1/disable.")));
         inventory.setItem(16, createItem(Material.GOLD_INGOT, "&#03fc88Edit Sell Price", List.of("&#ffffffCurrent: &#03fc88" + formatPrice(item.sellPrice()), "&#a7b8b0Type number or -1/disable.")));
 
-        inventory.setItem(19, EditorItemFactory.cycle("Edit Type", editorItemTypeValue(item.type()), ITEM_TYPE_OPTIONS));
+        inventory.setItem(19, EditorItemFactory.cycle(plugin.getMessages(), "Edit Type", editorItemTypeValue(item.type()), ITEM_TYPE_OPTIONS));
         inventory.setItem(20, createItem(Material.MAP, "&#03fc88Edit Page", List.of("&#ffffffCurrent: &#03fc88" + (item.page() + 1), "&#a7b8b0Type a page number, starting at 1.")));
         inventory.setItem(21, createItem(Material.REPEATING_COMMAND_BLOCK, "&#03fc88Edit Action Data", List.of("&#ffffffPermission node / commands.", "&#a7b8b0Commands use | between lines.")));
         inventory.setItem(22, createItem(Material.HOPPER, "&#03fc88Edit Stack Cap", List.of("&#ffffffCurrent: &#03fc88" + item.effectiveStackSize(), "&#a7b8b0Type a number 1-" + Math.min(64, item.material().getMaxStackSize()))));
@@ -1058,6 +1016,18 @@ public class GuiService implements Listener {
 
         if (holder instanceof TriStateSelectionHolder selectionHolder) {
             handleRotatingSelectionClick(event, player, top, selectionHolder);
+            return;
+        }
+
+        if (holder instanceof EntryBrowserHolder entryBrowserHolder) {
+            if (event.getClickedInventory() == null || !event.getClickedInventory().equals(top)) {
+                if (event.isShiftClick()) {
+                    event.setCancelled(true);
+                }
+                return;
+            }
+            event.setCancelled(true);
+            handleEntryBrowserClick(event, player, entryBrowserHolder);
             return;
         }
 
@@ -1121,18 +1091,8 @@ public class GuiService implements Listener {
             return;
         }
 
-        if (holder instanceof SectionEditorHolder sectionEditorHolder) {
-            handleSectionEditorClick(event, player, top, sectionEditorHolder);
-            return;
-        }
-
         if (holder instanceof SectionDetailHolder sectionDetailHolder) {
             handleSectionDetailClick(event, player, top, sectionDetailHolder);
-            return;
-        }
-
-        if (holder instanceof SectionItemsHolder sectionItemsHolder) {
-            handleSectionItemsClick(event, player, top, sectionItemsHolder);
             return;
         }
 
@@ -1629,7 +1589,7 @@ public class GuiService implements Listener {
                             () -> openRotatingItemEditorList(player, sectionId, click.page(), sectionPage, click.filter()));
                 }
             }
-            case NONE, CLOSE -> {
+            case NONE -> {
             }
         }
     }
@@ -1688,58 +1648,51 @@ public class GuiService implements Listener {
         return true;
     }
 
-    private void handleSectionEditorClick(InventoryClickEvent event, Player player, Inventory top, SectionEditorHolder holder) {
-        if (event.getClickedInventory() == null || !event.getClickedInventory().equals(top)) {
+    private void handleEntryBrowserClick(InventoryClickEvent event, Player player, EntryBrowserHolder holder) {
+        EntryBrowserRequest request = holder.request();
+        EntryBrowserClick click = EntryBrowserMenus.handleClick(event.getSlot(), holder);
+        String title = request.title();
+        boolean sectionBrowser = "Section Editor".equals(title);
+        boolean itemBrowser = title.startsWith("Items: ");
+        if (!sectionBrowser && !itemBrowser) {
             return;
         }
 
-        event.setCancelled(true);
-
-        switch (event.getSlot()) {
-            case SIX_ROW_BACK_SLOT -> {
-                openAdminEditor(player);
-                return;
-            }
-            case 47 -> {
-                startPrompt(player,
-                        new PromptEdit(PromptType.NEW_SECTION_ID, null, null, null, holder.page, 0),
+        String search = request.filter();
+        if (sectionBrowser) {
+            switch (click.action()) {
+                case ENTRY -> openSectionDetailEditor(player, click.entryId(), request.page());
+                case ADD -> startPrompt(player,
+                        new PromptEdit(PromptType.NEW_SECTION_ID, null, null, null, request.page(), 0),
                         "&#a7b8b0Expected: new section id (letters, numbers, _ or -). Type &#ff5d73cancel &#a7b8b0to abort.");
-                return;
-            }
-            case 48 -> {
-                if (holder.page > 0) {
-                    openSectionEditorList(player, holder.page - 1, holder.query);
-                }
-                return;
-            }
-            case 50 -> {
-                if (holder.page < holder.totalPages - 1) {
-                    openSectionEditorList(player, holder.page + 1, holder.query);
-                }
-                return;
-            }
-            case 51 -> {
-                startPrompt(player,
-                        new PromptEdit(PromptType.SECTION_SEARCH, null, null, null, holder.page, 0),
+                case BACK -> openAdminEditor(player);
+                case SEARCH -> startPrompt(player,
+                        new PromptEdit(PromptType.SECTION_SEARCH, null, null, null, request.page(), 0),
                         "&#a7b8b0Expected: section search text. Type &#ff5d73cancel &#a7b8b0to abort.");
-                return;
-            }
-            case 52 -> {
-                if (!holder.query.isBlank()) {
-                    openSectionEditorList(player, 0, "");
+                case CLEAR_SEARCH -> openSectionEditorList(player, 0, "");
+                case PREVIOUS_PAGE -> openSectionEditorList(player, request.page() - 1, search);
+                case NEXT_PAGE -> openSectionEditorList(player, request.page() + 1, search);
+                case NONE -> {
                 }
-                return;
             }
-            default -> {
-            }
-        }
-
-        String sectionId = holder.slotToSection.get(event.getSlot());
-        if (sectionId == null) {
             return;
         }
 
-        openSectionDetailEditor(player, sectionId, holder.page);
+        String sectionId = title.substring("Items: ".length());
+        int sectionPage = sectionItemBrowserPages.getOrDefault(player.getUniqueId(), 0);
+        switch (click.action()) {
+            case ENTRY -> openItemEditor(player, sectionId, click.entryId(), request.page(), sectionPage);
+            case ADD -> addProductFromCursor(player, event.getCursor(), sectionId, request.page(), sectionPage);
+            case BACK -> openSectionDetailEditor(player, sectionId, sectionPage);
+            case SEARCH -> startPrompt(player,
+                    new PromptEdit(PromptType.ITEM_SEARCH, null, sectionId, null, request.page(), sectionPage),
+                    "&#a7b8b0Expected: product search text. Type &#ff5d73cancel &#a7b8b0to abort.");
+            case CLEAR_SEARCH -> openItemListEditor(player, sectionId, 0, sectionPage, "");
+            case PREVIOUS_PAGE -> openItemListEditor(player, sectionId, request.page() - 1, sectionPage, search);
+            case NEXT_PAGE -> openItemListEditor(player, sectionId, request.page() + 1, sectionPage, search);
+            case NONE -> {
+            }
+        }
     }
 
     private void handleSectionDetailClick(InventoryClickEvent event, Player player, Inventory top, SectionDetailHolder holder) {
@@ -1775,60 +1728,6 @@ public class GuiService implements Listener {
             case THREE_ROW_BACK_SLOT -> openSectionEditorList(player, holder.sectionPage);
             default -> {
             }
-        }
-    }
-
-    private void handleSectionItemsClick(InventoryClickEvent event, Player player, Inventory top, SectionItemsHolder holder) {
-        if (event.getClickedInventory() == null || !event.getClickedInventory().equals(top)) {
-            return;
-        }
-
-        event.setCancelled(true);
-
-        switch (event.getSlot()) {
-            case SIX_ROW_BACK_SLOT -> {
-                openSectionDetailEditor(player, holder.sectionId, holder.sectionPage);
-                return;
-            }
-            case 47 -> {
-                addProductFromCursor(player, event.getCursor(), holder.sectionId, holder.page, holder.sectionPage);
-                return;
-            }
-            case 48 -> {
-                if (holder.page > 0) {
-                    openItemListEditor(player, holder.sectionId, holder.page - 1, holder.sectionPage, holder.query);
-                }
-                return;
-            }
-            case 50 -> {
-                if (holder.page < holder.totalPages - 1) {
-                    openItemListEditor(player, holder.sectionId, holder.page + 1, holder.sectionPage, holder.query);
-                }
-                return;
-            }
-            case 51 -> {
-                startPrompt(player,
-                        new PromptEdit(PromptType.ITEM_SEARCH, null, holder.sectionId, null, holder.page, holder.sectionPage),
-                        "&#a7b8b0Expected: product search text. Type &#ff5d73cancel &#a7b8b0to abort.");
-                return;
-            }
-            case 52 -> {
-                if (!holder.query.isBlank()) {
-                    openItemListEditor(player, holder.sectionId, 0, holder.sectionPage, "");
-                }
-                return;
-            }
-            default -> {
-            }
-        }
-
-        String itemId = holder.slotToItem.get(event.getSlot());
-        if (itemId == null) {
-            return;
-        }
-
-        if (event.getClick() == ClickType.LEFT) {
-            openItemEditor(player, holder.sectionId, itemId, holder.page, holder.sectionPage);
         }
     }
 
@@ -3053,6 +2952,15 @@ public class GuiService implements Listener {
     @EventHandler
     public void onInventoryDrag(InventoryDragEvent event) {
         Inventory top = event.getView().getTopInventory();
+        if (top.getHolder() instanceof EntryBrowserHolder) {
+            for (int rawSlot : event.getRawSlots()) {
+                if (rawSlot >= 0 && rawSlot < top.getSize()) {
+                    event.setCancelled(true);
+                    return;
+                }
+            }
+            return;
+        }
         if (top.getHolder() instanceof FoHolder && !(top.getHolder() instanceof SellGuiHolder)) {
             for (int rawSlot : event.getRawSlots()) {
                 if (rawSlot >= 0 && rawSlot < top.getSize()) {
@@ -5657,19 +5565,6 @@ public class GuiService implements Listener {
         }
     }
 
-    private static class SectionEditorHolder extends FoHolder {
-        private final int page;
-        private final int totalPages;
-        private final String query;
-        private final Map<Integer, String> slotToSection = new HashMap<>();
-
-        private SectionEditorHolder(int page, int totalPages, String query) {
-            this.page = page;
-            this.totalPages = totalPages;
-            this.query = query == null ? "" : query;
-        }
-    }
-
     private static class SectionDetailHolder extends FoHolder {
         private final String sectionId;
         private final int sectionPage;
@@ -5677,23 +5572,6 @@ public class GuiService implements Listener {
         private SectionDetailHolder(String sectionId, int sectionPage) {
             this.sectionId = sectionId;
             this.sectionPage = sectionPage;
-        }
-    }
-
-    private static class SectionItemsHolder extends FoHolder {
-        private final String sectionId;
-        private final int page;
-        private final int totalPages;
-        private final int sectionPage;
-        private final String query;
-        private final Map<Integer, String> slotToItem = new HashMap<>();
-
-        private SectionItemsHolder(String sectionId, int page, int totalPages, int sectionPage, String query) {
-            this.sectionId = sectionId;
-            this.page = page;
-            this.totalPages = totalPages;
-            this.sectionPage = sectionPage;
-            this.query = query == null ? "" : query;
         }
     }
 
