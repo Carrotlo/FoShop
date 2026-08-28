@@ -24,6 +24,7 @@ public class FoRotatingShopCommand implements CommandExecutor {
 
         if (!player.hasPermission("foshop.rotatingshop")) {
             plugin.getMessages().send(player, "no-permission");
+            plugin.getAdminSounds().updateError(player);
             return true;
         }
 

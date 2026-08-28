@@ -34,6 +34,7 @@ public class FoSellCommand implements CommandExecutor, TabCompleter {
 
         if (!sender.hasPermission(mode.permission())) {
             plugin.getMessages().send(sender, "no-permission");
+            plugin.getAdminSounds().updateError(sender);
             return true;
         }
 
@@ -50,6 +51,7 @@ public class FoSellCommand implements CommandExecutor, TabCompleter {
         if (args.length == 0) {
             if (!sender.hasPermission("foshop.sellgui.use")) {
                 plugin.getMessages().send(sender, "no-permission");
+                plugin.getAdminSounds().updateError(sender);
                 return true;
             }
             plugin.getGuiService().openSellGui(player);
@@ -61,6 +63,7 @@ public class FoSellCommand implements CommandExecutor, TabCompleter {
             case "all", "inventory", "inv", "sellall" -> {
                 if (!sender.hasPermission("foshop.sellall")) {
                     plugin.getMessages().send(sender, "no-permission");
+                    plugin.getAdminSounds().updateError(sender);
                     return true;
                 }
                 plugin.getGuiService().sellAll(player);
@@ -68,6 +71,7 @@ public class FoSellCommand implements CommandExecutor, TabCompleter {
             case "hand", "held", "mainhand", "sellhand" -> {
                 if (!sender.hasPermission("foshop.sellhand")) {
                     plugin.getMessages().send(sender, "no-permission");
+                    plugin.getAdminSounds().updateError(sender);
                     return true;
                 }
                 plugin.getGuiService().sellHand(player);
@@ -75,11 +79,15 @@ public class FoSellCommand implements CommandExecutor, TabCompleter {
             case "gui", "menu", "open" -> {
                 if (!sender.hasPermission("foshop.sellgui.use")) {
                     plugin.getMessages().send(sender, "no-permission");
+                    plugin.getAdminSounds().updateError(sender);
                     return true;
                 }
                 plugin.getGuiService().openSellGui(player);
             }
-            default -> plugin.getMessages().send(sender, "sell-usage");
+            default -> {
+                plugin.getMessages().send(sender, "sell-usage");
+                plugin.getAdminSounds().updateError(sender);
+            }
         }
         return true;
     }

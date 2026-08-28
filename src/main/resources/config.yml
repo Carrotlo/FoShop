@@ -93,14 +93,3 @@ sellgui:
     rounded-pricing: false
     remove-trailing-zeros: false
     abbreviate-numbers: true
-
-  sounds:
-    # Sound names must match Bukkit Sound enum names.
-    enabled: true
-    error-notification: true
-    pitch: 1
-    volume: 1
-    events:
-      open: BLOCK_CHEST_OPEN
-      success: ENTITY_VILLAGER_CELEBRATE
-      failed: ENTITY_VILLAGER_HURT

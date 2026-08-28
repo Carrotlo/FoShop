@@ -148,12 +148,83 @@ public class GuiService implements Listener {
     private final Set<UUID> suppressConfirmDeleteClose = new HashSet<>();
     private final Set<UUID> suppressConfirmRemoveBoosterClose = new HashSet<>();
     private final Set<UUID> nativeDialogFallbackWarnings = new HashSet<>();
+    private final Map<UUID, ScreenState> activeScreens = new HashMap<>();
+    private final Set<UUID> pendingBackNavigations = new HashSet<>();
 
     public GuiService(FoShop plugin) {
         this.plugin = plugin;
         this.transactionLogger = new SellTransactionLogger(plugin);
         this.configSettingSaver = new EditorSettingSaver(plugin, () -> plugin.reloadAll());
         this.chatPrompts = new ChatPromptManager(plugin, plugin.getCore().scheduler());
+    }
+
+    private void openInventory(Player player, Inventory inventory) {
+        player.openInventory(inventory);
+        screenOpened(player, inventory.getHolder());
+    }
+
+    private void screenOpened(Player player, InventoryHolder holder) {
+        boolean editor = isEditorScreen(holder);
+        ScreenState previous = activeScreens.put(player.getUniqueId(), new ScreenState(player.getOpenInventory().getTitle(), editor));
+        if (pendingBackNavigations.remove(player.getUniqueId())) {
+            if (previous == null || previous.editor()) {
+                plugin.getEditorSounds().back(player);
+            } else {
+                plugin.getSounds().play(player, "gui.back");
+            }
+            return;
+        }
+        if (previous != null && previous.editor() == editor && previous.title().equals(player.getOpenInventory().getTitle())) {
+            return;
+        }
+        if (editor) {
+            plugin.getEditorSounds().open(player);
+        } else if (holder instanceof SellGuiHolder) {
+            plugin.getSounds().play(player, "sell.open");
+        } else {
+            plugin.getGuiSounds().open(player);
+        }
+    }
+
+    private boolean isEditorScreen(InventoryHolder holder) {
+        return holder instanceof AdminEditorHolder
+                || holder instanceof SettingsEditorHolder
+                || holder instanceof SellBoosterEditorHolder
+                || holder instanceof ActiveSellBoostersHolder
+                || holder instanceof ConfirmRemoveSellBoosterHolder
+                || holder instanceof GlobalSellPriceEditorHolder
+                || holder instanceof GlobalSellPriceListHolder list && list.editor
+                || holder instanceof RotatingEditorHolder
+                || holder instanceof RotatingSectionDetailHolder
+                || holder instanceof SectionDetailHolder
+                || holder instanceof ItemEditorHolder
+                || holder instanceof ConfirmDeleteItemHolder
+                || holder instanceof ConfirmDeleteSectionHolder
+                || holder instanceof EntryBrowserHolder
+                || holder instanceof TriStateSelectionHolder;
+    }
+
+    private void markBackNavigation(Player player) {
+        pendingBackNavigations.add(player.getUniqueId());
+    }
+
+    private boolean isBackButton(ItemStack item) {
+        if (item == null || item.getType() != Material.IRON_DOOR) {
+            return false;
+        }
+        ItemMeta meta = item.getItemMeta();
+        return meta != null && meta.hasDisplayName()
+                && net.md_5.bungee.api.ChatColor.stripColor(meta.getDisplayName()).trim().equalsIgnoreCase("← Back");
+    }
+
+    private void clearScreenTrackingIfClosed(Player player) {
+        Bukkit.getScheduler().runTask(plugin, () -> {
+            InventoryHolder holder = player.getOpenInventory().getTopInventory().getHolder();
+            if (!(holder instanceof FoHolder) && !(holder instanceof EntryBrowserHolder) && !(holder instanceof TriStateSelectionHolder)) {
+                activeScreens.remove(player.getUniqueId());
+                pendingBackNavigations.remove(player.getUniqueId());
+            }
+        });
     }
 
     public void openMainShop(Player player) {
@@ -203,7 +274,7 @@ public class GuiService implements Listener {
             inventory.setItem(slot, icon);
         }
 
-        player.openInventory(inventory);
+        openInventory(player, inventory);
     }
 
     private int nextFreeMainSlot(MainMenuHolder holder, int start, int size) {
@@ -251,7 +322,7 @@ public class GuiService implements Listener {
             setNextPageButton(inventory, holder.nextSlot, currentPage, section.totalPages());
         }
 
-        player.openInventory(inventory);
+        openInventory(player, inventory);
     }
 
     public void openRotatingShop(Player player) {
@@ -272,7 +343,7 @@ public class GuiService implements Listener {
             GuiButton empty = readGuiButton("rotating-shop", "empty", 13, Material.GRAY_DYE,
                     "&#ff5d73No Boosts", List.of("&#ffffffNo sellable rotating items available."), inventory.getSize());
             inventory.setItem(empty.slot(), createButtonItem(empty));
-            player.openInventory(inventory);
+            openInventory(player, inventory);
             return;
         }
 
@@ -299,7 +370,7 @@ public class GuiService implements Listener {
             }
         }
 
-        player.openInventory(inventory);
+        openInventory(player, inventory);
     }
 
     public void openWorth(Player player) {
@@ -331,7 +402,7 @@ public class GuiService implements Listener {
         inventory.setItem(14, EditorItemFactory.filler());
         inventory.setItem(THREE_ROW_BACK_SLOT, GUI_BUTTONS.back());
 
-        player.openInventory(inventory);
+        openInventory(player, inventory);
     }
 
     private void openGlobalSellPriceList(Player player, boolean editor, int page, String query, WorthSort sort) {
@@ -372,13 +443,13 @@ public class GuiService implements Listener {
         setClearSearchButton(inventory, 52, "worth", search);
         setNextPageButton(inventory, 53, currentPage, totalPages);
 
-        player.openInventory(inventory);
+        openInventory(player, inventory);
     }
 
     public void openSellGui(Player player) {
         if (plugin.getFoConfig().isSellGamemodeBlocked(player.getGameMode().name())) {
             plugin.getMessages().send(player, "sellgui-gamemode-not-allowed", Map.of("{gamemode}", player.getGameMode().name()));
-            playSellSound(player, plugin.getFoConfig().getSellFailedSound());
+            plugin.getSounds().play(player, "sell.failure");
             return;
         }
 
@@ -403,8 +474,7 @@ public class GuiService implements Listener {
         inventory.setItem(sellButton.slot(), createButtonItem(sellButton));
 
         applySellGuiDecorations(inventory, holder);
-        player.openInventory(inventory);
-        playSellSound(player, plugin.getFoConfig().getSellOpenSound());
+        openInventory(player, inventory);
     }
 
     public Set<Integer> sellGuiInputSlots(Inventory inventory) {
@@ -516,7 +586,7 @@ public class GuiService implements Listener {
         inventory.setItem(15, createItem(Material.EXPERIENCE_BOTTLE, "&#03fc88Sell Boosters", List.of("&#ffffffManage global, player, and team sell price boosters.")));
         inventory.setItem(16, createItem(Material.CHEST, "&#03fc88Shop Section Manager", List.of("&#ffffffManage sections and products.")));
 
-        player.openInventory(inventory);
+        openInventory(player, inventory);
     }
 
     private void openSettingsEditor(Player player) {
@@ -537,17 +607,10 @@ public class GuiService implements Listener {
 
         inventory.setItem(19, EditorItemFactory.cycle(plugin.getMessages(), "Receipt Mode", Integer.toString(plugin.getFoConfig().getSellReceiptType()), RECEIPT_TYPE_OPTIONS));
         inventory.setItem(20, createItem(Material.IRON_BARS, "&#03fc88Blocked Gamemodes", List.of("&#ffffffCurrent: &#03fc88" + String.join(", ", effectiveStringListSetting("sellgui.blocked-gamemodes")), "&#ffffffClick to edit list.")));
-        inventory.setItem(21, toggleItem("Sell Sounds", plugin.getFoConfig().isSellSoundsEnabled(), "Play SellGUI sounds."));
-        inventory.setItem(22, toggleItem("Sound Warnings", plugin.getFoConfig().isSellSoundErrorNotification(), "Log invalid configured sounds."));
-        inventory.setItem(23, createItem(Material.NOTE_BLOCK, "&#03fc88Sound Pitch", List.of("&#ffffffCurrent: &#03fc88" + plugin.getFoConfig().getSellSoundPitch(), "&#ffffffClick to edit number.")));
-        inventory.setItem(24, createItem(Material.JUKEBOX, "&#03fc88Sound Volume", List.of("&#ffffffCurrent: &#03fc88" + plugin.getFoConfig().getSellSoundVolume(), "&#ffffffClick to edit number.")));
-        inventory.setItem(25, createItem(Material.CHEST, "&#03fc88Open Sound", List.of("&#ffffffCurrent: &#03fc88" + plugin.getFoConfig().getSellOpenSound(), "&#ffffffClick to edit Bukkit sound.")));
-        inventory.setItem(28, createItem(Material.EMERALD, "&#03fc88Success Sound", List.of("&#ffffffCurrent: &#03fc88" + plugin.getFoConfig().getSellSuccessSound(), "&#ffffffClick to edit Bukkit sound.")));
-        inventory.setItem(29, createItem(Material.REDSTONE, "&#03fc88Failed Sound", List.of("&#ffffffCurrent: &#03fc88" + plugin.getFoConfig().getSellFailedSound(), "&#ffffffClick to edit Bukkit sound.")));
 
         inventory.setItem(FOUR_ROW_BACK_SLOT, GUI_BUTTONS.back());
 
-        player.openInventory(inventory);
+        openInventory(player, inventory);
     }
 
     private void openSellBoosterEditor(Player player) {
@@ -571,7 +634,7 @@ public class GuiService implements Listener {
         inventory.setItem(FOUR_ROW_BACK_SLOT, GUI_BUTTONS.back());
         inventory.setItem(19, toggleItem("Bossbar", effectiveBooleanSetting("sell-boosters.bossbar.enabled"), "Show active sell boost bossbar to boosted players."));
 
-        player.openInventory(inventory);
+        openInventory(player, inventory);
     }
 
     private void openActiveSellBoosters(Player player, int page) {
@@ -607,7 +670,7 @@ public class GuiService implements Listener {
         setPreviousPageButton(inventory, 48, currentPage, totalPages);
         setNextPageButton(inventory, 50, currentPage, totalPages);
 
-        player.openInventory(inventory);
+        openInventory(player, inventory);
     }
 
     private void openRotatingShopEditor(Player player) {
@@ -637,7 +700,7 @@ public class GuiService implements Listener {
         )));
         inventory.setItem(THREE_ROW_BACK_SLOT, GUI_BUTTONS.back());
 
-        player.openInventory(inventory);
+        openInventory(player, inventory);
     }
 
     private void openRotatingSectionEditorList(Player player, int page) {
@@ -691,6 +754,7 @@ public class GuiService implements Listener {
                 .showSearch(true)
                 .build();
         TriStateSelectionMenus.open(player, request);
+        screenOpened(player, player.getOpenInventory().getTopInventory().getHolder());
     }
 
     private void openRotatingSectionDetailEditor(Player player, String sectionId, int sectionPage) {
@@ -717,7 +781,7 @@ public class GuiService implements Listener {
         )));
         inventory.setItem(THREE_ROW_BACK_SLOT, GUI_BUTTONS.back());
 
-        player.openInventory(inventory);
+        openInventory(player, inventory);
     }
 
     private void openRotatingItemEditorList(Player player, String sectionId, int page, int sectionPage) {
@@ -784,6 +848,7 @@ public class GuiService implements Listener {
                 .showSearch(true)
                 .build();
         TriStateSelectionMenus.open(player, request);
+        screenOpened(player, player.getOpenInventory().getTopInventory().getHolder());
     }
 
     private ItemStack toggleItem(String label, boolean enabled, String description) {
@@ -819,6 +884,7 @@ public class GuiService implements Listener {
                         "&#a7b8b0Click then type section id in chat."
                 )))
                 .build());
+        screenOpened(player, player.getOpenInventory().getTopInventory().getHolder());
     }
 
     private EntryBrowserRequest.Entry sectionBrowserEntry(ShopSection section) {
@@ -866,7 +932,7 @@ public class GuiService implements Listener {
         inventory.setItem(16, createItem(Material.LAVA_BUCKET, "&#ff5d73Remove Section", List.of("&#ffffffDeletes this section and all products in it.")));
         inventory.setItem(THREE_ROW_BACK_SLOT, GUI_BUTTONS.back());
 
-        player.openInventory(inventory);
+        openInventory(player, inventory);
     }
 
     private ItemStack createSectionIconCopyItem(ShopSection section) {
@@ -934,6 +1000,7 @@ public class GuiService implements Listener {
                         "&#a7b8b0Prices default to disabled (-1)."
                 )))
                 .build());
+        screenOpened(player, player.getOpenInventory().getTopInventory().getHolder());
     }
 
     private EntryBrowserRequest.Entry itemBrowserEntry(ShopItem item) {
@@ -997,7 +1064,7 @@ public class GuiService implements Listener {
         inventory.setItem(25, createItem(Material.LAVA_BUCKET, "&#ff5d73Remove Product", List.of("&#ffffffDeletes this product from section.")));
         inventory.setItem(FOUR_ROW_BACK_SLOT, GUI_BUTTONS.back());
 
-        player.openInventory(inventory);
+        openInventory(player, inventory);
     }
 
     @EventHandler(priority = EventPriority.HIGHEST)
@@ -1008,6 +1075,10 @@ public class GuiService implements Listener {
 
         Inventory top = event.getView().getTopInventory();
         InventoryHolder holder = top.getHolder();
+
+        if (event.getClickedInventory() != null && event.getClickedInventory().equals(top) && isBackButton(event.getCurrentItem())) {
+            markBackNavigation(player);
+        }
 
         if (holder instanceof FoHolder && !(holder instanceof SellGuiHolder) && shouldCancelReadOnlyViewClick(event, top)) {
             event.setCancelled(true);
@@ -1148,7 +1219,10 @@ public class GuiService implements Listener {
             }
             plugin.getShopManager().getSection(sectionId)
                     .filter(ShopSection::enabled)
-                    .ifPresent(section -> openShopSection(player, section));
+                    .ifPresent(section -> {
+                        plugin.getSounds().play(player, "gui.select");
+                        openShopSection(player, section);
+                    });
         }
     }
 
@@ -1171,11 +1245,13 @@ public class GuiService implements Listener {
         }
 
         if (section.totalPages() > 1 && holder.page() > 0 && slot == holder.previousSlot) {
+            plugin.getSounds().play(player, "gui.page-previous");
             openShopSection(player, section, holder.page() - 1);
             return;
         }
 
         if (section.totalPages() > 1 && holder.page() < section.totalPages() - 1 && slot == holder.nextSlot) {
+            plugin.getSounds().play(player, "gui.page-next");
             openShopSection(player, section, holder.page() + 1);
             return;
         }
@@ -1191,10 +1267,12 @@ public class GuiService implements Listener {
 
         if (!shopItem.canBuy()) {
             plugin.getMessages().send(player, "buy-disabled");
+            plugin.getSounds().play(player, "shop.purchase-failure");
             return;
         }
 
         if (event.getClick() == ClickType.LEFT || event.getClick() == ClickType.SHIFT_LEFT) {
+            plugin.getSounds().play(player, "gui.select");
             openBuyItemGui(player, holder.sectionId(), shopItem.id(), shopItem.amount());
         }
     }
@@ -1216,7 +1294,13 @@ public class GuiService implements Listener {
 
         switch (event.getSlot()) {
             case 10 -> {
-                ReloadFeedback.send(plugin, player, plugin.reloadAll());
+                ShopManager.ReloadResult result = plugin.reloadAll();
+                ReloadFeedback.send(plugin, player, result);
+                if (result.issues().isEmpty()) {
+                    plugin.getAdminSounds().reload(player);
+                } else {
+                    plugin.getAdminSounds().reloadError(player);
+                }
                 openAdminEditor(player);
             }
             case 11 -> openGlobalSellPriceEditor(player);
@@ -1249,18 +1333,6 @@ public class GuiService implements Listener {
             case 19 -> cycleReceiptType(player, reopenSettings);
             case 20 -> startPrompt(player, new PromptEdit(PromptType.CONFIG_GAMEMODE_LIST, "sellgui.blocked-gamemodes", null, null, 0, 0),
                     "&#a7b8b0Expected: gamemodes separated by |, comma, or space. Type &#ff5d73clear &#a7b8b0to empty, or &#ff5d73cancel &#a7b8b0to abort.");
-            case 21 -> toggleBooleanSetting(player, "sellgui.sounds.enabled", reopenSettings);
-            case 22 -> toggleBooleanSetting(player, "sellgui.sounds.error-notification", reopenSettings);
-            case 23 -> startPrompt(player, new PromptEdit(PromptType.CONFIG_DOUBLE, "sellgui.sounds.pitch", null, null, 0, 0),
-                    "&#a7b8b0Expected: sound pitch number. Type &#ff5d73cancel &#a7b8b0to abort.");
-            case 24 -> startPrompt(player, new PromptEdit(PromptType.CONFIG_DOUBLE, "sellgui.sounds.volume", null, null, 0, 0),
-                    "&#a7b8b0Expected: sound volume number. Type &#ff5d73cancel &#a7b8b0to abort.");
-            case 25 -> startPrompt(player, new PromptEdit(PromptType.CONFIG_SOUND, "sellgui.sounds.events.open", null, null, 0, 0),
-                    "&#a7b8b0Expected: Bukkit sound name. Type &#ff5d73cancel &#a7b8b0to abort.");
-            case 28 -> startPrompt(player, new PromptEdit(PromptType.CONFIG_SOUND, "sellgui.sounds.events.success", null, null, 0, 0),
-                    "&#a7b8b0Expected: Bukkit sound name. Type &#ff5d73cancel &#a7b8b0to abort.");
-            case 29 -> startPrompt(player, new PromptEdit(PromptType.CONFIG_SOUND, "sellgui.sounds.events.failed", null, null, 0, 0),
-                    "&#a7b8b0Expected: Bukkit sound name. Type &#ff5d73cancel &#a7b8b0to abort.");
             case FOUR_ROW_BACK_SLOT -> openAdminEditor(player);
             default -> {
             }
@@ -1290,6 +1362,7 @@ public class GuiService implements Listener {
         String next = CycleOptions.nextValue(current, ITEM_TYPE_OPTIONS);
         if (updateItemField(holder.sectionId, holder.itemId, "type", next, player)) {
             plugin.getMessages().send(player, "editor-saved");
+            plugin.getEditorSounds().cycle(player);
             openItemEditor(player, holder.sectionId, holder.itemId, holder.page, holder.sectionPage);
         }
     }
@@ -1309,8 +1382,6 @@ public class GuiService implements Listener {
             case "sellgui.price-format.rounded-pricing" -> plugin.getConfig().getBoolean(path, plugin.getConfig().getBoolean("gui.sell.price-format.rounded-pricing", false));
             case "sellgui.price-format.remove-trailing-zeros" -> plugin.getConfig().getBoolean(path, plugin.getConfig().getBoolean("gui.sell.price-format.remove-trailing-zeros", false));
             case "sellgui.price-format.abbreviate-numbers" -> plugin.getFoConfig().isSellAbbreviateNumbers();
-            case "sellgui.sounds.enabled" -> plugin.getFoConfig().isSellSoundsEnabled();
-            case "sellgui.sounds.error-notification" -> plugin.getFoConfig().isSellSoundErrorNotification();
             case "sell-boosters.enabled" -> plugin.getSellBoosterService().isEnabled();
             case "sell-boosters.stack-boosters" -> plugin.getSellBoosterService().isStackBoosters();
             case "sell-boosters.stack-with-rotating-shop" -> plugin.getSellBoosterService().isStackWithRotatingShop();
@@ -1321,20 +1392,11 @@ public class GuiService implements Listener {
     }
 
     private double effectiveDoubleSetting(String path, double fallback) {
-        return switch (path) {
-            case "sellgui.sounds.pitch" -> plugin.getFoConfig().getSellSoundPitch();
-            case "sellgui.sounds.volume" -> plugin.getFoConfig().getSellSoundVolume();
-            default -> plugin.getConfig().getDouble(path, fallback);
-        };
+        return plugin.getConfig().getDouble(path, fallback);
     }
 
     private String effectiveStringSetting(String path) {
-        return switch (path) {
-            case "sellgui.sounds.events.open" -> plugin.getFoConfig().getSellOpenSound();
-            case "sellgui.sounds.events.success" -> plugin.getFoConfig().getSellSuccessSound();
-            case "sellgui.sounds.events.failed" -> plugin.getFoConfig().getSellFailedSound();
-            default -> plugin.getConfig().getString(path, "");
-        };
+        return plugin.getConfig().getString(path, "");
     }
 
     private void handleRotatingEditorClick(InventoryClickEvent event, Player player) {
@@ -1351,6 +1413,7 @@ public class GuiService implements Listener {
             case 13 -> {
                 plugin.getRotatingShopService().resetNow();
                 plugin.getMessages().send(player, "rotating-shop-reset");
+                plugin.getSounds().play(player, "shop.rotating-reset");
                 openRotatingShopEditor(player);
             }
             case 14 -> toggleBooleanSetting(player, "sell-boosters.stack-with-rotating-shop", () -> openRotatingShopEditor(player));
@@ -1402,12 +1465,14 @@ public class GuiService implements Listener {
             }
             case 48 -> {
                 if (holder.page > 0) {
+                    plugin.getEditorSounds().previousPage(player);
                     openActiveSellBoosters(player, holder.page - 1);
                 }
                 return;
             }
             case 50 -> {
                 if (holder.page < holder.totalPages - 1) {
+                    plugin.getEditorSounds().nextPage(player);
                     openActiveSellBoosters(player, holder.page + 1);
                 }
                 return;
@@ -1447,12 +1512,18 @@ public class GuiService implements Listener {
         switch (event.getSlot()) {
             case 45 -> {
                 if (holder.page > 0) {
+                    pageSound(player, holder.editor, false);
                     openGlobalSellPriceList(player, holder.editor, holder.page - 1, holder.query, holder.sort);
                 }
                 return;
             }
             case 47 -> {
                 String next = CycleOptions.nextValue(holder.sort.name(), WORTH_SORT_OPTIONS);
+                if (holder.editor) {
+                    plugin.getEditorSounds().cycle(player);
+                } else {
+                    plugin.getSounds().play(player, "gui.sort");
+                }
                 openGlobalSellPriceList(player, holder.editor, 0, holder.query, sortFromValue(next));
                 return;
             }
@@ -1463,6 +1534,7 @@ public class GuiService implements Listener {
                 return;
             }
             case 51 -> {
+                searchSound(player, holder.editor, false);
                 startPrompt(player,
                         new PromptEdit(PromptType.GLOBAL_PRICE_SEARCH, holder.editor ? "editor" : "worth", null, null, holder.page, holder.sort.ordinal()),
                         "&#a7b8b0Expected: material search text. Type &#ff5d73cancel &#a7b8b0to abort.");
@@ -1470,12 +1542,14 @@ public class GuiService implements Listener {
             }
             case 52 -> {
                 if (!holder.query.isBlank()) {
+                    searchSound(player, holder.editor, true);
                     openGlobalSellPriceList(player, holder.editor, 0, "", holder.sort);
                 }
                 return;
             }
             case 53 -> {
                 if (holder.page < holder.totalPages - 1) {
+                    pageSound(player, holder.editor, true);
                     openGlobalSellPriceList(player, holder.editor, holder.page + 1, holder.query, holder.sort);
                 }
                 return;
@@ -1502,6 +1576,9 @@ public class GuiService implements Listener {
             if (saved) {
                 plugin.getRotatingShopService().reload();
                 plugin.getMessages().send(player, "editor-saved");
+                plugin.getEditorSounds().toggle(player, !current);
+            } else {
+                plugin.getEditorSounds().error(player);
             }
             openGlobalSellPriceList(player, true, holder.page, holder.query, holder.sort);
             return;
@@ -1520,6 +1597,9 @@ public class GuiService implements Listener {
             if (saved) {
                 plugin.getRotatingShopService().reload();
                 plugin.getMessages().send(player, "editor-saved");
+                plugin.getEditorSounds().toggle(player, !current);
+            } else {
+                plugin.getEditorSounds().error(player);
             }
             openGlobalSellPriceList(player, true, holder.page, holder.query, holder.sort);
             return;
@@ -1554,8 +1634,19 @@ public class GuiService implements Listener {
 
         TriStateSelectionClick click = TriStateSelectionMenus.handleClick(event.getSlot(), holder);
         switch (click.action()) {
-            case PREVIOUS_PAGE, NEXT_PAGE, CLEAR_SEARCH -> TriStateSelectionMenus.open(player, click.nextRequest());
+            case PREVIOUS_PAGE, NEXT_PAGE, CLEAR_SEARCH -> {
+                if (click.action() == TriStateSelectionActionType.PREVIOUS_PAGE) {
+                    plugin.getEditorSounds().previousPage(player);
+                } else if (click.action() == TriStateSelectionActionType.NEXT_PAGE) {
+                    plugin.getEditorSounds().nextPage(player);
+                } else {
+                    plugin.getEditorSounds().clearSearch(player);
+                }
+                TriStateSelectionMenus.open(player, click.nextRequest());
+                screenOpened(player, player.getOpenInventory().getTopInventory().getHolder());
+            }
             case SEARCH -> {
+                plugin.getEditorSounds().search(player);
                 if (sectionsSelector) {
                     startPrompt(player,
                             new PromptEdit(PromptType.ROTATING_SECTION_SEARCH, null, null, null, request.page(), 0),
@@ -1636,16 +1727,48 @@ public class GuiService implements Listener {
         EditorSaveResult result = configSettingSaver.save(path, value);
         if (!result.successful()) {
             plugin.getMessages().send(player, "editor-invalid", Map.of("{reason}", result.errorMessage()));
+            plugin.getEditorSounds().error(player);
             if (reopen != null) {
                 reopen.run();
             }
             return false;
         }
         plugin.getMessages().send(player, "editor-saved");
+        if (path.equals("sellgui.receipts.type") || path.startsWith("rotating-shop.sections.") || path.startsWith("rotating-shop.items.")) {
+            plugin.getEditorSounds().cycle(player);
+        } else if (value instanceof Boolean enabled) {
+            plugin.getEditorSounds().toggle(player, enabled);
+        } else {
+            plugin.getEditorSounds().save(player);
+        }
         if (reopen != null) {
             reopen.run();
         }
         return true;
+    }
+
+    private void pageSound(Player player, boolean editor, boolean next) {
+        if (editor) {
+            if (next) {
+                plugin.getEditorSounds().nextPage(player);
+            } else {
+                plugin.getEditorSounds().previousPage(player);
+            }
+        } else {
+            plugin.getSounds().play(player, next ? "gui.page-next" : "gui.page-previous");
+        }
+    }
+
+    private void searchSound(Player player, boolean editor, boolean clear) {
+        if (editor) {
+            if (clear) {
+                plugin.getEditorSounds().clearSearch(player);
+            } else {
+                plugin.getEditorSounds().search(player);
+            }
+        } else {
+            plugin.getSounds().play(player, clear ? "gui.clear-search" : "gui.search");
+        }
     }
 
     private void handleEntryBrowserClick(InventoryClickEvent event, Player player, EntryBrowserHolder holder) {
@@ -1661,17 +1784,31 @@ public class GuiService implements Listener {
         String search = request.filter();
         if (sectionBrowser) {
             switch (click.action()) {
-                case ENTRY -> openSectionDetailEditor(player, click.entryId(), request.page());
-                case ADD -> startPrompt(player,
+            case ENTRY -> openSectionDetailEditor(player, click.entryId(), request.page());
+                case ADD -> {
+                    startPrompt(player,
                         new PromptEdit(PromptType.NEW_SECTION_ID, null, null, null, request.page(), 0),
                         "&#a7b8b0Expected: new section id (letters, numbers, _ or -). Type &#ff5d73cancel &#a7b8b0to abort.");
+                }
                 case BACK -> openAdminEditor(player);
-                case SEARCH -> startPrompt(player,
+                case SEARCH -> {
+                    plugin.getEditorSounds().search(player);
+                    startPrompt(player,
                         new PromptEdit(PromptType.SECTION_SEARCH, null, null, null, request.page(), 0),
                         "&#a7b8b0Expected: section search text. Type &#ff5d73cancel &#a7b8b0to abort.");
-                case CLEAR_SEARCH -> openSectionEditorList(player, 0, "");
-                case PREVIOUS_PAGE -> openSectionEditorList(player, request.page() - 1, search);
-                case NEXT_PAGE -> openSectionEditorList(player, request.page() + 1, search);
+                }
+                case CLEAR_SEARCH -> {
+                    plugin.getEditorSounds().clearSearch(player);
+                    openSectionEditorList(player, 0, "");
+                }
+                case PREVIOUS_PAGE -> {
+                    plugin.getEditorSounds().previousPage(player);
+                    openSectionEditorList(player, request.page() - 1, search);
+                }
+                case NEXT_PAGE -> {
+                    plugin.getEditorSounds().nextPage(player);
+                    openSectionEditorList(player, request.page() + 1, search);
+                }
                 case NONE -> {
                 }
             }
@@ -1682,14 +1819,28 @@ public class GuiService implements Listener {
         int sectionPage = sectionItemBrowserPages.getOrDefault(player.getUniqueId(), 0);
         switch (click.action()) {
             case ENTRY -> openItemEditor(player, sectionId, click.entryId(), request.page(), sectionPage);
-            case ADD -> addProductFromCursor(player, event.getCursor(), sectionId, request.page(), sectionPage);
+            case ADD -> {
+                addProductFromCursor(player, event.getCursor(), sectionId, request.page(), sectionPage);
+            }
             case BACK -> openSectionDetailEditor(player, sectionId, sectionPage);
-            case SEARCH -> startPrompt(player,
+            case SEARCH -> {
+                plugin.getEditorSounds().search(player);
+                startPrompt(player,
                     new PromptEdit(PromptType.ITEM_SEARCH, null, sectionId, null, request.page(), sectionPage),
                     "&#a7b8b0Expected: product search text. Type &#ff5d73cancel &#a7b8b0to abort.");
-            case CLEAR_SEARCH -> openItemListEditor(player, sectionId, 0, sectionPage, "");
-            case PREVIOUS_PAGE -> openItemListEditor(player, sectionId, request.page() - 1, sectionPage, search);
-            case NEXT_PAGE -> openItemListEditor(player, sectionId, request.page() + 1, sectionPage, search);
+            }
+            case CLEAR_SEARCH -> {
+                plugin.getEditorSounds().clearSearch(player);
+                openItemListEditor(player, sectionId, 0, sectionPage, "");
+            }
+            case PREVIOUS_PAGE -> {
+                plugin.getEditorSounds().previousPage(player);
+                openItemListEditor(player, sectionId, request.page() - 1, sectionPage, search);
+            }
+            case NEXT_PAGE -> {
+                plugin.getEditorSounds().nextPage(player);
+                openItemListEditor(player, sectionId, request.page() + 1, sectionPage, search);
+            }
             case NONE -> {
             }
         }
@@ -1706,6 +1857,7 @@ public class GuiService implements Listener {
             case 11 -> {
                 if (applySectionIconFromCursor(holder.sectionId, event.getCursor(), player)) {
                     plugin.getMessages().send(player, "editor-saved");
+                    plugin.getEditorSounds().add(player);
                     openSectionDetailEditor(player, holder.sectionId, holder.sectionPage);
                 }
             }
@@ -1721,6 +1873,10 @@ public class GuiService implements Listener {
             case 15 -> {
                 if (toggleSectionEnabled(holder.sectionId, player)) {
                     plugin.getMessages().send(player, "editor-saved");
+                    boolean enabled = plugin.getShopManager().getSection(holder.sectionId)
+                            .map(ShopSection::enabled)
+                            .orElse(false);
+                    plugin.getEditorSounds().toggle(player, enabled);
                     openSectionDetailEditor(player, holder.sectionId, holder.sectionPage);
                 }
             }
@@ -1746,6 +1902,7 @@ public class GuiService implements Listener {
                 if (hasCursorItem(event)) {
                     if (applyItemFromCursor(holder.sectionId, holder.itemId, event.getCursor(), player)) {
                         plugin.getMessages().send(player, "editor-saved");
+                        plugin.getEditorSounds().add(player);
                         openItemEditor(player, holder.sectionId, holder.itemId, holder.page, holder.sectionPage);
                     }
                     return;
@@ -1798,7 +1955,7 @@ public class GuiService implements Listener {
         inventory.setItem(11, createItem(Material.LIME_CONCRETE, "&#3ecf8eConfirm", List.of("&#ffffffDelete product: &#03fc88" + itemId)));
         inventory.setItem(15, createItem(Material.RED_CONCRETE, "&#ff5d73Cancel", List.of("&#ffffffReturn to product editor.")));
 
-        player.openInventory(inventory);
+        openInventory(player, inventory);
     }
 
     private void openConfirmDeleteSection(Player player, String sectionId, int sectionPage) {
@@ -1810,7 +1967,7 @@ public class GuiService implements Listener {
         inventory.setItem(11, createItem(Material.LIME_CONCRETE, "&#3ecf8eConfirm", List.of("&#ffffffDelete section: &#03fc88" + sectionId)));
         inventory.setItem(15, createItem(Material.RED_CONCRETE, "&#ff5d73Cancel", List.of("&#ffffffReturn to section editor.")));
 
-        player.openInventory(inventory);
+        openInventory(player, inventory);
     }
 
     private void handleConfirmDeleteItemClick(InventoryClickEvent event, Player player, Inventory top, ConfirmDeleteItemHolder holder) {
@@ -1823,9 +1980,11 @@ public class GuiService implements Listener {
             if (removeItem(holder.sectionId, holder.itemId, player)) {
                 suppressConfirmDeleteClose.add(player.getUniqueId());
                 plugin.getMessages().send(player, "editor-saved");
+                plugin.getEditorSounds().delete(player);
                 openItemListEditor(player, holder.sectionId, holder.page, holder.sectionPage);
             } else {
                 suppressConfirmDeleteClose.add(player.getUniqueId());
+                plugin.getEditorSounds().error(player);
                 openItemListEditor(player, holder.sectionId, holder.page, holder.sectionPage);
             }
             return;
@@ -1834,6 +1993,7 @@ public class GuiService implements Listener {
         if (event.getSlot() == 15) {
             suppressConfirmDeleteClose.add(player.getUniqueId());
             plugin.getMessages().send(player, "editor-cancelled");
+            markBackNavigation(player);
             openItemEditor(player, holder.sectionId, holder.itemId, holder.page, holder.sectionPage);
         }
     }
@@ -1848,6 +2008,9 @@ public class GuiService implements Listener {
             suppressConfirmDeleteClose.add(player.getUniqueId());
             if (removeSection(holder.sectionId, player)) {
                 plugin.getMessages().send(player, "editor-saved");
+                plugin.getEditorSounds().delete(player);
+            } else {
+                plugin.getEditorSounds().error(player);
             }
             openSectionEditorList(player, holder.sectionPage);
             return;
@@ -1856,6 +2019,7 @@ public class GuiService implements Listener {
         if (event.getSlot() == 15) {
             suppressConfirmDeleteClose.add(player.getUniqueId());
             plugin.getMessages().send(player, "editor-cancelled");
+            markBackNavigation(player);
             openSectionDetailEditor(player, holder.sectionId, holder.sectionPage);
         }
     }
@@ -1869,7 +2033,7 @@ public class GuiService implements Listener {
         inventory.setItem(11, createItem(Material.LIME_CONCRETE, "&#3ecf8eConfirm", List.of("&#ffffffRemove booster: &#03fc88" + boosterId)));
         inventory.setItem(15, createItem(Material.RED_CONCRETE, "&#ff5d73Cancel", List.of("&#ffffffReturn to active boosters.")));
 
-        player.openInventory(inventory);
+        openInventory(player, inventory);
     }
 
     private void handleConfirmRemoveSellBoosterClick(InventoryClickEvent event, Player player, Inventory top, ConfirmRemoveSellBoosterHolder holder) {
@@ -1882,8 +2046,10 @@ public class GuiService implements Listener {
             suppressConfirmRemoveBoosterClose.add(player.getUniqueId());
             if (plugin.getSellBoosterService().remove(holder.boosterId)) {
                 plugin.getMessages().send(player, "editor-saved");
+                plugin.getSounds().play(player, "shop.booster-removed");
             } else {
                 plugin.getMessages().send(player, "editor-invalid", Map.of("{reason}", "Booster not found."));
+                plugin.getEditorSounds().error(player);
             }
             openActiveSellBoosters(player, holder.page);
             return;
@@ -1892,6 +2058,7 @@ public class GuiService implements Listener {
         if (event.getSlot() == 15) {
             suppressConfirmRemoveBoosterClose.add(player.getUniqueId());
             plugin.getMessages().send(player, "editor-cancelled");
+            markBackNavigation(player);
             openActiveSellBoosters(player, holder.page);
         }
     }
@@ -1930,7 +2097,7 @@ public class GuiService implements Listener {
 
         placeAmountSelectionButtons(inventory, holder, item, amount);
 
-        player.openInventory(inventory);
+        openInventory(player, inventory);
     }
 
     private void openBuyMoreGui(Player player, String sectionId, String itemId, int returnAmount) {
@@ -1975,7 +2142,7 @@ public class GuiService implements Listener {
 
         holder.backSlot = readGuiSlot("buy-more", "buttons.back", THREE_ROW_BACK_SLOT, inventory.getSize());
         inventory.setItem(holder.backSlot, GUI_BUTTONS.back());
-        player.openInventory(inventory);
+        openInventory(player, inventory);
     }
 
     private void placeAmountSelectionButtons(Inventory inventory, BuyItemHolder holder, ShopItem item, int amount) {
@@ -2194,6 +2361,7 @@ public class GuiService implements Listener {
 
         Integer delta = holder.slotToDelta.get(event.getSlot());
         if (delta != null) {
+            plugin.getSounds().playWithPitchVariation(player, "gui.cycle", 0.06F);
             openBuyItemGui(player, holder.sectionId, holder.itemId, holder.selectedAmount + delta);
             return;
         }
@@ -2210,6 +2378,7 @@ public class GuiService implements Listener {
         }
 
         if (event.getSlot() == holder.cancelSlot) {
+            plugin.getSounds().play(player, "gui.cancel");
             plugin.getShopManager().getSection(holder.sectionId).ifPresent(section -> openShopSection(player, section));
         }
     }
@@ -2227,6 +2396,7 @@ public class GuiService implements Listener {
         }
 
         if (event.getSlot() == holder.backSlot) {
+            markBackNavigation(player);
             openBuyItemGui(player, holder.sectionId, holder.itemId, holder.returnAmount);
             return;
         }
@@ -2243,16 +2413,19 @@ public class GuiService implements Listener {
 
         if (!plugin.getEconomyService().isEnabled()) {
             plugin.getMessages().send(player, "no-economy");
+            plugin.getSounds().play(player, "shop.purchase-failure");
             return;
         }
 
         if (!shopItem.canBuy() || !isFinitePositiveOrZero(shopItem.buyPrice())) {
             plugin.getMessages().send(player, "buy-disabled");
+            plugin.getSounds().play(player, "shop.purchase-failure");
             return;
         }
 
         if (!hasConfiguredPurchaseData(shopItem)) {
             plugin.getMessages().send(player, "buy-disabled");
+            plugin.getSounds().play(player, "shop.purchase-failure");
             return;
         }
 
@@ -2263,32 +2436,38 @@ public class GuiService implements Listener {
         int stock = plugin.getShopManager().getStock(sectionId, shopItem.id());
         if (stock >= 0 && amount > stock) {
             plugin.getMessages().send(player, "stock-insufficient", Map.of("{stock}", String.valueOf(stock)));
+            plugin.getSounds().play(player, "shop.purchase-failure");
             return;
         }
 
         int remainingLimit = plugin.getShopManager().getRemainingBuyLimit(player.getUniqueId(), sectionId, shopItem);
         if (remainingLimit >= 0 && amount > remainingLimit) {
             plugin.getMessages().send(player, "buy-limit-reached", Map.of("{limit}", String.valueOf(remainingLimit)));
+            plugin.getSounds().play(player, "shop.purchase-failure");
             return;
         }
 
         double totalCost = shopItem.buyPrice() * amount;
         if (totalCost < 0D || !Double.isFinite(totalCost)) {
             plugin.getMessages().send(player, "transaction-failed");
+            plugin.getSounds().play(player, "shop.purchase-failure");
             return;
         }
         if (plugin.getEconomyService().getBalance(player) < totalCost) {
             plugin.getMessages().send(player, "not-enough-money", Map.of("{amount}", plugin.getEconomyService().format(totalCost)));
+            plugin.getSounds().play(player, "shop.purchase-failure");
             return;
         }
 
         if (requiresInventorySpace(shopItem) && !canFitExact(player.getInventory(), shopItem, amount)) {
             plugin.getMessages().send(player, "inventory-full");
+            plugin.getSounds().play(player, "shop.purchase-failure");
             return;
         }
 
         if (!plugin.getEconomyService().withdraw(player, totalCost)) {
             plugin.getMessages().send(player, "transaction-failed");
+            plugin.getSounds().play(player, "shop.purchase-failure");
             return;
         }
 
@@ -2300,6 +2479,7 @@ public class GuiService implements Listener {
         }
 
         if (purchasedAmount <= 0) {
+            plugin.getSounds().play(player, "shop.purchase-failure");
             return;
         }
 
@@ -2309,6 +2489,7 @@ public class GuiService implements Listener {
                 "{item}", prettify(shopItem.material().name()),
                 "{price}", plugin.getEconomyService().format(shopItem.buyPrice() * purchasedAmount)
         ));
+        plugin.getSounds().play(player, "shop.purchase");
     }
 
     private boolean canBuyPermissionItem(Player player, ShopItem item) {
@@ -2483,7 +2664,7 @@ public class GuiService implements Listener {
         if (!foundItems) {
             sellingInProgress.remove(player.getUniqueId());
             plugin.getMessages().send(player, "sellall-empty");
-            playSellSound(player, plugin.getFoConfig().getSellFailedSound());
+            plugin.getSounds().play(player, "sell.failure");
             return;
         }
 
@@ -2500,7 +2681,7 @@ public class GuiService implements Listener {
         if (hand == null || hand.getType() == Material.AIR) {
             sellingInProgress.remove(player.getUniqueId());
             plugin.getMessages().send(player, "sellhand-empty");
-            playSellSound(player, plugin.getFoConfig().getSellFailedSound());
+            plugin.getSounds().play(player, "sell.failure");
             return;
         }
 
@@ -2508,7 +2689,7 @@ public class GuiService implements Listener {
         if (result.soldUnits <= 0) {
             sellingInProgress.remove(player.getUniqueId());
             plugin.getMessages().send(player, "sellgui-none");
-            playSellSound(player, plugin.getFoConfig().getSellFailedSound());
+            plugin.getSounds().play(player, "sell.failure");
             return;
         }
 
@@ -2523,13 +2704,13 @@ public class GuiService implements Listener {
     private boolean startDirectSell(Player player) {
         if (plugin.getFoConfig().isSellGamemodeBlocked(player.getGameMode().name())) {
             plugin.getMessages().send(player, "sellgui-gamemode-not-allowed", Map.of("{gamemode}", player.getGameMode().name()));
-            playSellSound(player, plugin.getFoConfig().getSellFailedSound());
+            plugin.getSounds().play(player, "sell.failure");
             return false;
         }
 
         if (!plugin.getEconomyService().isEnabled()) {
             plugin.getMessages().send(player, "no-economy");
-            playSellSound(player, plugin.getFoConfig().getSellFailedSound());
+            plugin.getSounds().play(player, "sell.failure");
             return false;
         }
 
@@ -2561,7 +2742,7 @@ public class GuiService implements Listener {
         if (snapshot.isEmpty()) {
             sellingInProgress.remove(player.getUniqueId());
             plugin.getMessages().send(player, "sellgui-empty");
-            playSellSound(player, plugin.getFoConfig().getSellFailedSound());
+            plugin.getSounds().play(player, "sell.failure");
             return;
         }
 
@@ -2597,21 +2778,21 @@ public class GuiService implements Listener {
                         plugin.getMessages().send(player, "sellgui-inventory-full");
                     }
                     plugin.getMessages().send(player, "no-economy");
-                    playSellSound(player, plugin.getFoConfig().getSellFailedSound());
+                    plugin.getSounds().play(player, "sell.failure");
                     return;
                 }
                 if (overflowed) {
                     plugin.getMessages().send(player, "sellgui-inventory-full");
                 }
                 sendSellSuccess(player, totalResult);
-                playSellSound(player, plugin.getFoConfig().getSellSuccessSound());
+                plugin.getSounds().play(player, "sell.success");
                 transactionLogger.write(player, totalResult.soldUnits, formatSellMoney(totalResult.earned), buildSoldList(totalResult));
             } else {
                 if (overflowed) {
                     plugin.getMessages().send(player, "sellgui-inventory-full");
                 }
                 plugin.getMessages().send(player, "sellgui-none");
-                playSellSound(player, plugin.getFoConfig().getSellFailedSound());
+                plugin.getSounds().play(player, "sell.failure");
             }
         } finally {
             sellingInProgress.remove(player.getUniqueId());
@@ -2931,24 +3112,6 @@ public class GuiService implements Listener {
                 .replace("%earning%", formatSellMoney(line.price()));
     }
 
-    private void playSellSound(Player player, String soundName) {
-        if (!plugin.getFoConfig().isSellSoundsEnabled() || soundName == null || soundName.isBlank()) {
-            return;
-        }
-        Optional<Sound> resolved = SoundTypes.resolve(soundName);
-        if (resolved.isPresent()) {
-            Sound sound = resolved.get();
-            player.playSound(player.getLocation(), sound, plugin.getFoConfig().getSellSoundVolume(), plugin.getFoConfig().getSellSoundPitch());
-        } else {
-            if (plugin.getFoConfig().isSellSoundErrorNotification()) {
-                plugin.getLogger().warning("Invalid SellGUI sound: " + soundName);
-                if (plugin.getFileLogger() != null) {
-                    plugin.getFileLogger().warn("Invalid SellGUI sound: " + soundName);
-                }
-            }
-        }
-    }
-
     @EventHandler
     public void onInventoryDrag(InventoryDragEvent event) {
         Inventory top = event.getView().getTopInventory();
@@ -2994,6 +3157,8 @@ public class GuiService implements Listener {
         if (plugin.getCore() != null && plugin.getCore().inventoryCloseSuppressor().consumeSuppressedClose(player)) {
             return;
         }
+
+        clearScreenTrackingIfClosed(player);
 
         if (top.getHolder() instanceof ConfirmDeleteItemHolder holder) {
             if (suppressConfirmDeleteClose.remove(player.getUniqueId())) {
@@ -3096,9 +3261,22 @@ public class GuiService implements Listener {
                 plugin.getFileLogger().info("Editor prompt saved by " + player.getName() + ": " + promptLogContext(edit));
             }
             plugin.getMessages().send(player, outcome.feedbackMessage);
+            playPromptSuccessSound(player, edit.type);
             openAfterPromptSuccess(player, edit, outcome.updatedItemId);
         } else {
+            plugin.getEditorSounds().error(player);
             openAfterPromptCancel(player, edit);
+        }
+    }
+
+    private void playPromptSuccessSound(Player player, PromptType type) {
+        switch (type) {
+            case SECTION_SEARCH, ROTATING_SECTION_SEARCH, ROTATING_ITEM_SEARCH, GLOBAL_PRICE_SEARCH, ITEM_SEARCH -> {
+                // The search control already played its feedback before opening the prompt.
+            }
+            case NEW_SECTION_ID -> plugin.getEditorSounds().add(player);
+            case SELL_BOOSTER_START -> plugin.getSounds().play(player, "shop.booster-started");
+            default -> plugin.getEditorSounds().save(player);
         }
     }
 
@@ -3934,6 +4112,7 @@ public class GuiService implements Listener {
 
         if (persistSectionYaml(sectionId, yaml, player, "Failed to add product.")) {
             plugin.getMessages().send(player, "editor-saved");
+            plugin.getEditorSounds().add(player);
             openItemEditor(player, sectionId, itemId, page, sectionPage);
         }
     }
@@ -4122,6 +4301,7 @@ public class GuiService implements Listener {
         if (!result.success()) {
             String reason = result.error() == null || result.error().isBlank() ? fallbackReason : result.error();
             plugin.getMessages().send(player, "editor-invalid", Map.of("{reason}", reason));
+            plugin.getEditorSounds().error(player);
             if (plugin.getFileLogger() != null) {
                 plugin.getFileLogger().warn("Editor save failed for section " + sectionId + ": " + reason);
             }
@@ -5343,6 +5523,9 @@ public class GuiService implements Listener {
         private GuiButton(int slot, Material material, String name, List<String> lore) {
             this(slot, material, 1, name, lore, -1);
         }
+    }
+
+    private record ScreenState(String title, boolean editor) {
     }
 
     private enum PromptType {

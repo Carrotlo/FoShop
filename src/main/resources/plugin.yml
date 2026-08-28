@@ -11,39 +11,32 @@ commands:
     description: Opens the FoShop main shop GUI
     usage: /<command>
     aliases: [ shop ]
-    permission: foshop.use
   foshopadmin:
     description: FoShop admin command
     usage: "/<command> <version|reload|editor|booster|rotatingshop reset|convert <ShopGUIPlus|EconomyShopGUI> [dryrun]>"
     aliases: [ shopadmin ]
-    permission: foshop.admin
   rotatingshop:
     description: Opens the FoShop rotating boosted shop GUI
     usage: /<command>
     aliases: [ rshop ]
-    permission: foshop.rotatingshop
   fosellgui:
     description: Opens the FoShop sell GUI
     usage: /<command>
     aliases: [ sellgui ]
-    permission: foshop.sellgui.use
   sell:
     description: Opens SellGUI or sells inventory/hand items
     usage: "/<command> [all|hand|gui]"
   sellall:
     description: Sells all sellable items in your inventory
     usage: /<command>
-    permission: foshop.sellall
   sellhand:
     description: Sells the item in your main hand
     usage: /<command>
     aliases: [ sellheld ]
-    permission: foshop.sellhand
   worth:
     description: Opens the FoShop worth browser
     usage: /<command>
     aliases: [ prices ]
-    permission: foshop.worth
 
 permissions:
   foshop.use:

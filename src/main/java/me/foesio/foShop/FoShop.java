@@ -2,6 +2,11 @@ package me.foesio.foShop;
 
 import me.foesio.core.FoCoreContext;
 import me.foesio.core.FoPluginCore;
+import me.foesio.core.sound.FoAdminSounds;
+import me.foesio.core.sound.FoEditorSounds;
+import me.foesio.core.sound.FoGuiSounds;
+import me.foesio.core.sound.FoSoundMigrations;
+import me.foesio.core.sound.FoSoundService;
 import me.foesio.core.logging.FoFileLogger;
 import me.foesio.core.message.FoMessageService;
 import me.foesio.core.reload.FoReloadRegistry;
@@ -35,6 +40,7 @@ import org.bukkit.plugin.ServicePriority;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.Objects;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
 public final class FoShop extends JavaPlugin {
@@ -47,6 +53,10 @@ public final class FoShop extends JavaPlugin {
     private PermissionService permissionService;
     private GuiService guiService;
     private FoCoreContext core;
+    private FoSoundService sounds;
+    private FoGuiSounds guiSounds;
+    private FoEditorSounds editorSounds;
+    private FoAdminSounds adminSounds;
     private FoMessageService coreMessages;
     private UpdateNoticeService updateNotices;
     private ShopGUIPlusConverter converter;
@@ -65,14 +75,13 @@ public final class FoShop extends JavaPlugin {
     @Override
     public void onEnable() {
         saveDefaultConfig();
-        this.coreMessages = FoMessageService.load(this);
-
         this.foConfig = new FoConfig(this);
         this.foConfig.reload();
         this.fileLogger = FoFileLogger.create(this);
         this.fileLogger.configure(foConfig.isFileLoggingEnabled(), true);
         fileLogger.info("Plugin enable started.");
         refreshCoreContext();
+        this.coreMessages = FoMessageService.load(this);
         this.updateNotices = core.createUpdateNotices(coreMessages, "foshop").start();
         this.userDataStore = new UserDataStore(this);
         this.userDataStore.open();
@@ -151,7 +160,6 @@ public final class FoShop extends JavaPlugin {
         }
         AtomicReference<ShopManager.ReloadResult> shopReloadResult = new AtomicReference<>();
         FoReloadResult reload = FoReloadRegistry.create()
-                .add("core messages", this::reloadCoreMessages)
                 .add("config/guis", foConfig::reload)
                 .add("file logging", () -> {
                     if (fileLogger != null) {
@@ -159,6 +167,7 @@ public final class FoShop extends JavaPlugin {
                     }
                 })
                 .add("core context", this::refreshCoreContext)
+                .add("core messages", this::reloadCoreMessages)
                 .add("shops", () -> shopReloadResult.set(shopManager.reload()))
                 .add("global sell prices", () -> {
                     if (globalSellPriceService != null) {
@@ -238,6 +247,10 @@ public final class FoShop extends JavaPlugin {
             core.close();
         }
         core = FoPluginCore.create(this);
+        sounds = core.createSounds(soundMigrations());
+        guiSounds = FoGuiSounds.create(sounds);
+        editorSounds = FoEditorSounds.create(sounds);
+        adminSounds = FoAdminSounds.create(sounds);
         core.metrics(BSTATS_PLUGIN_ID);
         core.warnIfNativeDialogsUnavailable();
         if (fileLogger != null) {
@@ -246,6 +259,18 @@ public final class FoShop extends JavaPlugin {
                 fileLogger.warn("Native dialogs unavailable: " + availability.reason());
             }
         }
+    }
+
+    private FoSoundMigrations soundMigrations() {
+        Map<String, String> sellEvents = Map.of(
+                "events.open", "sell.open",
+                "events.success", "sell.success",
+                "events.failed", "sell.failure"
+        );
+        return FoSoundMigrations.create()
+                .add(soundService -> soundService.moveFromConfigSharedEventSettings("sellgui.sounds", sellEvents))
+                .add(soundService -> soundService.moveFromConfigSharedEventSettings("gui.sell.sounds", sellEvents))
+                .build();
     }
 
     private void registerCommands() {
@@ -336,6 +361,22 @@ public final class FoShop extends JavaPlugin {
 
     public FoCoreContext getCore() {
         return core;
+    }
+
+    public FoGuiSounds getGuiSounds() {
+        return guiSounds;
+    }
+
+    public FoSoundService getSounds() {
+        return sounds;
+    }
+
+    public FoEditorSounds getEditorSounds() {
+        return editorSounds;
+    }
+
+    public FoAdminSounds getAdminSounds() {
+        return adminSounds;
     }
 
     public ShopGUIPlusConverter getConverter() {

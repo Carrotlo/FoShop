@@ -61,13 +61,6 @@ public class FoConfig {
     private boolean sellRoundedPricing;
     private boolean sellRemoveTrailingZeros;
     private boolean sellAbbreviateNumbers;
-    private boolean sellSoundsEnabled;
-    private boolean sellSoundErrorNotification;
-    private float sellSoundPitch;
-    private float sellSoundVolume;
-    private String sellOpenSound;
-    private String sellSuccessSound;
-    private String sellFailedSound;
     private Set<String> sellBlockedGamemodes = Set.of();
 
 
@@ -119,13 +112,6 @@ public class FoConfig {
         this.sellRoundedPricing = configBool("sellgui.price-format.rounded-pricing", "gui.sell.price-format.rounded-pricing", false);
         this.sellRemoveTrailingZeros = configBool("sellgui.price-format.remove-trailing-zeros", "gui.sell.price-format.remove-trailing-zeros", false);
         this.sellAbbreviateNumbers = configBool("sellgui.price-format.abbreviate-numbers", "gui.sell.price-format.abbreviate-numbers", true);
-        this.sellSoundsEnabled = configBool("sellgui.sounds.enabled", "gui.sell.sounds.enabled", true);
-        this.sellSoundErrorNotification = configBool("sellgui.sounds.error-notification", "gui.sell.sounds.error-notification", true);
-        this.sellSoundPitch = (float) configDouble("sellgui.sounds.pitch", "gui.sell.sounds.pitch", 1D);
-        this.sellSoundVolume = (float) configDouble("sellgui.sounds.volume", "gui.sell.sounds.volume", 1D);
-        this.sellOpenSound = configString("sellgui.sounds.events.open", "gui.sell.sounds.events.open", "BLOCK_CHEST_OPEN");
-        this.sellSuccessSound = configString("sellgui.sounds.events.success", "gui.sell.sounds.events.success", "ENTITY_VILLAGER_CELEBRATE");
-        this.sellFailedSound = configString("sellgui.sounds.events.failed", "gui.sell.sounds.events.failed", "ENTITY_VILLAGER_HURT");
         this.sellBlockedGamemodes = normalizeGamemodes(configStringList("sellgui.blocked-gamemodes", "gui.sell.blocked-gamemodes"));
 
     }
@@ -512,34 +498,6 @@ public class FoConfig {
 
     public boolean isSellAbbreviateNumbers() {
         return sellAbbreviateNumbers;
-    }
-
-    public boolean isSellSoundsEnabled() {
-        return sellSoundsEnabled;
-    }
-
-    public boolean isSellSoundErrorNotification() {
-        return sellSoundErrorNotification;
-    }
-
-    public float getSellSoundPitch() {
-        return sellSoundPitch;
-    }
-
-    public float getSellSoundVolume() {
-        return sellSoundVolume;
-    }
-
-    public String getSellOpenSound() {
-        return sellOpenSound;
-    }
-
-    public String getSellSuccessSound() {
-        return sellSuccessSound;
-    }
-
-    public String getSellFailedSound() {
-        return sellFailedSound;
     }
 
     public String getSellReceiptText() {

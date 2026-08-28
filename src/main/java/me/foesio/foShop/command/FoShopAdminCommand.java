@@ -40,6 +40,7 @@ public final class FoShopAdminCommand {
         FoAdminCommand command = FoAdminCommand.builder(plugin, messages)
                 .commandName("foshopadmin")
                 .permission("foshop.admin")
+                .adminSounds(plugin.getAdminSounds())
                 .adminMessages(adminMessages())
                 .versionCommand(false)
                 .addSubcommand(handlers.versionSubcommand())
@@ -114,6 +115,7 @@ public final class FoShopAdminCommand {
         return FoAdminSubcommand.builder("resetrotatingshop", context -> {
             plugin.getRotatingShopService().resetNow();
             plugin.getMessages().send(context.sender(), "rotating-shop-reset");
+            play(context.sender(), "shop.rotating-reset");
             return true;
         }).usage("resetrotatingshop").build();
     }
@@ -140,17 +142,26 @@ public final class FoShopAdminCommand {
     private void handleReload(CommandSender sender) {
         var result = plugin.reloadAll();
         ReloadFeedback.send(plugin, sender, result);
+        if (sender instanceof Player player) {
+            if (result.issues().isEmpty()) {
+                plugin.getAdminSounds().reload(player);
+            } else {
+                plugin.getAdminSounds().reloadError(player);
+            }
+        }
     }
 
     private void handleConvert(CommandSender sender, String[] args) {
         if (args.length < 2) {
             plugin.getMessages().send(sender, "convert-usage");
+            plugin.getAdminSounds().updateError(sender);
             return;
         }
 
         ShopGUIPlusConverter.SourcePlugin sourcePlugin = ShopGUIPlusConverter.SourcePlugin.fromInput(args[1]).orElse(null);
         if (sourcePlugin == null) {
             plugin.getMessages().send(sender, "convert-unknown", Map.of("{plugin}", args[1]));
+            plugin.getAdminSounds().updateError(sender);
             return;
         }
 
@@ -160,6 +171,7 @@ public final class FoShopAdminCommand {
                 mode = ShopGUIPlusConverter.ConversionMode.DRY_RUN;
             } else if (!args[2].equalsIgnoreCase("apply")) {
                 plugin.getMessages().send(sender, "convert-mode-unknown");
+                plugin.getAdminSounds().updateError(sender);
                 return;
             }
         }
@@ -184,22 +196,26 @@ public final class FoShopAdminCommand {
             plugin.getMessages().send(sender, "convert-report", Map.of("{message}", result.message()));
         } else {
             plugin.getMessages().send(sender, "convert-fail", Map.of("{reason}", result.message()));
+            plugin.getAdminSounds().updateError(sender);
         }
     }
 
     private void handleRotatingShop(CommandSender sender, String[] args) {
         if (args.length < 2 || !args[1].equalsIgnoreCase("reset")) {
             plugin.getMessages().send(sender, "admin-usage");
+            plugin.getAdminSounds().updateError(sender);
             return;
         }
 
         plugin.getRotatingShopService().resetNow();
         plugin.getMessages().send(sender, "rotating-shop-reset");
+        play(sender, "shop.rotating-reset");
     }
 
     private void handleSellBooster(CommandSender sender, String[] args) {
         if (args.length < 2) {
             plugin.getMessages().send(sender, "booster-usage");
+            plugin.getAdminSounds().updateError(sender);
             return;
         }
 
@@ -207,7 +223,10 @@ public final class FoShopAdminCommand {
             case "list", "active" -> listBoosters(sender);
             case "start", "add" -> startBooster(sender, args);
             case "clear", "remove", "delete" -> clearBooster(sender, args);
-            default -> plugin.getMessages().send(sender, "booster-usage");
+            default -> {
+                plugin.getMessages().send(sender, "booster-usage");
+                plugin.getAdminSounds().updateError(sender);
+            }
         }
     }
 
@@ -233,18 +252,21 @@ public final class FoShopAdminCommand {
     private void startBooster(CommandSender sender, String[] args) {
         if (args.length < 5) {
             plugin.getMessages().send(sender, "booster-usage");
+            plugin.getAdminSounds().updateError(sender);
             return;
         }
 
         Optional<SellBoosterScope> scope = SellBoosterScope.fromInput(args[2]);
         if (scope.isEmpty()) {
             plugin.getMessages().send(sender, "booster-invalid", Map.of("{reason}", "Unknown scope."));
+            plugin.getAdminSounds().updateError(sender);
             return;
         }
 
         SellBoosterInputParser.StartInput input = SellBoosterInputParser.parseCommandStart(scope.get(), args).orElse(null);
         if (input == null) {
             plugin.getMessages().send(sender, "booster-usage");
+            plugin.getAdminSounds().updateError(sender);
             return;
         }
 
@@ -256,12 +278,14 @@ public final class FoShopAdminCommand {
         Double multiplier = SellBoosterInputParser.parseMultiplier(input.multiplier());
         if (multiplier == null || multiplier <= 1D) {
             plugin.getMessages().send(sender, "booster-invalid", Map.of("{reason}", "Multiplier must be above 1x."));
+            plugin.getAdminSounds().updateError(sender);
             return;
         }
 
         OptionalLong duration = DurationUtil.parseSeconds(input.duration());
         if (duration.isEmpty() || duration.getAsLong() < 60L) {
             plugin.getMessages().send(sender, "booster-invalid", Map.of("{reason}", "Duration must be 60s+, 1h, or 1d."));
+            plugin.getAdminSounds().updateError(sender);
             return;
         }
 
@@ -273,6 +297,7 @@ public final class FoShopAdminCommand {
                 "{multiplier}", plugin.getSellBoosterService().formatMultiplier(booster.multiplier()),
                 "{time}", DurationUtil.format(duration.getAsLong())
         ));
+        play(sender, "shop.booster-started");
     }
 
     private SellBoosterInputParser.Target startTarget(CommandSender sender, SellBoosterScope scope, String input) {
@@ -284,6 +309,7 @@ public final class FoShopAdminCommand {
             Optional<SellBoosterInputParser.Target> target = SellBoosterInputParser.resolvePlayerTarget(input);
             if (target.isEmpty()) {
                 plugin.getMessages().send(sender, "booster-invalid", Map.of("{reason}", "Player not found."));
+                plugin.getAdminSounds().updateError(sender);
                 return null;
             }
             return target.get();
@@ -291,11 +317,13 @@ public final class FoShopAdminCommand {
 
         if (!plugin.getSellBoosterService().isFoTeamsAvailable()) {
             plugin.getMessages().send(sender, "booster-invalid", Map.of("{reason}", "FoTeams is not installed or enabled."));
+            plugin.getAdminSounds().updateError(sender);
             return null;
         }
         Optional<FoTeamsHook.TeamInfo> team = plugin.getSellBoosterService().teamByInput(input);
         if (team.isEmpty()) {
             plugin.getMessages().send(sender, "booster-invalid", Map.of("{reason}", "Team not found."));
+            plugin.getAdminSounds().updateError(sender);
             return null;
         }
         return new SellBoosterInputParser.Target(team.get().id(), team.get().name());
@@ -304,6 +332,7 @@ public final class FoShopAdminCommand {
     private void clearBooster(CommandSender sender, String[] args) {
         if (args.length < 3) {
             plugin.getMessages().send(sender, "booster-usage");
+            plugin.getAdminSounds().updateError(sender);
             return;
         }
 
@@ -311,6 +340,9 @@ public final class FoShopAdminCommand {
         if (target.equalsIgnoreCase("all")) {
             int removed = plugin.getSellBoosterService().clearAll();
             plugin.getMessages().send(sender, "booster-cleared", Map.of("{count}", String.valueOf(removed)));
+            if (removed > 0) {
+                play(sender, "shop.booster-removed");
+            }
             return;
         }
 
@@ -320,14 +352,25 @@ public final class FoShopAdminCommand {
             String owner = rawOwner.isBlank() ? "" : resolveClearOwner(scope.get(), rawOwner);
             int removed = plugin.getSellBoosterService().clearScope(scope.get(), owner);
             plugin.getMessages().send(sender, "booster-cleared", Map.of("{count}", String.valueOf(removed)));
+            if (removed > 0) {
+                play(sender, "shop.booster-removed");
+            }
             return;
         }
 
         boolean removed = plugin.getSellBoosterService().remove(target);
         if (removed) {
             plugin.getMessages().send(sender, "booster-cleared", Map.of("{count}", "1"));
+            play(sender, "shop.booster-removed");
         } else {
             plugin.getMessages().send(sender, "booster-invalid", Map.of("{reason}", "Booster id not found."));
+            plugin.getAdminSounds().updateError(sender);
+        }
+    }
+
+    private void play(CommandSender sender, String soundPath) {
+        if (sender instanceof Player player) {
+            plugin.getSounds().play(player, soundPath);
         }
     }
 

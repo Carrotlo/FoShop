@@ -19,6 +19,7 @@ public class FoSellGuiCommand implements CommandExecutor {
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if (!sender.hasPermission("foshop.sellgui.use")) {
             plugin.getMessages().send(sender, "no-permission");
+            plugin.getAdminSounds().updateError(sender);
             return true;
         }
 

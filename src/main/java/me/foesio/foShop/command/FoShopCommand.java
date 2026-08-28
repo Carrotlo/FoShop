@@ -19,6 +19,7 @@ public class FoShopCommand implements CommandExecutor {
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if (!sender.hasPermission("foshop.use")) {
             plugin.getMessages().send(sender, "no-permission");
+            plugin.getAdminSounds().updateError(sender);
             return true;
         }
 
