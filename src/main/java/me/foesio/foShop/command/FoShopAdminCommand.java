@@ -128,15 +128,7 @@ public final class FoShopAdminCommand {
     }
 
     private void handleVersion(CommandSender sender) {
-        String current = plugin.getPluginVersion();
-        plugin.getMessages().send(sender, "version-current", Map.of(
-                "{author}", "Carrotio",
-                "{version}", current
-        ));
-
-        if (plugin.getUpdateNotices() != null) {
-            plugin.getUpdateNotices().checkAndSendVersion(sender);
-        }
+        plugin.getUpdateNotices().checkAndSendVersion(sender);
     }
 
     private void handleReload(CommandSender sender) {

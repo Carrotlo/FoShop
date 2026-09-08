@@ -1,6 +1,7 @@
 package me.foesio.foShop.config;
 
 import me.foesio.core.dialog.NativeDialogConfigDefaults;
+import me.foesio.core.dialog.DialogIcons;
 import me.foesio.core.config.ResourceFiles;
 import me.foesio.core.gui.GuiTitles;
 import me.foesio.foShop.FoShop;
@@ -11,6 +12,8 @@ import org.bukkit.configuration.file.YamlConfiguration;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.StandardOpenOption;
@@ -19,6 +22,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 public class FoConfig {
@@ -144,8 +148,84 @@ public class FoConfig {
     private void loadGuiFiles() {
         guiFiles.clear();
         for (String name : List.of("main", "shop-section", "sell-gui", "rotating-shop", "buy-item", "buy-more")) {
-            guiFiles.put(name, YamlConfiguration.loadConfiguration(new File(plugin.getDataFolder(), "guis/" + name + ".yml")));
+            File file = new File(plugin.getDataFolder(), "guis/" + name + ".yml");
+            YamlConfiguration gui = YamlConfiguration.loadConfiguration(file);
+            migrateDefaultGuiStyle(name, file, gui);
+            guiFiles.put(name, gui);
         }
+    }
+
+    private boolean migrateDefaultGuiStyle(String name, File file, YamlConfiguration gui) {
+        YamlConfiguration defaults = loadGuiDefaults(name);
+        if (defaults == null) {
+            return false;
+        }
+
+        boolean changed = false;
+        if (name.equals("buy-item")) {
+            changed |= replaceExactDefault(gui, defaults, "buttons.remove-64.name", "&#ff5d73-64");
+            changed |= replaceExactDefault(gui, defaults, "buttons.remove-64.lore", List.of("&#ffffffRemove 64."));
+            changed |= replaceExactDefault(gui, defaults, "buttons.remove-10.name", "&#ff5d73-10");
+            changed |= replaceExactDefault(gui, defaults, "buttons.remove-10.lore", List.of("&#ffffffRemove 10."));
+            changed |= replaceExactDefault(gui, defaults, "buttons.remove-1.name", "&#ff5d73-1");
+            changed |= replaceExactDefault(gui, defaults, "buttons.remove-1.lore", List.of("&#ffffffRemove 1."));
+            changed |= replaceExactDefault(gui, defaults, "buttons.add-1.name", "&#3ecf8e+1");
+            changed |= replaceExactDefault(gui, defaults, "buttons.add-1.lore", List.of("&#ffffffAdd 1."));
+            changed |= replaceExactDefault(gui, defaults, "buttons.add-10.name", "&#3ecf8e+10");
+            changed |= replaceExactDefault(gui, defaults, "buttons.add-10.lore", List.of("&#ffffffAdd 10."));
+            changed |= replaceExactDefault(gui, defaults, "buttons.add-64.name", "&#3ecf8e+64");
+            changed |= replaceExactDefault(gui, defaults, "buttons.add-64.lore", List.of("&#ffffffAdd 64."));
+            changed |= replaceExactDefault(gui, defaults, "buttons.bulk.name", "&#03fc88Buy More");
+            changed |= replaceExactDefault(gui, defaults, "buttons.bulk.lore", List.of("&#ffffffChoose stack amount preset."));
+            changed |= replaceExactDefault(gui, defaults, "buttons.confirm.name", "&#3ecf8eConfirm Buy");
+            changed |= replaceExactDefault(gui, defaults, "buttons.confirm.lore", List.of(
+                    "&#ffffffBuy: &#03fc88{amount}",
+                    "&#ffffffPrice: &#03fc88{price}"
+            ));
+        } else if (name.equals("buy-more")) {
+            changed |= replaceExactDefault(gui, defaults, "option.name", "&#03fc88{stacks} stack{plural}");
+            changed |= replaceExactDefault(gui, defaults, "option.lore", List.of(
+                    "&#ffffffAmount: &#03fc88{amount}",
+                    "&#ffffffPrice: &#03fc88{price}",
+                    "&#ffffffClick to buy."
+            ));
+        } else if (name.equals("sell-gui")) {
+            changed |= replaceExactDefault(gui, defaults, "buttons.sell.name", "&#03fc88Sell Items");
+            changed |= replaceExactDefault(gui, defaults, "buttons.sell.lore", List.of(
+                    "&#ffffffPut items in the top rows.",
+                    "&#ffffffClick to sell all sellable items.",
+                    "&#a7b8b0Unsellable items are returned."
+            ));
+        }
+
+        if (changed) {
+            try {
+                gui.save(file);
+            } catch (IOException exception) {
+                plugin.getLogger().warning("Failed migrating " + file.getName() + " GUI defaults: " + exception.getMessage());
+            }
+        }
+        return changed;
+    }
+
+    private YamlConfiguration loadGuiDefaults(String name) {
+        try (InputStream input = plugin.getResource("guis/" + name + ".yml")) {
+            if (input == null) {
+                return null;
+            }
+            return YamlConfiguration.loadConfiguration(new InputStreamReader(input, StandardCharsets.UTF_8));
+        } catch (IOException exception) {
+            plugin.getLogger().warning("Failed loading GUI defaults for " + name + ": " + exception.getMessage());
+            return null;
+        }
+    }
+
+    private boolean replaceExactDefault(YamlConfiguration current, YamlConfiguration defaults, String path, Object oldValue) {
+        if (!current.isSet(path) || !Objects.equals(current.get(path), oldValue) || !defaults.isSet(path)) {
+            return false;
+        }
+        current.set(path, defaults.get(path));
+        return true;
     }
 
     private void ensureNativeDialogDefaults() {
@@ -565,7 +645,9 @@ public class FoConfig {
     }
 
     public String sectionTitleSmallCaps(String raw) {
-        return smallCapsTitle(raw);
+        // Keep the legacy method name for source compatibility, but configured
+        // inventory titles are presentation data and must not be rewritten.
+        return GuiTitles.format(Text.colorize(DialogIcons.fallbackText(raw)));
     }
 
     public String getTheme() {
@@ -632,11 +714,6 @@ public class FoConfig {
     }
 
     private String smallCapsTitle(String raw) {
-        String colored = Text.colorize(raw);
-        String small = GuiTitles.smallCaps(colored);
-        if (small.length() > 32) {
-            return small.substring(0, 32);
-        }
-        return small;
+        return GuiTitles.format(Text.colorize(DialogIcons.fallbackText(raw)));
     }
 }

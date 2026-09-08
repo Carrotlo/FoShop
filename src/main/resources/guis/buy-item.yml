@@ -1,5 +1,5 @@
 # Public buy amount selector. Slot indexes are 0-based for a 27-slot GUI.
-title: "&8Buy: {item}"
+title: "&8ʙᴜʏ: {item}"
 filler:
   material: GRAY_STAINED_GLASS_PANE
   amount: 1
@@ -13,54 +13,84 @@ buttons:
     change: -64
     material: RED_STAINED_GLASS_PANE
     amount: 1
-    name: "&#ff5d73-64"
+    name: ":red_stained_glass_pane: &#ff5d73&l-64"
     lore:
-      - "&#ffffffRemove 64."
+      - "&8ʙᴜᴛᴛᴏɴ"
+      - " "
+      - "&eⓘ Information ↓"
+      - "&7&l | &fRemoves 64 items from the purchase."
+      - " "
+      - "&#3ecf8e→ Click to Remove 64 ←"
     custom-model-data: -1
   remove-10:
     slot: 11
     change: -10
     material: RED_STAINED_GLASS_PANE
     amount: 1
-    name: "&#ff5d73-10"
+    name: ":red_stained_glass_pane: &#ff5d73&l-10"
     lore:
-      - "&#ffffffRemove 10."
+      - "&8ʙᴜᴛᴛᴏɴ"
+      - " "
+      - "&eⓘ Information ↓"
+      - "&7&l | &fRemoves 10 items from the purchase."
+      - " "
+      - "&#3ecf8e→ Click to Remove 10 ←"
     custom-model-data: -1
   remove-1:
     slot: 12
     change: -1
     material: RED_STAINED_GLASS_PANE
     amount: 1
-    name: "&#ff5d73-1"
+    name: ":red_stained_glass_pane: &#ff5d73&l-1"
     lore:
-      - "&#ffffffRemove 1."
+      - "&8ʙᴜᴛᴛᴏɴ"
+      - " "
+      - "&eⓘ Information ↓"
+      - "&7&l | &fRemoves 1 item from the purchase."
+      - " "
+      - "&#3ecf8e→ Click to Remove 1 ←"
     custom-model-data: -1
   add-1:
     slot: 14
     change: 1
     material: LIME_STAINED_GLASS_PANE
     amount: 1
-    name: "&#3ecf8e+1"
+    name: ":lime_stained_glass_pane: &#3ecf8e&l+1"
     lore:
-      - "&#ffffffAdd 1."
+      - "&8ʙᴜᴛᴛᴏɴ"
+      - " "
+      - "&eⓘ Information ↓"
+      - "&7&l | &fAdds 1 item to the purchase."
+      - " "
+      - "&#3ecf8e→ Click to Add 1 ←"
     custom-model-data: -1
   add-10:
     slot: 15
     change: 10
     material: LIME_STAINED_GLASS_PANE
     amount: 1
-    name: "&#3ecf8e+10"
+    name: ":lime_stained_glass_pane: &#3ecf8e&l+10"
     lore:
-      - "&#ffffffAdd 10."
+      - "&8ʙᴜᴛᴛᴏɴ"
+      - " "
+      - "&eⓘ Information ↓"
+      - "&7&l | &fAdds 10 items to the purchase."
+      - " "
+      - "&#3ecf8e→ Click to Add 10 ←"
     custom-model-data: -1
   add-64:
     slot: 16
     change: 64
     material: LIME_STAINED_GLASS_PANE
     amount: 1
-    name: "&#3ecf8e+64"
+    name: ":lime_stained_glass_pane: &#3ecf8e&l+64"
     lore:
-      - "&#ffffffAdd 64."
+      - "&8ʙᴜᴛᴛᴏɴ"
+      - " "
+      - "&eⓘ Information ↓"
+      - "&7&l | &fAdds 64 items to the purchase."
+      - " "
+      - "&#3ecf8e→ Click to Add 64 ←"
     custom-model-data: -1
   cancel:
     slot: 22
@@ -68,16 +98,26 @@ buttons:
     slot: 21
     material: HOPPER
     amount: 1
-    name: "&#03fc88Buy More"
+    name: ":hopper: &#03fc88&lBUY MORE"
     lore:
-      - "&#ffffffChoose stack amount preset."
+      - "&8ʙᴜᴛᴛᴏɴ"
+      - " "
+      - "&eⓘ Information ↓"
+      - "&7&l | &fChoose a stack amount preset."
+      - " "
+      - "&#3ecf8e→ Click to Choose Amount ←"
     custom-model-data: -1
   confirm:
     slot: 23
     material: LIME_SHULKER_BOX
     amount: 1
-    name: "&#3ecf8eConfirm Buy"
+    name: ":lime_shulker_box: &#3ecf8e&lCONFIRM BUY"
     lore:
-      - "&#ffffffBuy: &#03fc88{amount}"
-      - "&#ffffffPrice: &#03fc88{price}"
+      - "&8ʙᴜᴛᴛᴏɴ"
+      - " "
+      - "&eⓘ Information ↓"
+      - "&7&l | &fBuy: &#03fc88{amount}"
+      - "&7&l | &fPrice: &#03fc88{price}"
+      - " "
+      - "&#3ecf8e→ Click to Confirm Purchase ←"
     custom-model-data: -1

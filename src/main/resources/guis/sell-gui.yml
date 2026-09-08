@@ -1,5 +1,5 @@
 # Public /sellgui layout. Top rows are player input slots; bottom row is protected controls.
-title: "&8Sell Gui"
+title: "&8ꜱᴇʟʟ ɢᴜɪ"
 rows: 6
 
 filler:
@@ -14,11 +14,15 @@ buttons:
     slot: -1 # -1 means plugin default: bottom center.
     material: EMERALD
     amount: 1
-    name: "&#03fc88Sell Items"
+    name: ":emerald: &#03fc88&lSELL ITEMS"
     lore:
-      - "&#ffffffPut items in the top rows."
-      - "&#ffffffClick to sell all sellable items."
-      - "&#a7b8b0Unsellable items are returned."
+      - "&8ʙᴜᴛᴛᴏɴ"
+      - " "
+      - "&eⓘ Information ↓"
+      - "&7&l | &fPut items in the top rows."
+      - "&7&l | &fUnsellable items are returned."
+      - " "
+      - "&#3ecf8e→ Click to Sell Items ←"
     custom-model-data: -1
 
 # Optional static buttons/decorations.

@@ -82,6 +82,7 @@ public final class FoShop extends JavaPlugin {
         fileLogger.info("Plugin enable started.");
         refreshCoreContext();
         this.coreMessages = FoMessageService.load(this);
+        migrateSprites();
         this.updateNotices = core.createUpdateNotices(coreMessages, "foshop").start();
         this.userDataStore = new UserDataStore(this);
         this.userDataStore.open();
@@ -242,6 +243,30 @@ public final class FoShop extends JavaPlugin {
         coreMessages.save();
     }
 
+    private void migrateSprites() {
+        coreMessages.migrateToVersion(core.migrations(), 1, config -> {
+            boolean changed = false;
+            changed |= FoMessageService.addMissingToken(config, "tokens.prefix", ":emerald:", null);
+            changed |= FoMessageService.addMissingToken(config, "no-economy", ":redstone:");
+            changed |= FoMessageService.addMissingToken(config, "inventory-full", ":chest:");
+            changed |= FoMessageService.addMissingToken(config, "transaction-failed", ":redstone:");
+            changed |= FoMessageService.addMissingToken(config, "buy-success", ":emerald:");
+            changed |= FoMessageService.addMissingToken(config, "sell-success", ":emerald:");
+            changed |= FoMessageService.addMissingToken(config, "sellgui-success", ":emerald:");
+            changed |= FoMessageService.addMissingToken(config, "rotating-shop-reset", ":clock:");
+            changed |= FoMessageService.addMissingToken(config, "booster-started", ":experience_bottle:");
+            changed |= FoMessageService.addMissingToken(config, "booster-cleared", ":redstone:");
+            changed |= FoMessageService.addMissingToken(config, "reload-success", ":emerald:");
+            changed |= FoMessageService.addMissingToken(config, "reload-warning", ":redstone:");
+            changed |= FoMessageService.addMissingToken(config, "convert-success", ":emerald:");
+            changed |= FoMessageService.addMissingToken(config, "convert-fail", ":redstone:");
+            changed |= FoMessageService.addMissingToken(config, "editor-saved", ":emerald:");
+            changed |= FoMessageService.addMissingToken(config, "editor-invalid", ":redstone:");
+            return changed;
+        });
+        coreMessages.reload();
+    }
+
     private void refreshCoreContext() {
         if (core != null) {
             core.close();
@@ -305,10 +330,6 @@ public final class FoShop extends JavaPlugin {
         worth.setExecutor(worthCommand);
 
         FoShopAdminCommand.register(this, coreMessages);
-    }
-
-    public String getPluginVersion() {
-        return getDescription().getVersion();
     }
 
     public FoConfig getFoConfig() {

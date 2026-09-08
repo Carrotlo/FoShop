@@ -1,8 +1,10 @@
+# Edit optional item icons here. Remove any :icon: token to hide it.
+# Unsupported servers, older Java clients, and Bedrock players automatically receive clean text without item sprites.
 # FoShop editable messages.
 # Tokens: {prefix} {theme} {muted} {white} {good} {bad}
 
 tokens:
-  prefix: "#03fc88FoShop &8» #a7b8b0"
+  prefix: ":emerald: #03fc88FoShop &8» #a7b8b0"
   theme: "#03fc88"
   muted: "#a7b8b0"
   white: "#ffffff"
@@ -11,22 +13,22 @@ tokens:
 
 no-permission: "{prefix}{bad}No permission."
 player-only: "{prefix}{bad}Players only."
-no-economy: "{prefix}{bad}No economy provider. Install Vault + economy plugin."
+no-economy: "{prefix}:redstone: {bad}No economy provider. Install Vault + economy plugin."
 
 buy-disabled: "{prefix}{bad}Buying disabled."
 sell-disabled: "{prefix}{bad}Selling disabled."
-inventory-full: "{prefix}{bad}Inventory full."
+inventory-full: "{prefix}:chest: {bad}Inventory full."
 not-enough-money: "{prefix}{bad}Need {theme}{amount}{bad}."
-transaction-failed: "{prefix}{bad}Transaction failed. Try again."
+transaction-failed: "{prefix}:redstone: {bad}Transaction failed. Try again."
 missing-items: "{prefix}{bad}Not enough {theme}{item}{bad}."
 stock-insufficient: "{prefix}{bad}Only {theme}{stock}{bad} in stock."
 buy-limit-reached: "{prefix}{bad}Buy limit left: {theme}{limit}{bad}."
 permission-provider-missing: "{prefix}{bad}No Vault permission provider."
 permission-already-owned: "{prefix}{bad}Permission already owned."
 
-buy-success: "{prefix}{good}Bought {theme}{amount}x {item}{good} for {theme}{price}{good}."
-sell-success: "{prefix}{good}Sold {theme}{amount}x {item}{good} for {theme}{price}{good}."
-sellgui-success: "{prefix}{good}Sold {theme}{amount}{good} item(s) for {theme}{price}{good}."
+buy-success: "{prefix}:emerald: {good}Bought {theme}{amount}x {item}{good} for {theme}{price}{good}."
+sell-success: "{prefix}:emerald: {good}Sold {theme}{amount}x {item}{good} for {theme}{price}{good}."
+sellgui-success: "{prefix}:emerald: {good}Sold {theme}{amount}{good} item(s) for {theme}{price}{good}."
 sellgui-none: "{prefix}{bad}No sellable items found."
 sellgui-empty: "{prefix}{bad}No items placed."
 sellgui-gamemode-not-allowed: "{prefix}{bad}SellGUI blocked in {theme}{gamemode}{bad}."
@@ -42,34 +44,34 @@ sellgui-receipt-item-layout: "{good}{amount} x {item} {white}for {theme}{price}"
 worth-lore: "{white}Worth: {theme}${worth}"
 
 rotating-shop-disabled: "{prefix}{bad}Rotating shop is disabled."
-rotating-shop-reset: "{prefix}{good}Rotating shop reset."
+rotating-shop-reset: "{prefix}:clock: {good}Rotating shop reset."
 
 booster-usage: "{prefix}{muted}Usage: {theme}/foshopadmin booster <list|start|clear>{muted}. Start: {theme}start <global|player|team> [target] <multiplier> <duration>"
 booster-invalid: "{prefix}{bad}Sell booster error: {theme}{reason}"
-booster-started: "{prefix}{good}Started {theme}{multiplier}x{good} {scope} booster for {theme}{target}{good}. ID: {theme}{id}{good}, time: {theme}{time}{good}."
-booster-cleared: "{prefix}{good}Removed {theme}{count}{good} sell booster(s)."
+booster-started: "{prefix}:experience_bottle: {good}Started {theme}{multiplier}x{good} {scope} booster for {theme}{target}{good}. ID: {theme}{id}{good}, time: {theme}{time}{good}."
+booster-cleared: "{prefix}:redstone: {good}Removed {theme}{count}{good} sell booster(s)."
 booster-list-empty: "{prefix}{muted}No active sell boosters."
 booster-list-header: "{prefix}{good}Active sell boosters: {theme}{count}"
 booster-list-entry: "{prefix}{muted}{id} {white}| {theme}{scope}{muted} {target} {white}| {theme}{multiplier}x{muted} for {theme}{time}"
 
 admin-usage: "{prefix}{muted}Usage: {theme}/foshopadmin <version|reload|editor|booster|rotatingshop reset|convert <ShopGUIPlus|EconomyShopGUI> [dryrun]>"
-reload-success: "{prefix}{good}Reloaded. Sections: {theme}{count}{good}."
+admin-command-missing: "{prefix}{bad}Admin command is missing from plugin.yml: {theme}{command}"
+admin-command-failed: "{prefix}{bad}Command failed. {muted}{error}"
+reload-success: "{prefix}:emerald: {good}Reloaded. Sections: {theme}{count}{good}."
 reload-detail: "{prefix}{muted}Skipped sections: {bad}{sections}{muted} | skipped items: {bad}{items}{muted}."
-reload-warning: "{prefix}{bad}Reload completed with {theme}{count}{bad} issue(s). {muted}{reason}"
-
-version-current: "{prefix}{muted}Author: {theme}{author}{muted} | Version: {theme}{version}"
+reload-warning: "{prefix}:redstone: {bad}Reload completed with {theme}{count}{bad} issue(s). {muted}{reason}"
 
 convert-usage: "{prefix}{muted}Usage: {theme}/foshopadmin convert <ShopGUIPlus|EconomyShopGUI> [dryrun]"
 convert-unknown: "{prefix}{bad}Unsupported converter: {theme}{plugin}{bad}. Supported: {theme}ShopGUIPlus{bad}, {theme}EconomyShopGUI"
 convert-mode-unknown: "{prefix}{bad}Unknown mode. Use {theme}/foshopadmin convert <ShopGUIPlus|EconomyShopGUI> [dryrun]"
-convert-success: "{prefix}{good}Converted {theme}{count}{good} section(s) from {theme}{plugin}{good}."
+convert-success: "{prefix}:emerald: {good}Converted {theme}{count}{good} section(s) from {theme}{plugin}{good}."
 convert-dryrun: "{prefix}{good}Dry-run found {theme}{count}{good} convertible {theme}{plugin}{good} section(s)."
 convert-report: "{prefix}{muted}{message}"
-convert-fail: "{prefix}{bad}Conversion failed: {theme}{reason}"
+convert-fail: "{prefix}:redstone: {bad}Conversion failed: {theme}{reason}"
 
-editor-saved: "{prefix}{good}Saved."
+editor-saved: "{prefix}:emerald: {good}Saved."
 editor-cancelled: "{prefix}{muted}Cancelled."
-editor-invalid: "{prefix}{bad}Invalid: {theme}{reason}"
+editor-invalid: "{prefix}:redstone: {bad}Invalid: {theme}{reason}"
 editor-file-logging-toggle: "{prefix}{muted}File logging {theme}{state}{muted}."
 editor-prompt: "{prefix}{prompt}"
 editor-search-applied: "{prefix}{good}Search applied."

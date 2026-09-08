@@ -13,11 +13,14 @@ import me.foesio.core.editor.EditorSaveResult;
 import me.foesio.core.editor.EditorSettingSaver;
 import me.foesio.core.editor.EditorDialogInputs;
 import me.foesio.core.editor.EditorItemFactory;
+import me.foesio.core.dialog.DialogIcons;
 import me.foesio.core.gui.GuiButtonConfig;
 import me.foesio.core.gui.EntryBrowserClick;
 import me.foesio.core.gui.EntryBrowserHolder;
 import me.foesio.core.gui.EntryBrowserMenus;
 import me.foesio.core.gui.EntryBrowserRequest;
+import me.foesio.core.message.FoStyle;
+import me.foesio.core.text.FoText;
 import me.foesio.core.inventory.InventoryDepositResult;
 import me.foesio.core.inventory.OverflowPolicy;
 import me.foesio.core.material.MaterialTypes;
@@ -159,6 +162,12 @@ public class GuiService implements Listener {
     }
 
     private void openInventory(Player player, Inventory inventory) {
+        for (int slot = 0; slot < inventory.getSize(); slot++) {
+            ItemStack item = inventory.getItem(slot);
+            if (item != null) {
+                inventory.setItem(slot, DialogIcons.forViewer(player, item));
+            }
+        }
         player.openInventory(inventory);
         screenOpened(player, inventory.getHolder());
     }
@@ -314,12 +323,12 @@ public class GuiService implements Listener {
         }
 
         holder.backSlot = readGuiSlot("shop-section", "buttons.back", inventory.getSize() - 5, inventory.getSize());
-        inventory.setItem(holder.backSlot, GUI_BUTTONS.back());
+        inventory.setItem(holder.backSlot, GUI_BUTTONS.back(player));
         if (section.totalPages() > 1) {
             holder.previousSlot = readGuiSlot("shop-section", "buttons.previous", inventory.getSize() - 9, inventory.getSize());
             holder.nextSlot = readGuiSlot("shop-section", "buttons.next", inventory.getSize() - 1, inventory.getSize());
-            setPreviousPageButton(inventory, holder.previousSlot, currentPage, section.totalPages());
-            setNextPageButton(inventory, holder.nextSlot, currentPage, section.totalPages());
+            setPreviousPageButton(player, inventory, holder.previousSlot, currentPage, section.totalPages());
+            setNextPageButton(player, inventory, holder.nextSlot, currentPage, section.totalPages());
         }
 
         openInventory(player, inventory);
@@ -342,7 +351,7 @@ public class GuiService implements Listener {
         if (entries.isEmpty()) {
             GuiButton empty = readGuiButton("rotating-shop", "empty", 13, Material.GRAY_DYE,
                     "&#ff5d73No Boosts", List.of("&#ffffffNo sellable rotating items available."), inventory.getSize());
-            inventory.setItem(empty.slot(), createButtonItem(empty));
+            inventory.setItem(empty.slot(), createButtonItem(player, empty));
             openInventory(player, inventory);
             return;
         }
@@ -391,16 +400,16 @@ public class GuiService implements Listener {
         boolean enabled = plugin.getFoConfig().isGlobalSellPricesEnabled();
         long priced = plugin.getGlobalSellPriceService().entries().stream().filter(entry -> entry.enabled() && entry.price() > 0D).count()
                 + plugin.getGlobalSellPriceService().potionEntries().stream().filter(entry -> entry.enabled() && entry.price() > 0D).count();
-        inventory.setItem(10, toggleItem("Global Sell Prices", enabled, "Use global-sell-prices.yml as fallback sell prices."));
-        inventory.setItem(12, createItem(Material.EMERALD, "&#03fc88Price Browser", List.of(
+        inventory.setItem(10, toggleItem(player, "Global Sell Prices", enabled, "Use global-sell-prices.yml as fallback sell prices."));
+        inventory.setItem(12, button(player, Material.EMERALD, "Price Browser", List.of(
                 "&#ffffffEntries: &#03fc88" + (plugin.getGlobalSellPriceService().entries().size() + plugin.getGlobalSellPriceService().potionEntries().size()),
                 "&#ffffffEnabled prices: &#03fc88" + priced,
                 "&#a7b8b0Click to browse, edit, blacklist, and toggle rotating."
-        )));
-        inventory.setItem(11, toggleItem("Worth Item Lore", plugin.getFoConfig().isWorthLoreConfiguredEnabled(),
+        ), "browse prices"));
+        inventory.setItem(11, toggleItem(player, "Worth Item Lore", plugin.getFoConfig().isWorthLoreConfiguredEnabled(),
                 "Show packet-only stack worth in inventories and containers."));
         inventory.setItem(14, EditorItemFactory.filler());
-        inventory.setItem(THREE_ROW_BACK_SLOT, GUI_BUTTONS.back());
+        inventory.setItem(THREE_ROW_BACK_SLOT, GUI_BUTTONS.back(player));
 
         openInventory(player, inventory);
     }
@@ -434,14 +443,14 @@ public class GuiService implements Listener {
             inventory.setItem(22, createItem(Material.GRAY_DYE, "&#ff5d73No Matches", List.of("&#ffffffNo global sell prices matched your search.")));
         }
 
-        setPreviousPageButton(inventory, 45, currentPage, totalPages);
-        inventory.setItem(47, EditorItemFactory.cycle(plugin.getMessages(), "Sort: " + activeSort.display(), activeSort.name(), WORTH_SORT_OPTIONS));
+        setPreviousPageButton(player, inventory, 45, currentPage, totalPages);
+        inventory.setItem(47, EditorItemFactory.cycle(player, plugin.getMessages(), "Sort", activeSort.name(), WORTH_SORT_OPTIONS));
         if (editor) {
-            inventory.setItem(49, GUI_BUTTONS.back());
+            inventory.setItem(49, GUI_BUTTONS.back(player));
         }
-        inventory.setItem(51, GUI_BUTTONS.search(search));
-        setClearSearchButton(inventory, 52, "worth", search);
-        setNextPageButton(inventory, 53, currentPage, totalPages);
+        inventory.setItem(51, GUI_BUTTONS.search(player, search));
+        setClearSearchButton(player, inventory, 52, "worth", search);
+        setNextPageButton(player, inventory, 53, currentPage, totalPages);
 
         openInventory(player, inventory);
     }
@@ -471,7 +480,7 @@ public class GuiService implements Listener {
                 ),
                 inventory.getSize());
         holder.sellSlot = sellButton.slot();
-        inventory.setItem(sellButton.slot(), createButtonItem(sellButton));
+        inventory.setItem(sellButton.slot(), createButtonItem(player, sellButton));
 
         applySellGuiDecorations(inventory, holder);
         openInventory(player, inventory);
@@ -575,16 +584,16 @@ public class GuiService implements Listener {
 
         fillBackground(inventory);
 
-        inventory.setItem(10, createItem(Material.REDSTONE, "&#03fc88Reload Plugin", List.of("&#ffffffReload config, messages, GUI files, and shops.")));
-        inventory.setItem(11, createItem(Material.EMERALD, "&#03fc88Global Sell Prices", List.of("&#ffffffManage global-sell-prices.yml and /worth.")));
-        inventory.setItem(12, createItem(Material.COMPARATOR, "&#03fc88Settings", List.of("&#ffffffEdit config toggles, sounds, price display, and limits.")));
-        inventory.setItem(13, createItem(Material.CLOCK, "&#03fc88Rotating Shop", List.of("&#ffffffEdit boosted item rotation.")));
+        inventory.setItem(10, button(player, Material.REDSTONE, "Reload Plugin", List.of("Reload config, messages, GUI files, and shops."), "reload the plugin"));
+        inventory.setItem(11, button(player, Material.EMERALD, "Global Sell Prices", List.of("Manage global-sell-prices.yml and /worth."), "manage global sell prices"));
+        inventory.setItem(12, button(player, Material.COMPARATOR, "Settings", List.of("Edit config toggles, sounds, price display, and limits."), "open settings"));
+        inventory.setItem(13, button(player, Material.CLOCK, "Rotating Shop", List.of("Edit boosted item rotation."), "open the rotating shop"));
 
         String stateText = plugin.getFoConfig().isFileLoggingEnabled() ? "&#3ecf8eEnabled" : "&#ff5d73Disabled";
-        inventory.setItem(14, createItem(Material.WRITABLE_BOOK, "&#03fc88File Logging", List.of("&#ffffffCurrent: " + stateText, "&#a7b8b0Debug file: logs/latest.log")));
+        inventory.setItem(14, button(player, Material.WRITABLE_BOOK, "File Logging", List.of("Current: " + stateText, "Debug file: logs/latest.log"), "toggle file logging"));
 
-        inventory.setItem(15, createItem(Material.EXPERIENCE_BOTTLE, "&#03fc88Sell Boosters", List.of("&#ffffffManage global, player, and team sell price boosters.")));
-        inventory.setItem(16, createItem(Material.CHEST, "&#03fc88Shop Section Manager", List.of("&#ffffffManage sections and products.")));
+        inventory.setItem(15, button(player, Material.EXPERIENCE_BOTTLE, "Sell Boosters", List.of("Manage global, player, and team sell price boosters."), "manage sell boosters"));
+        inventory.setItem(16, button(player, Material.CHEST, "Shop Section Manager", List.of("Manage sections and products."), "manage shop sections"));
 
         openInventory(player, inventory);
     }
@@ -596,19 +605,19 @@ public class GuiService implements Listener {
 
         fillBackground(inventory);
 
-        inventory.setItem(10, createItem(Material.CHEST, "&#03fc88Main Shop Rows", List.of("&#ffffffCurrent: &#03fc88" + plugin.getFoConfig().getMainRows(), "&#ffffffClick to enter 1-6 rows.")));
-        inventory.setItem(11, toggleItem("Rounded Pricing", plugin.getConfig().getBoolean("sellgui.price-format.rounded-pricing", false), "Format sell values with two decimals."));
-        inventory.setItem(12, toggleItem("Trim Zeros", plugin.getConfig().getBoolean("sellgui.price-format.remove-trailing-zeros", false), "Remove trailing .00 from sell values."));
-        inventory.setItem(13, toggleItem("Abbreviate Prices", plugin.getFoConfig().isSellAbbreviateNumbers(), "Use k/m/b for large sell values."));
+        inventory.setItem(10, button(player, Material.CHEST, "Main Shop Rows", List.of("Current: " + plugin.getFoConfig().getMainRows(), "Click to enter 1-6 rows."), "edit the shop rows"));
+        inventory.setItem(11, toggleItem(player, "Rounded Pricing", plugin.getConfig().getBoolean("sellgui.price-format.rounded-pricing", false), "Format sell values with two decimals."));
+        inventory.setItem(12, toggleItem(player, "Trim Zeros", plugin.getConfig().getBoolean("sellgui.price-format.remove-trailing-zeros", false), "Remove trailing .00 from sell values."));
+        inventory.setItem(13, toggleItem(player, "Abbreviate Prices", plugin.getFoConfig().isSellAbbreviateNumbers(), "Use k/m/b for large sell values."));
 
-        inventory.setItem(14, toggleItem("Sell Titles", plugin.getFoConfig().isSellTitlesEnabled(), "Show title after SellGUI sale."));
-        inventory.setItem(15, toggleItem("Sell Action Bar", plugin.getFoConfig().isSellActionBarEnabled(), "Show action bar after SellGUI sale."));
-        inventory.setItem(16, toggleItem("Transaction Log", plugin.getFoConfig().isSellTransactionLogEnabled(), "Write SellGUI sale history."));
+        inventory.setItem(14, toggleItem(player, "Sell Titles", plugin.getFoConfig().isSellTitlesEnabled(), "Show title after SellGUI sale."));
+        inventory.setItem(15, toggleItem(player, "Sell Action Bar", plugin.getFoConfig().isSellActionBarEnabled(), "Show action bar after SellGUI sale."));
+        inventory.setItem(16, toggleItem(player, "Transaction Log", plugin.getFoConfig().isSellTransactionLogEnabled(), "Write SellGUI sale history."));
 
-        inventory.setItem(19, EditorItemFactory.cycle(plugin.getMessages(), "Receipt Mode", Integer.toString(plugin.getFoConfig().getSellReceiptType()), RECEIPT_TYPE_OPTIONS));
-        inventory.setItem(20, createItem(Material.IRON_BARS, "&#03fc88Blocked Gamemodes", List.of("&#ffffffCurrent: &#03fc88" + String.join(", ", effectiveStringListSetting("sellgui.blocked-gamemodes")), "&#ffffffClick to edit list.")));
+        inventory.setItem(19, EditorItemFactory.cycle(player, plugin.getMessages(), "Receipt Mode", Integer.toString(plugin.getFoConfig().getSellReceiptType()), RECEIPT_TYPE_OPTIONS));
+        inventory.setItem(20, button(player, Material.IRON_BARS, "Blocked Gamemodes", List.of("Current: " + String.join(", ", effectiveStringListSetting("sellgui.blocked-gamemodes")), "Click to edit list."), "edit blocked gamemodes"));
 
-        inventory.setItem(FOUR_ROW_BACK_SLOT, GUI_BUTTONS.back());
+        inventory.setItem(FOUR_ROW_BACK_SLOT, GUI_BUTTONS.back(player));
 
         openInventory(player, inventory);
     }
@@ -620,19 +629,19 @@ public class GuiService implements Listener {
 
         fillBackground(inventory);
 
-        inventory.setItem(10, toggleItem("Sell Boosters", plugin.getSellBoosterService().isEnabled(), "Apply active boosters to sell prices."));
-        inventory.setItem(11, toggleItem("Stack Boosters", plugin.getSellBoosterService().isStackBoosters(), "Multiply active boosters together. Disabled uses the highest booster."));
-        inventory.setItem(12, toggleItem("Team Boosters", plugin.getSellBoosterService().isTeamBoostersEnabled(), "Use FoTeams team boosters when FoTeams is installed."));
-        inventory.setItem(13, toggleItem("Stack Rotating", plugin.getSellBoosterService().isStackWithRotatingShop(), "Multiply rotating shop boosts with sell boosters. Disabled uses the highest multiplier."));
-        inventory.setItem(14, createItem(Material.BOOK, "&#03fc88Active Boosters", List.of(
-                "&#ffffffCurrent: &#03fc88" + plugin.getSellBoosterService().activeBoosters().size(),
-                "&#ffffffClick to browse and remove active boosters."
-        )));
-        inventory.setItem(15, createItem(Material.NETHER_STAR, "&#03fc88Start Global Booster", List.of("&#ffffffPrompt format: &#03fc88multiplier duration", "&#a7b8b0Example: 2 1h")));
-        inventory.setItem(16, createItem(Material.PLAYER_HEAD, "&#03fc88Start Player Booster", List.of("&#ffffffPrompt format: &#03fc88player multiplier duration", "&#a7b8b0Example: Steve 2 1h")));
-        inventory.setItem(20, createItem(Material.SHIELD, "&#03fc88Start Team Booster", List.of("&#ffffffPrompt format: &#03fc88team multiplier duration", "&#a7b8b0Requires FoTeams.")));
-        inventory.setItem(FOUR_ROW_BACK_SLOT, GUI_BUTTONS.back());
-        inventory.setItem(19, toggleItem("Bossbar", effectiveBooleanSetting("sell-boosters.bossbar.enabled"), "Show active sell boost bossbar to boosted players."));
+        inventory.setItem(10, toggleItem(player, "Sell Boosters", plugin.getSellBoosterService().isEnabled(), "Apply active boosters to sell prices."));
+        inventory.setItem(11, toggleItem(player, "Stack Boosters", plugin.getSellBoosterService().isStackBoosters(), "Multiply active boosters together. Disabled uses the highest booster."));
+        inventory.setItem(12, toggleItem(player, "Team Boosters", plugin.getSellBoosterService().isTeamBoostersEnabled(), "Use FoTeams team boosters when FoTeams is installed."));
+        inventory.setItem(13, toggleItem(player, "Stack Rotating", plugin.getSellBoosterService().isStackWithRotatingShop(), "Multiply rotating boosts with sell boosters. Disabled uses the highest multiplier."));
+        inventory.setItem(14, button(player, Material.BOOK, "Active Boosters", List.of(
+                "Current: " + plugin.getSellBoosterService().activeBoosters().size(),
+                "Click to browse and remove active boosters."
+        ), "browse active boosters"));
+        inventory.setItem(15, button(player, Material.NETHER_STAR, "Start Global Booster", List.of("Prompt format: multiplier duration", "Example: 2 1h"), "start a global booster"));
+        inventory.setItem(16, button(player, Material.PLAYER_HEAD, "Start Player Booster", List.of("Prompt format: player multiplier duration", "Example: Steve 2 1h"), "start a player booster"));
+        inventory.setItem(20, button(player, Material.SHIELD, "Start Team Booster", List.of("Prompt format: team multiplier duration", "Requires FoTeams."), "start a team booster"));
+        inventory.setItem(FOUR_ROW_BACK_SLOT, GUI_BUTTONS.back(player));
+        inventory.setItem(19, toggleItem(player, "Bossbar", effectiveBooleanSetting("sell-boosters.bossbar.enabled"), "Show active sell boost bossbar to boosted players."));
 
         openInventory(player, inventory);
     }
@@ -666,9 +675,9 @@ public class GuiService implements Listener {
             inventory.setItem(22, createItem(Material.GRAY_DYE, "&#ff5d73No Active Boosters", List.of("&#ffffffStart one from the previous page.")));
         }
 
-        inventory.setItem(SIX_ROW_BACK_SLOT, GUI_BUTTONS.back());
-        setPreviousPageButton(inventory, 48, currentPage, totalPages);
-        setNextPageButton(inventory, 50, currentPage, totalPages);
+        inventory.setItem(SIX_ROW_BACK_SLOT, GUI_BUTTONS.back(player));
+        setPreviousPageButton(player, inventory, 48, currentPage, totalPages);
+        setNextPageButton(player, inventory, 50, currentPage, totalPages);
 
         openInventory(player, inventory);
     }
@@ -682,23 +691,23 @@ public class GuiService implements Listener {
 
         RotatingShopService service = plugin.getRotatingShopService();
         String status = service.isEnabled() ? "&#3ecf8eEnabled" : "&#ff5d73Disabled";
-        inventory.setItem(10, toggleItem("Rotating Shop", service.isEnabled(), "Allow /rotatingshop boosted sell prices."));
-        inventory.setItem(12, createItem(Material.CLOCK, "&#03fc88Reset Timer", List.of(
-                "&#ffffffCurrent: &#03fc88" + DurationUtil.format(service.resetIntervalSeconds()),
-                "&#ffffffSeconds: &#03fc88" + service.resetIntervalSeconds(),
-                "&#a7b8b0Click to edit, e.g. 1d, 12h, 30m."
-        )));
-        inventory.setItem(13, createItem(Material.NETHER_STAR, "&#03fc88Reset Now", List.of(
-                "&#ffffffPick new boosted items now.",
-                "&#ffffffCurrent: " + status,
-                "&#a7b8b0Active boosts: &#03fc88" + service.activeEntries().size()
-        )));
-        inventory.setItem(14, toggleItem("Stack Sell Boosters", plugin.getSellBoosterService().isStackWithRotatingShop(), "Multiply rotating boosts with sell boosters. Disabled uses the highest multiplier."));
-        inventory.setItem(11, createItem(Material.CHEST, "&#03fc88Section Pool", List.of(
-                "&#ffffffToggle which shop sections can be picked.",
-                "&#a7b8b0Disabled shop sections are never picked."
-        )));
-        inventory.setItem(THREE_ROW_BACK_SLOT, GUI_BUTTONS.back());
+        inventory.setItem(10, toggleItem(player, "Rotating Shop", service.isEnabled(), "Allow /rotatingshop boosted sell prices."));
+        inventory.setItem(12, button(player, Material.CLOCK, "Reset Timer", List.of(
+                "Current: " + DurationUtil.format(service.resetIntervalSeconds()),
+                "Seconds: " + service.resetIntervalSeconds(),
+                "Click to edit, e.g. 1d, 12h, 30m."
+        ), "edit the reset timer"));
+        inventory.setItem(13, button(player, Material.NETHER_STAR, "Reset Now", List.of(
+                "Pick new boosted items now.",
+                "Current: " + status,
+                "Active boosts: " + service.activeEntries().size()
+        ), "reset the rotation"));
+        inventory.setItem(14, toggleItem(player, "Stack Sell Boosters", plugin.getSellBoosterService().isStackWithRotatingShop(), "Multiply rotating boosts with sell boosters. Disabled uses the highest multiplier."));
+        inventory.setItem(11, button(player, Material.CHEST, "Section Pool", List.of(
+                "Toggle which shop sections can be picked.",
+                "Disabled shop sections are never picked."
+        ), "configure section pool"));
+        inventory.setItem(THREE_ROW_BACK_SLOT, GUI_BUTTONS.back(player));
 
         openInventory(player, inventory);
     }
@@ -773,13 +782,13 @@ public class GuiService implements Listener {
 
         long activeItems = countRotatingParticipatingItems(section);
         long totalItems = countRotatingSellableItems(section);
-        inventory.setItem(10, toggleItem("Section Pool", plugin.getRotatingShopService().sectionParticipates(section.id()),
+        inventory.setItem(10, toggleItem(player, "Section Pool", plugin.getRotatingShopService().sectionParticipates(section.id()),
                 "Allow this section in rotating shop picks."));
         inventory.setItem(12, createItem(Material.CHEST, "&#03fc88Item Pool", List.of(
                 "&#ffffffToggle individual sellable items.",
                 "&#a7b8b0Active: &#03fc88" + activeItems + " / " + totalItems
         )));
-        inventory.setItem(THREE_ROW_BACK_SLOT, GUI_BUTTONS.back());
+        inventory.setItem(THREE_ROW_BACK_SLOT, GUI_BUTTONS.back(player));
 
         openInventory(player, inventory);
     }
@@ -851,10 +860,11 @@ public class GuiService implements Listener {
         screenOpened(player, player.getOpenInventory().getTopInventory().getHolder());
     }
 
-    private ItemStack toggleItem(String label, boolean enabled, String description) {
-        return createItem(enabled ? Material.LIME_DYE : Material.GRAY_DYE,
-                enabled ? "&#3ecf8e" + label : "&#ff5d73" + label,
-                List.of("&#ffffff" + description, "&#ffffffCurrent: " + (enabled ? "&#3ecf8eEnabled" : "&#ff5d73Disabled"), "&#a7b8b0Click to toggle."));
+    private ItemStack toggleItem(Player player, String label, boolean enabled, String description) {
+        return EditorItemFactory.button(player, enabled ? Material.LIME_DYE : Material.RED_DYE,
+                enabled ? FoStyle.GOOD : FoStyle.BAD, label,
+                List.of(description, "State: " + (enabled ? FoStyle.GOOD + "ON" : FoStyle.BAD + "OFF")),
+                "toggle");
     }
 
     private void openSectionEditorList(Player player, int page) {
@@ -879,10 +889,10 @@ public class GuiService implements Listener {
                 .filter(search)
                 .buttons(GUI_BUTTONS)
                 .showBack(true)
-                .addButton(createItem(Material.ANVIL, "&#03fc88New Section", List.of(
+                .addButton(button(player, Material.ANVIL, "New Section", List.of(
                         "&#ffffffCreate a new shop section.",
                         "&#a7b8b0Click then type section id in chat."
-                )))
+                ), "create a section"))
                 .build());
         screenOpened(player, player.getOpenInventory().getTopInventory().getHolder());
     }
@@ -923,14 +933,14 @@ public class GuiService implements Listener {
 
         fillBackground(inventory);
 
-        inventory.setItem(10, createItem(Material.CHEST, "&#03fc88Products", List.of("&#ffffffOpen product browser.")));
+        inventory.setItem(10, button(player, Material.CHEST, "Products", List.of("Open product browser."), "browse products"));
         inventory.setItem(11, createSectionIconCopyItem(section));
-        inventory.setItem(12, createItem(Material.HOPPER, "&#03fc88Edit Size", List.of("&#ffffffCurrent: &#03fc88" + section.size(), "&#ffffffClick to enter 9-54 divisible by 9.")));
-        inventory.setItem(13, createItem(Material.WRITABLE_BOOK, "&#03fc88Edit Description", List.of("&#ffffffLines: &#03fc88" + section.description().size(), "&#ffffffUse | between lines.")));
-        inventory.setItem(14, createItem(Material.COMPASS, "&#03fc88Main Menu Slot", List.of("&#ffffffCurrent: &#03fc88" + section.slot(), "&#ffffffClick to lock this section to a /foshop slot.", "&#a7b8b0Visible range now: 0-" + (plugin.getFoConfig().getMainSize() - 1))));
-        inventory.setItem(15, toggleItem("Section Enabled", section.enabled(), "Show this section in /shop."));
-        inventory.setItem(16, createItem(Material.LAVA_BUCKET, "&#ff5d73Remove Section", List.of("&#ffffffDeletes this section and all products in it.")));
-        inventory.setItem(THREE_ROW_BACK_SLOT, GUI_BUTTONS.back());
+        inventory.setItem(12, button(player, Material.HOPPER, "Edit Size", List.of("Current: " + section.size(), "Click to enter 9-54 divisible by 9."), "edit the size"));
+        inventory.setItem(13, button(player, Material.WRITABLE_BOOK, "Edit Description", List.of("Lines: " + section.description().size(), "Use | between lines."), "edit the description"));
+        inventory.setItem(14, button(player, Material.COMPASS, "Main Menu Slot", List.of("Current: " + section.slot(), "Click to lock this section to a /foshop slot.", "Visible range now: 0-" + (plugin.getFoConfig().getMainSize() - 1)), "edit the menu slot"));
+        inventory.setItem(15, toggleItem(player, "Section Enabled", section.enabled(), "Show this section in /shop."));
+        inventory.setItem(16, button(player, Material.LAVA_BUCKET, FoStyle.BAD, "Remove Section", List.of("Deletes this section and all products in it."), "open confirmation"));
+        inventory.setItem(THREE_ROW_BACK_SLOT, GUI_BUTTONS.back(player));
 
         openInventory(player, inventory);
     }
@@ -994,11 +1004,11 @@ public class GuiService implements Listener {
                 .filter(search)
                 .buttons(GUI_BUTTONS)
                 .showBack(true)
-                .addButton(createItem(Material.ANVIL, "&#03fc88Add Product From Cursor", List.of(
+                .addButton(button(player, Material.ANVIL, "Add Product From Cursor", List.of(
                         "&#ffffffHold an item on your cursor.",
                         "&#ffffffClick to add it as a product.",
                         "&#a7b8b0Prices default to disabled (-1)."
-                )))
+                ), "add a product"))
                 .build());
         screenOpened(player, player.getOpenInventory().getTopInventory().getHolder());
     }
@@ -1047,22 +1057,22 @@ public class GuiService implements Listener {
                 "&#ffffffSlot: &#03fc88" + item.slot()
         )));
 
-        inventory.setItem(10, createItem(Material.NAME_TAG, "&#03fc88Edit Product ID", List.of("&#ffffffCurrent: &#03fc88" + item.id(), "&#a7b8b0Chat input, type cancel to abort.")));
-        inventory.setItem(11, createItem(item.material(), "&#03fc88Edit Material", List.of("&#ffffffCurrent: &#03fc88" + item.material().name(), "&#a7b8b0Hold cursor item + click to copy material/name/lore/model/enchants.")));
-        inventory.setItem(12, createItem(Material.CHEST, "&#03fc88Edit Amount", List.of("&#ffffffCurrent: &#03fc88" + item.amount(), "&#a7b8b0Type a number 1-" + item.effectiveStackSize())));
+        inventory.setItem(10, button(player, Material.NAME_TAG, "Edit Product ID", List.of("Current: " + item.id(), "Chat input, type cancel to abort."), "edit the product ID"));
+        inventory.setItem(11, button(player, item.material(), "Edit Material", List.of("Current: " + item.material().name(), "Hold cursor item + click to copy material/name/lore/model/enchants."), "edit the material"));
+        inventory.setItem(12, button(player, Material.CHEST, "Edit Amount", List.of("Current: " + item.amount(), "Type a number 1-" + item.effectiveStackSize()), "edit the amount"));
 
-        inventory.setItem(14, createItem(Material.ITEM_FRAME, "&#03fc88Edit GUI Slot", List.of("&#ffffffCurrent: &#03fc88" + item.slot(), "&#a7b8b0Type a slot index (0-" + (section.size() - 1) + ").")));
-        inventory.setItem(15, createItem(Material.EMERALD, "&#03fc88Edit Buy Price", List.of("&#ffffffCurrent: &#03fc88" + formatPrice(item.buyPrice()), "&#a7b8b0Type number or -1/disable.")));
-        inventory.setItem(16, createItem(Material.GOLD_INGOT, "&#03fc88Edit Sell Price", List.of("&#ffffffCurrent: &#03fc88" + formatPrice(item.sellPrice()), "&#a7b8b0Type number or -1/disable.")));
+        inventory.setItem(14, button(player, Material.ITEM_FRAME, "Edit GUI Slot", List.of("Current: " + item.slot(), "Type a slot index (0-" + (section.size() - 1) + ")."), "edit the GUI slot"));
+        inventory.setItem(15, button(player, Material.EMERALD, "Edit Buy Price", List.of("Current: " + formatPrice(item.buyPrice()), "Type number or -1/disable."), "edit the buy price"));
+        inventory.setItem(16, button(player, Material.GOLD_INGOT, "Edit Sell Price", List.of("Current: " + formatPrice(item.sellPrice()), "Type number or -1/disable."), "edit the sell price"));
 
-        inventory.setItem(19, EditorItemFactory.cycle(plugin.getMessages(), "Edit Type", editorItemTypeValue(item.type()), ITEM_TYPE_OPTIONS));
-        inventory.setItem(20, createItem(Material.MAP, "&#03fc88Edit Page", List.of("&#ffffffCurrent: &#03fc88" + (item.page() + 1), "&#a7b8b0Type a page number, starting at 1.")));
-        inventory.setItem(21, createItem(Material.REPEATING_COMMAND_BLOCK, "&#03fc88Edit Action Data", List.of("&#ffffffPermission node / commands.", "&#a7b8b0Commands use | between lines.")));
-        inventory.setItem(22, createItem(Material.HOPPER, "&#03fc88Edit Stack Cap", List.of("&#ffffffCurrent: &#03fc88" + item.effectiveStackSize(), "&#a7b8b0Type a number 1-" + Math.min(64, item.material().getMaxStackSize()))));
-        inventory.setItem(23, createItem(Material.BARREL, "&#03fc88Edit Stock", List.of("&#ffffffCurrent: &#03fc88" + (item.stock() == null ? "unlimited" : item.stock()), "&#a7b8b0Type amount or -1 to disable.")));
-        inventory.setItem(24, createItem(Material.CLOCK, "&#03fc88Edit Buy Limit", List.of("&#ffffffCurrent: &#03fc88" + (item.buyLimit() == null ? "unlimited" : item.buyLimit()), "&#a7b8b0Type amount or -1 to disable.")));
-        inventory.setItem(25, createItem(Material.LAVA_BUCKET, "&#ff5d73Remove Product", List.of("&#ffffffDeletes this product from section.")));
-        inventory.setItem(FOUR_ROW_BACK_SLOT, GUI_BUTTONS.back());
+        inventory.setItem(19, EditorItemFactory.cycle(player, plugin.getMessages(), "Edit Type", editorItemTypeValue(item.type()), ITEM_TYPE_OPTIONS));
+        inventory.setItem(20, button(player, Material.MAP, "Edit Page", List.of("Current: " + (item.page() + 1), "Type a page number, starting at 1."), "edit the page"));
+        inventory.setItem(21, button(player, Material.REPEATING_COMMAND_BLOCK, "Edit Action Data", List.of("Permission node / commands.", "Commands use | between lines."), "edit action data"));
+        inventory.setItem(22, button(player, Material.HOPPER, "Edit Stack Cap", List.of("Current: " + item.effectiveStackSize(), "Type a number 1-" + Math.min(64, item.material().getMaxStackSize())), "edit the stack cap"));
+        inventory.setItem(23, button(player, Material.BARREL, "Edit Stock", List.of("Current: " + (item.stock() == null ? "unlimited" : item.stock()), "Type amount or -1 to disable."), "edit the stock"));
+        inventory.setItem(24, button(player, Material.CLOCK, "Edit Buy Limit", List.of("Current: " + (item.buyLimit() == null ? "unlimited" : item.buyLimit()), "Type amount or -1 to disable."), "edit the buy limit"));
+        inventory.setItem(25, button(player, Material.LAVA_BUCKET, FoStyle.BAD, "Remove Product", List.of("Deletes this product from section."), "open confirmation"));
+        inventory.setItem(FOUR_ROW_BACK_SLOT, GUI_BUTTONS.back(player));
 
         openInventory(player, inventory);
     }
@@ -2095,7 +2105,7 @@ public class GuiService implements Listener {
         }
         inventory.setItem(13, center);
 
-        placeAmountSelectionButtons(inventory, holder, item, amount);
+        placeAmountSelectionButtons(player, inventory, holder, item, amount);
 
         openInventory(player, inventory);
     }
@@ -2141,26 +2151,26 @@ public class GuiService implements Listener {
         }
 
         holder.backSlot = readGuiSlot("buy-more", "buttons.back", THREE_ROW_BACK_SLOT, inventory.getSize());
-        inventory.setItem(holder.backSlot, GUI_BUTTONS.back());
+        inventory.setItem(holder.backSlot, GUI_BUTTONS.back(player));
         openInventory(player, inventory);
     }
 
-    private void placeAmountSelectionButtons(Inventory inventory, BuyItemHolder holder, ShopItem item, int amount) {
-        placeAmountButton(inventory, holder, "remove-64", 10, -64, Material.RED_STAINED_GLASS_PANE, "&#ff5d73-64", List.of("&#ffffffRemove 64."), item, amount);
-        placeAmountButton(inventory, holder, "remove-10", 11, -10, Material.RED_STAINED_GLASS_PANE, "&#ff5d73-10", List.of("&#ffffffRemove 10."), item, amount);
-        placeAmountButton(inventory, holder, "remove-1", 12, -1, Material.RED_STAINED_GLASS_PANE, "&#ff5d73-1", List.of("&#ffffffRemove 1."), item, amount);
-        placeAmountButton(inventory, holder, "add-1", 14, 1, Material.LIME_STAINED_GLASS_PANE, "&#3ecf8e+1", List.of("&#ffffffAdd 1."), item, amount);
-        placeAmountButton(inventory, holder, "add-10", 15, 10, Material.LIME_STAINED_GLASS_PANE, "&#3ecf8e+10", List.of("&#ffffffAdd 10."), item, amount);
-        placeAmountButton(inventory, holder, "add-64", 16, 64, Material.LIME_STAINED_GLASS_PANE, "&#3ecf8e+64", List.of("&#ffffffAdd 64."), item, amount);
+    private void placeAmountSelectionButtons(Player player, Inventory inventory, BuyItemHolder holder, ShopItem item, int amount) {
+        placeAmountButton(player, inventory, holder, "remove-64", 10, -64, Material.RED_STAINED_GLASS_PANE, "&#ff5d73-64", List.of("&#ffffffRemove 64."), item, amount);
+        placeAmountButton(player, inventory, holder, "remove-10", 11, -10, Material.RED_STAINED_GLASS_PANE, "&#ff5d73-10", List.of("&#ffffffRemove 10."), item, amount);
+        placeAmountButton(player, inventory, holder, "remove-1", 12, -1, Material.RED_STAINED_GLASS_PANE, "&#ff5d73-1", List.of("&#ffffffRemove 1."), item, amount);
+        placeAmountButton(player, inventory, holder, "add-1", 14, 1, Material.LIME_STAINED_GLASS_PANE, "&#3ecf8e+1", List.of("&#ffffffAdd 1."), item, amount);
+        placeAmountButton(player, inventory, holder, "add-10", 15, 10, Material.LIME_STAINED_GLASS_PANE, "&#3ecf8e+10", List.of("&#ffffffAdd 10."), item, amount);
+        placeAmountButton(player, inventory, holder, "add-64", 16, 64, Material.LIME_STAINED_GLASS_PANE, "&#3ecf8e+64", List.of("&#ffffffAdd 64."), item, amount);
 
         holder.cancelSlot = readGuiSlot("buy-item", "buttons.cancel", THREE_ROW_BACK_SLOT, inventory.getSize());
-        inventory.setItem(holder.cancelSlot, GUI_BUTTONS.back());
+        inventory.setItem(holder.cancelSlot, GUI_BUTTONS.back(player));
 
         if (supportsBulkBuy(item)) {
             GuiButton bulk = readGuiButton("buy-item", "buttons.bulk", 21, Material.HOPPER,
                     "&#03fc88Buy More", List.of("&#ffffffChoose stack amount preset."), inventory.getSize());
             holder.bulkSlot = bulk.slot();
-            inventory.setItem(bulk.slot(), createButtonItem(bulk, formatAmountLine(bulk.name(), item, amount),
+            inventory.setItem(bulk.slot(), createButtonItem(player, bulk, formatAmountLine(bulk.name(), item, amount),
                     bulk.lore().stream().map(line -> formatAmountLine(line, item, amount)).toList()));
         } else {
             holder.bulkSlot = -1;
@@ -2172,11 +2182,11 @@ public class GuiService implements Listener {
                         "&#ffffffPrice: &#03fc88{price}"
                 ), inventory.getSize());
         holder.confirmSlot = confirm.slot();
-        inventory.setItem(confirm.slot(), createButtonItem(confirm, formatAmountLine(confirm.name(), item, amount),
+        inventory.setItem(confirm.slot(), createButtonItem(player, confirm, formatAmountLine(confirm.name(), item, amount),
                 confirm.lore().stream().map(line -> formatAmountLine(line, item, amount)).toList()));
     }
 
-    private void placeAmountButton(Inventory inventory, BuyItemHolder holder, String key, int defaultSlot, int defaultDelta,
+    private void placeAmountButton(Player player, Inventory inventory, BuyItemHolder holder, String key, int defaultSlot, int defaultDelta,
                                    Material defaultMaterial, String defaultName, List<String> defaultLore, ShopItem item, int amount) {
         ConfigurationSection section = plugin.getFoConfig().guiSection("buy-item", "buttons." + key);
         int slot = sanitizeGuiSlot(section == null ? defaultSlot : section.getInt("slot", defaultSlot), defaultSlot, inventory.getSize(), "buy-item buttons." + key + ".slot");
@@ -2186,7 +2196,7 @@ public class GuiService implements Listener {
         List<String> lore = section == null ? defaultLore : sectionStringList(section, "lore", defaultLore);
 
         holder.slotToDelta.put(slot, delta);
-        inventory.setItem(slot, createItem(material, formatAmountLine(name, item, amount),
+        inventory.setItem(slot, EditorItemFactory.item(player, material, formatAmountLine(name, item, amount),
                 lore.stream().map(line -> formatAmountLine(line, item, amount)).toList()));
     }
 
@@ -2216,21 +2226,21 @@ public class GuiService implements Listener {
         return configuredSlot < 0 ? defaultSlot : sanitizeGuiSlot(configuredSlot, defaultSlot, inventorySize, file + " " + path + ".slot");
     }
 
-    private void setPreviousPageButton(Inventory inventory, int slot, int currentPage, int totalPages) {
+    private void setPreviousPageButton(Player player, Inventory inventory, int slot, int currentPage, int totalPages) {
         if (currentPage > 0) {
-            inventory.setItem(slot, GUI_BUTTONS.previousPage(currentPage, Math.max(0, totalPages - 1)));
+            inventory.setItem(slot, GUI_BUTTONS.previousPage(player, currentPage, Math.max(0, totalPages - 1)));
         }
     }
 
-    private void setNextPageButton(Inventory inventory, int slot, int currentPage, int totalPages) {
+    private void setNextPageButton(Player player, Inventory inventory, int slot, int currentPage, int totalPages) {
         if (currentPage < totalPages - 1) {
-            inventory.setItem(slot, GUI_BUTTONS.nextPage(currentPage, Math.max(0, totalPages - 1)));
+            inventory.setItem(slot, GUI_BUTTONS.nextPage(player, currentPage, Math.max(0, totalPages - 1)));
         }
     }
 
-    private void setClearSearchButton(Inventory inventory, int slot, String target, String search) {
+    private void setClearSearchButton(Player player, Inventory inventory, int slot, String target, String search) {
         if (search != null && !search.isBlank()) {
-            inventory.setItem(slot, GUI_BUTTONS.clearSearch(target));
+            inventory.setItem(slot, GUI_BUTTONS.clearSearch(player, target));
         }
     }
 
@@ -4351,7 +4361,7 @@ public class GuiService implements Listener {
             plugin.getFileLogger().debug("Editor prompt opened by " + player.getName() + ": " + promptLogContext(edit));
         }
         TextDialogRequest request = buildDialogInputRequest(edit, message);
-        if (!canUseNativeDialogs()) {
+        if (!canUseNativeDialogs(player)) {
             player.closeInventory();
             startChatPrompt(player, edit, message);
             return;
@@ -4378,8 +4388,8 @@ public class GuiService implements Listener {
         chatPrompts.close();
     }
 
-    private boolean canUseNativeDialogs() {
-        return plugin.getCore() != null && plugin.getCore().nativeDialogs().canUseNativeDialogs();
+    private boolean canUseNativeDialogs(Player player) {
+        return plugin.getCore() != null && plugin.getCore().nativeDialogs().canUseNativeDialogs(player);
     }
 
     private boolean openNativeTextInputFromInventory(Player player, TextDialogRequest request, java.util.function.Consumer<String> onSubmit, Runnable onCancel) {
@@ -4685,8 +4695,25 @@ public class GuiService implements Listener {
         return createButtonItem(button, button.name(), button.lore());
     }
 
+    private ItemStack createButtonItem(Player player, GuiButton button) {
+        return createButtonItem(player, button, button.name(), button.lore());
+    }
+
     private ItemStack createButtonItem(GuiButton button, String displayName, List<String> lore) {
         ItemStack item = createItem(button.material(), displayName, lore);
+        item.setAmount(Math.clamp(button.amount(), 1, button.material().getMaxStackSize()));
+        if (button.customModelData() >= 0) {
+            ItemMeta meta = item.getItemMeta();
+            if (meta != null) {
+                meta.setCustomModelData(button.customModelData());
+                item.setItemMeta(meta);
+            }
+        }
+        return item;
+    }
+
+    private ItemStack createButtonItem(Player player, GuiButton button, String displayName, List<String> lore) {
+        ItemStack item = EditorItemFactory.item(player, button.material(), displayName, lore);
         item.setAmount(Math.clamp(button.amount(), 1, button.material().getMaxStackSize()));
         if (button.customModelData() >= 0) {
             ItemMeta meta = item.getItemMeta();
@@ -4715,18 +4742,25 @@ public class GuiService implements Listener {
     }
 
     private ItemStack createItem(Material material, String displayName, Collection<String> lore) {
-        ItemStack item = new ItemStack(material);
+        ItemStack item = EditorItemFactory.templateItem(material, Text.colorize(displayName),
+                lore == null ? List.of() : lore.stream().map(Text::colorize).toList());
         ItemMeta meta = item.getItemMeta();
         if (meta != null) {
-            meta.setDisplayName(Text.colorize(displayName));
-            if (!lore.isEmpty()) {
-                List<String> lines = lore.stream().map(Text::colorize).toList();
-                meta.setLore(lines);
-            }
             meta.addItemFlags(ItemFlag.HIDE_ATTRIBUTES);
             item.setItemMeta(meta);
         }
         return item;
+    }
+
+    private ItemStack button(Player player, Material material, String label,
+                             Collection<String> information, String clickAction) {
+        return button(player, material, FoStyle.THEME, label, information, clickAction);
+    }
+
+    private ItemStack button(Player player, Material material, String nameColor, String label,
+                             Collection<String> information, String clickAction) {
+        return EditorItemFactory.button(player, material, nameColor, FoText.plain(label),
+                information == null ? List.of() : List.copyOf(information), clickAction);
     }
 
     private String prettify(String value) {
