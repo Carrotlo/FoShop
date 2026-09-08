@@ -369,11 +369,11 @@ public class GuiService implements Listener {
             int slot = slots[index];
             holder.slotToEntry.put(slot, entry);
             if (globalEnchantmentEntry != null) {
-                inventory.setItem(slot, createGlobalEnchantmentRotatingDisplayItem(entry, globalEnchantmentEntry));
+                inventory.setItem(slot, createGlobalEnchantmentRotatingDisplayItem(player, entry, globalEnchantmentEntry));
             } else if (globalPotionEntry != null) {
-                inventory.setItem(slot, createGlobalPotionRotatingDisplayItem(entry, globalPotionEntry));
+                inventory.setItem(slot, createGlobalPotionRotatingDisplayItem(player, entry, globalPotionEntry));
             } else if (globalEntry != null) {
-                inventory.setItem(slot, createGlobalRotatingDisplayItem(entry, globalEntry));
+                inventory.setItem(slot, createGlobalRotatingDisplayItem(player, entry, globalEntry));
             } else {
                 inventory.setItem(slot, createRotatingDisplayItem(player, entry, item));
             }
@@ -436,7 +436,7 @@ public class GuiService implements Listener {
             GlobalPriceListEntry entry = entries.get(index);
             int slot = GLOBAL_PRICE_SLOTS[i];
             holder.slotToEntry.put(slot, entry);
-            inventory.setItem(slot, globalPriceItem(entry, editor));
+            inventory.setItem(slot, globalPriceItem(player, entry, editor));
         }
 
         if (entries.isEmpty()) {
@@ -2794,6 +2794,7 @@ public class GuiService implements Listener {
                 if (overflowed) {
                     plugin.getMessages().send(player, "sellgui-inventory-full");
                 }
+                plugin.getPriceApi().reportSale(java.util.UUID.randomUUID(), "FoShop", totalResult.soldItems);
                 sendSellSuccess(player, totalResult);
                 plugin.getSounds().play(player, "sell.success");
                 transactionLogger.write(player, totalResult.soldUnits, formatSellMoney(totalResult.earned), buildSoldList(totalResult));
@@ -4870,14 +4871,14 @@ public class GuiService implements Listener {
         return stack;
     }
 
-    private ItemStack globalPriceItem(GlobalPriceListEntry entry, boolean editor) {
+    private ItemStack globalPriceItem(Player player, GlobalPriceListEntry entry, boolean editor) {
         if (entry.isEnchantment()) {
-            return globalEnchantmentPriceItem(entry.enchantmentEntry(), editor);
+            return globalEnchantmentPriceItem(player, entry.enchantmentEntry(), editor);
         }
-        return entry.isPotion() ? globalPotionPriceItem(entry.potionEntry(), editor) : globalPriceItem(entry.materialEntry(), editor);
+        return entry.isPotion() ? globalPotionPriceItem(player, entry.potionEntry(), editor) : globalPriceItem(player, entry.materialEntry(), editor);
     }
 
-    private ItemStack globalPriceItem(GlobalSellPriceService.GlobalSellPriceEntry entry, boolean editor) {
+    private ItemStack globalPriceItem(Player player, GlobalSellPriceService.GlobalSellPriceEntry entry, boolean editor) {
         ItemStack stack = new ItemStack(entry.material());
         ItemMeta meta = stack.getItemMeta();
         if (meta == null) {
@@ -4885,10 +4886,11 @@ public class GuiService implements Listener {
         }
 
         boolean shopOverride = plugin.getShopManager().hasMatchingSellOffer(stack);
-        double effectivePrice = effectiveGlobalPrice(stack);
+        double effectivePrice = editor ? plugin.getShopManager().getOriginalBaseSellPrice(stack) : effectiveGlobalPrice(stack);
         meta.setDisplayName(Text.colorize("&f" + prettify(entry.material().name())));
         List<String> lore = new ArrayList<>();
         lore.add(Text.colorize("&#ffffffWorth: &#03fc88" + formatGlobalPrice(effectivePrice)));
+        if (!editor) applyPriceExtension(player, stack, lore);
         if (editor) {
             lore.add(Text.colorize("&#ffffffSource: " + (shopOverride ? "&#3ecf8eShop override" : "&#a7b8b0Global file")));
             if (shopOverride) {
@@ -4907,7 +4909,7 @@ public class GuiService implements Listener {
         return stack;
     }
 
-    private ItemStack globalEnchantmentPriceItem(GlobalSellPriceService.GlobalEnchantmentEntry entry, boolean editor) {
+    private ItemStack globalEnchantmentPriceItem(Player player, GlobalSellPriceService.GlobalEnchantmentEntry entry, boolean editor) {
         ItemStack stack = globalEnchantmentBaseStack(entry);
         ItemMeta meta = stack.getItemMeta();
         if (meta == null) {
@@ -4915,10 +4917,11 @@ public class GuiService implements Listener {
         }
 
         boolean shopOverride = plugin.getShopManager().hasMatchingSellOffer(stack);
-        double effectivePrice = effectiveGlobalPrice(stack);
+        double effectivePrice = editor ? plugin.getShopManager().getOriginalBaseSellPrice(stack) : effectiveGlobalPrice(stack);
         meta.setDisplayName(Text.colorize("&f" + enchantmentDisplayName(entry)));
         List<String> lore = new ArrayList<>();
         lore.add(Text.colorize("&#ffffffWorth: &#03fc88" + formatGlobalPrice(effectivePrice)));
+        if (!editor) applyPriceExtension(player, stack, lore);
         if (editor) {
             lore.add(0, Text.colorize("&#ffffffEnchantment: &#03fc88" + entry.enchantmentKey()));
             lore.add(Text.colorize("&#ffffffLevel: &#03fc88" + entry.level()));
@@ -4939,7 +4942,7 @@ public class GuiService implements Listener {
         return stack;
     }
 
-    private ItemStack globalPotionPriceItem(GlobalSellPriceService.GlobalPotionEntry entry, boolean editor) {
+    private ItemStack globalPotionPriceItem(Player player, GlobalSellPriceService.GlobalPotionEntry entry, boolean editor) {
         ItemStack stack = globalPotionBaseStack(entry);
         ItemMeta meta = stack.getItemMeta();
         if (meta == null) {
@@ -4947,10 +4950,11 @@ public class GuiService implements Listener {
         }
 
         boolean shopOverride = plugin.getShopManager().hasMatchingSellOffer(stack);
-        double effectivePrice = effectiveGlobalPrice(stack);
+        double effectivePrice = editor ? plugin.getShopManager().getOriginalBaseSellPrice(stack) : effectiveGlobalPrice(stack);
         meta.setDisplayName(Text.colorize("&f" + prettify(entry.potionType().name()) + " Potion"));
         List<String> lore = new ArrayList<>();
         lore.add(Text.colorize("&#ffffffWorth: &#03fc88" + formatGlobalPrice(effectivePrice)));
+        if (!editor) applyPriceExtension(player, stack, lore);
         if (editor) {
             lore.add(0, Text.colorize("&#ffffffPotion: &#03fc88" + entry.potionType().name()));
             lore.add(Text.colorize("&#ffffffSource: " + (shopOverride ? "&#3ecf8eShop override" : "&#a7b8b0Global file")));
@@ -5000,7 +5004,11 @@ public class GuiService implements Listener {
                 lore.add(Text.colorize("&#3ecf8eBuy: " + plugin.getEconomyService().format(item.buyPrice())));
             }
             if (item.canSell()) {
-                lore.add(Text.colorize("&#ff5d73Sell: " + plugin.getEconomyService().format(item.sellPrice())));
+                ItemStack priced = createPurchaseStack(item, 1);
+                List<String> extension = plugin.getPriceApi().lore(player, priced,
+                        plugin.getShopManager().getOriginalBaseSellPrice(priced), plugin.getShopManager().getSellPrice(player, priced));
+                if (extension.isEmpty()) lore.add(Text.colorize("&#ff5d73Sell: " + plugin.getEconomyService().format(plugin.getShopManager().getSellPrice(player, priced))));
+                else extension.forEach(line -> lore.add(Text.colorize(line)));
             }
             int stock = plugin.getShopManager().getStock(sectionId, item.id());
             if (stock >= 0) {
@@ -5019,6 +5027,7 @@ public class GuiService implements Listener {
 
     private ItemStack createRotatingDisplayItem(Player player, RotatingShopService.RotatingEntry entry, ShopItem item) {
         ItemStack stack = createShopDisplayItem(player, entry.sectionId(), item, item.amount());
+        if (plugin.getPriceApi().active()) return stack;
         ItemMeta meta = stack.getItemMeta();
         if (meta == null) {
             return stack;
@@ -5044,7 +5053,7 @@ public class GuiService implements Listener {
         return stack;
     }
 
-    private ItemStack createGlobalRotatingDisplayItem(RotatingShopService.RotatingEntry entry, GlobalSellPriceService.GlobalSellPriceEntry globalEntry) {
+    private ItemStack createGlobalRotatingDisplayItem(Player player, RotatingShopService.RotatingEntry entry, GlobalSellPriceService.GlobalSellPriceEntry globalEntry) {
         ItemStack stack = new ItemStack(globalEntry.material());
         ItemMeta meta = stack.getItemMeta();
         if (meta == null) {
@@ -5063,13 +5072,14 @@ public class GuiService implements Listener {
         for (String line : boostLore) {
             lore.add(Text.colorize(formatGlobalRotatingLine(line, entry, globalEntry)));
         }
+        applyPriceExtension(player, stack, lore);
         meta.setLore(lore);
         meta.addItemFlags(ItemFlag.HIDE_ATTRIBUTES);
         stack.setItemMeta(meta);
         return stack;
     }
 
-    private ItemStack createGlobalEnchantmentRotatingDisplayItem(RotatingShopService.RotatingEntry entry, GlobalSellPriceService.GlobalEnchantmentEntry globalEntry) {
+    private ItemStack createGlobalEnchantmentRotatingDisplayItem(Player player, RotatingShopService.RotatingEntry entry, GlobalSellPriceService.GlobalEnchantmentEntry globalEntry) {
         ItemStack stack = new ItemStack(Material.ENCHANTED_BOOK);
         ItemMeta meta = stack.getItemMeta();
         if (meta == null) {
@@ -5093,13 +5103,14 @@ public class GuiService implements Listener {
         for (String line : boostLore) {
             lore.add(Text.colorize(formatGlobalEnchantmentRotatingLine(line, entry, globalEntry)));
         }
+        applyPriceExtension(player, stack, lore);
         meta.setLore(lore);
         meta.addItemFlags(ItemFlag.HIDE_ATTRIBUTES, ItemFlag.HIDE_ENCHANTS);
         stack.setItemMeta(meta);
         return stack;
     }
 
-    private ItemStack createGlobalPotionRotatingDisplayItem(RotatingShopService.RotatingEntry entry, GlobalSellPriceService.GlobalPotionEntry globalEntry) {
+    private ItemStack createGlobalPotionRotatingDisplayItem(Player player, RotatingShopService.RotatingEntry entry, GlobalSellPriceService.GlobalPotionEntry globalEntry) {
         ItemStack stack = new ItemStack(Material.POTION);
         ItemMeta meta = stack.getItemMeta();
         if (meta == null) {
@@ -5121,6 +5132,7 @@ public class GuiService implements Listener {
         for (String line : boostLore) {
             lore.add(Text.colorize(formatGlobalPotionRotatingLine(line, entry, globalEntry)));
         }
+        applyPriceExtension(player, stack, lore);
         meta.setLore(lore);
         meta.addItemFlags(ItemFlag.HIDE_ATTRIBUTES);
         stack.setItemMeta(meta);
@@ -5203,6 +5215,12 @@ public class GuiService implements Listener {
         return String.format(Locale.US, "%.2f", multiplier);
     }
 
+    private void applyPriceExtension(Player player, ItemStack item, List<String> lore) {
+        List<String> extension = plugin.getPriceApi().lore(player,item,
+                plugin.getShopManager().getOriginalBaseSellPrice(item),plugin.getShopManager().getSellPrice(player,item));
+        if (!extension.isEmpty()) { lore.clear(); extension.forEach(line -> lore.add(Text.colorize(line))); }
+    }
+
     private List<ShopItem> rotatingSellableItems(ShopSection section, String search) {
         String query = search == null ? "" : search.trim().toLowerCase(Locale.ROOT);
         return section.items().stream()
@@ -5236,8 +5254,8 @@ public class GuiService implements Listener {
                 "amount", String.valueOf(amount),
                 "buy_price", plugin.getEconomyService().format(item.buyPrice()),
                 "buy", plugin.getEconomyService().format(item.buyPrice()),
-                "sell_price", plugin.getEconomyService().format(item.sellPrice()),
-                "sell", plugin.getEconomyService().format(item.sellPrice()),
+                "sell_price", plugin.getEconomyService().format(plugin.getShopManager().getSellPrice(player, createPurchaseStack(item, 1))),
+                "sell", plugin.getEconomyService().format(plugin.getShopManager().getSellPrice(player, createPurchaseStack(item, 1))),
                 "stock", String.valueOf(plugin.getShopManager().getStock(sectionId, item.id())),
                 "buy_limit", String.valueOf(plugin.getShopManager().getRemainingBuyLimit(player.getUniqueId(), sectionId, item))
         ));

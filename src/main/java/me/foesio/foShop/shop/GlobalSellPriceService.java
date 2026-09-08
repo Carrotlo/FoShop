@@ -306,6 +306,7 @@ public final class GlobalSellPriceService {
         enchantmentEntries = Map.copyOf(immutableEnchantments);
         potionEntries = Map.copyOf(loadedPotionEntries);
         priceRevision++;
+        plugin.getPriceApi().catalogChanged();
     }
 
     public boolean isEnabled() {
