@@ -2421,7 +2421,7 @@ public class GuiService implements Listener {
     private void buyItem(Player player, String sectionId, ShopItem shopItem, int amount) {
         amount = shopItem.type() == ShopItemType.PERMISSION ? 1 : Math.max(1, amount);
 
-        if (!plugin.getEconomyService().isEnabled()) {
+        if (!plugin.getEconomyService().isAvailable()) {
             plugin.getMessages().send(player, "no-economy");
             plugin.getSounds().play(player, "shop.purchase-failure");
             return;
@@ -2463,7 +2463,7 @@ public class GuiService implements Listener {
             plugin.getSounds().play(player, "shop.purchase-failure");
             return;
         }
-        if (plugin.getEconomyService().getBalance(player) < totalCost) {
+        if (plugin.getEconomyService().balance(player) < totalCost) {
             plugin.getMessages().send(player, "not-enough-money", Map.of("{amount}", plugin.getEconomyService().format(totalCost)));
             plugin.getSounds().play(player, "shop.purchase-failure");
             return;
@@ -2559,7 +2559,7 @@ public class GuiService implements Listener {
                 event.setCancelled(true);
 
                 if (slot == holder.sellSlot) {
-                    if (!plugin.getEconomyService().isEnabled()) {
+                    if (!plugin.getEconomyService().isAvailable()) {
                         plugin.getMessages().send(player, "no-economy");
                         return;
                     }
@@ -2718,7 +2718,7 @@ public class GuiService implements Listener {
             return false;
         }
 
-        if (!plugin.getEconomyService().isEnabled()) {
+        if (!plugin.getEconomyService().isAvailable()) {
             plugin.getMessages().send(player, "no-economy");
             plugin.getSounds().play(player, "sell.failure");
             return false;
@@ -3222,7 +3222,7 @@ public class GuiService implements Listener {
         if (!hasSellGuiItems(top)) {
             return;
         }
-        if (!plugin.getEconomyService().isEnabled()) {
+        if (!plugin.getEconomyService().isAvailable()) {
             returnUnsoldItems(player, top);
             plugin.getMessages().send(player, "no-economy");
             return;

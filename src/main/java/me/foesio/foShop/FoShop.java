@@ -2,6 +2,7 @@ package me.foesio.foShop;
 
 import me.foesio.core.FoCoreContext;
 import me.foesio.core.FoPluginCore;
+import me.foesio.core.economy.VaultEconomyBridge;
 import me.foesio.core.sound.FoAdminSounds;
 import me.foesio.core.sound.FoEditorSounds;
 import me.foesio.core.sound.FoGuiSounds;
@@ -25,7 +26,6 @@ import me.foesio.foShop.booster.SellBoosterService;
 import me.foesio.foShop.config.FoConfig;
 import me.foesio.foShop.converter.ShopGUIPlusConverter;
 import me.foesio.foShop.data.UserDataStore;
-import me.foesio.foShop.economy.EconomyService;
 import me.foesio.foShop.economy.PermissionService;
 import me.foesio.foShop.gui.GuiService;
 import me.foesio.foShop.hook.FoTeamsHook;
@@ -49,7 +49,7 @@ public final class FoShop extends JavaPlugin {
 
     private FoConfig foConfig;
     private ShopManager shopManager;
-    private EconomyService economyService;
+    private VaultEconomyBridge economyService;
     private PermissionService permissionService;
     private GuiService guiService;
     private FoCoreContext core;
@@ -95,7 +95,7 @@ public final class FoShop extends JavaPlugin {
         this.foTeamsHook = new FoTeamsHook(this);
         this.sellBoosterService = new SellBoosterService(this, foTeamsHook);
         this.sellBoosterBossbarService = new SellBoosterBossbarService(this, sellBoosterService);
-        this.economyService = new EconomyService(this);
+        this.economyService = core.createVaultEconomy();
         this.permissionService = new PermissionService(this);
         this.converter = new ShopGUIPlusConverter(this);
 
@@ -108,7 +108,7 @@ public final class FoShop extends JavaPlugin {
         sellBoostApi = new DefaultFoShopSellBoostApi(sellBoosterService);
         getServer().getServicesManager().register(FoShopSellBoostApi.class, sellBoostApi, this, ServicePriority.Normal);
 
-        if (!economyService.isEnabled()) {
+        if (!economyService.isAvailable()) {
             getLogger().warning("Vault economy not found. Buy/sell actions will be disabled until Vault + economy plugin are installed.");
             fileLogger.warn("Vault economy not found. Buy/sell disabled.");
         }
@@ -195,7 +195,7 @@ public final class FoShop extends JavaPlugin {
                         worthLoreService.reload();
                     }
                 })
-                .add("economy", economyService::setup)
+                .add("economy", economyService::reload)
                 .add("permissions", permissionService::setup)
                 .reload();
 
@@ -223,7 +223,7 @@ public final class FoShop extends JavaPlugin {
         if (fileLogger != null) {
             fileLogger.debug("Reload steps: " + String.join(", ", reload.completedSteps()));
             fileLogger.info("Reload result: " + resultMessage);
-            fileLogger.info("Integrations: Vault economy=" + economyService.isEnabled() + ", Vault permissions=" + permissionService.isEnabled()
+            fileLogger.info("Integrations: Vault economy=" + economyService.isAvailable() + ", Vault permissions=" + permissionService.isEnabled()
                     + ", PlaceholderAPI=" + (getServer().getPluginManager().getPlugin("PlaceholderAPI") != null));
         }
         for (String issue : result.issues()) {
@@ -364,7 +364,7 @@ public final class FoShop extends JavaPlugin {
         return foTeamsHook;
     }
 
-    public EconomyService getEconomyService() {
+    public VaultEconomyBridge getEconomyService() {
         return economyService;
     }
 

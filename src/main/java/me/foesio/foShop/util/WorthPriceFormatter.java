@@ -1,6 +1,6 @@
 package me.foesio.foShop.util;
 
-import me.foesio.foShop.economy.EconomyService;
+import me.foesio.core.economy.VaultEconomyBridge;
 
 import java.math.RoundingMode;
 import java.text.DecimalFormat;
@@ -14,7 +14,7 @@ public final class WorthPriceFormatter {
     private WorthPriceFormatter() {
     }
 
-    public static String format(EconomyService economyService, double price) {
+    public static String format(VaultEconomyBridge economyService, double price) {
         if (price <= 0D || !Double.isFinite(price)) {
             return "disabled";
         }
