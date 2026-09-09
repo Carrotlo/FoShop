@@ -44,6 +44,10 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
 public final class FoShop extends JavaPlugin {
+    private final me.foesio.foShop.api.FoShopPriceApi priceApi = new me.foesio.foShop.api.FoShopPriceApi(this);
+
+    public me.foesio.foShop.api.FoShopPriceApi getPriceApi() { return priceApi; }
+
 
     private static final int BSTATS_PLUGIN_ID = 32519;
 
@@ -107,6 +111,11 @@ public final class FoShop extends JavaPlugin {
         sellBoosterBossbarService.start();
         sellBoostApi = new DefaultFoShopSellBoostApi(sellBoosterService);
         getServer().getServicesManager().register(FoShopSellBoostApi.class, sellBoostApi, this, ServicePriority.Normal);
+        getServer().getServicesManager().register(me.foesio.foShop.api.FoShopPriceApi.class, priceApi, this, ServicePriority.Normal);
+        getServer().getPluginManager().registerEvents(new org.bukkit.event.Listener() {
+            @org.bukkit.event.EventHandler
+            public void disabled(org.bukkit.event.server.PluginDisableEvent event) { priceApi.unregister(event.getPlugin()); }
+        }, this);
 
         if (!economyService.isAvailable()) {
             getLogger().warning("Vault economy not found. Buy/sell actions will be disabled until Vault + economy plugin are installed.");

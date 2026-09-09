@@ -95,6 +95,7 @@ public class ShopManager {
         sellOffersByMaterial.forEach((material, offers) -> snapshot.put(material, List.copyOf(offers)));
         sellOffersByMaterialSnapshot = Map.copyOf(snapshot);
         priceRevision++;
+        plugin.getPriceApi().catalogChanged();
         return result;
     }
 
@@ -483,6 +484,11 @@ public class ShopManager {
     }
 
     public double getSellPrice(Player player, ItemStack stack) {
+        return getSellPrice(player, stack, 1D);
+    }
+
+    public double getSellPrice(Player player, ItemStack stack, double externalMultiplier) {
+        if (!Double.isFinite(externalMultiplier) || externalMultiplier <= 0D) return -1D;
         if (stack == null || stack.getType() == Material.AIR) {
             return -1D;
         }
@@ -536,10 +542,15 @@ public class ShopManager {
                 best = globalPrice * Math.max(1D, combinedMultiplier);
             }
         }
-        return best < 0D ? -1D : best;
+        return best < 0D ? -1D : plugin.getPriceApi().apply(stack, getOriginalBaseSellPrice(stack), best * externalMultiplier);
     }
 
     public double getBaseSellPrice(ItemStack stack) {
+        double original = getOriginalBaseSellPrice(stack);
+        return plugin.getPriceApi().apply(stack, original, original);
+    }
+
+    public double getOriginalBaseSellPrice(ItemStack stack) {
         if (stack == null || stack.getType() == Material.AIR) {
             return -1D;
         }
@@ -574,7 +585,7 @@ public class ShopManager {
     }
 
     public long priceRevision() {
-        return priceRevision;
+        return priceRevision + plugin.getPriceApi().revision();
     }
 
     public Map<Material, Double> getHighestSellPrices() {
