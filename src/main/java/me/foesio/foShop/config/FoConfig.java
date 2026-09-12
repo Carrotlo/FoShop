@@ -4,6 +4,7 @@ import me.foesio.core.dialog.NativeDialogConfigDefaults;
 import me.foesio.core.dialog.DialogIcons;
 import me.foesio.core.config.ResourceFiles;
 import me.foesio.core.gui.GuiTitles;
+import me.foesio.core.number.NumberFormatters;
 import me.foesio.foShop.FoShop;
 import me.foesio.foShop.util.Text;
 import org.bukkit.configuration.ConfigurationSection;
@@ -614,20 +615,7 @@ public class FoConfig {
     }
 
     private String abbreviate(double amount) {
-        double absolute = Math.abs(amount);
-        String suffix = "";
-        double value = amount;
-        if (absolute >= 1_000_000_000D) {
-            value = amount / 1_000_000_000D;
-            suffix = "b";
-        } else if (absolute >= 1_000_000D) {
-            value = amount / 1_000_000D;
-            suffix = "m";
-        } else if (absolute >= 1_000D) {
-            value = amount / 1_000D;
-            suffix = "k";
-        }
-        return removeTrailingZeros(new DecimalFormat("#,##0.##").format(value)) + suffix;
+        return NumberFormatters.compact(amount);
     }
 
     private String removeTrailingZeros(String value) {

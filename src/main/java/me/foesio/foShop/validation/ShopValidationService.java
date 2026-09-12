@@ -184,6 +184,7 @@ public class ShopValidationService {
                 continue;
             }
             String permission = firstNonBlank(itemSection.getString("permission"), itemSection.getString("permission-node"));
+            String requiredPermission = itemSection.getString("required-permission", "");
             List<String> commands = readStringList(itemSection, "commands");
             String command = itemSection.getString("command");
             if (command != null && !command.isBlank()) {
@@ -216,7 +217,7 @@ public class ShopValidationService {
             }
 
             items.add(new ShopItem(itemId, type, material, page, slot, amount, buy, sell, lore, displayName, customModelData, enchants, stackSize,
-                    itemStack, permission, commands, enchantment, enchantmentLevel, stock, buyLimit, limitResetSeconds, rawNbt));
+                    itemStack, permission, requiredPermission, commands, enchantment, enchantmentLevel, stock, buyLimit, limitResetSeconds, rawNbt));
         }
 
         ShopSection section = new ShopSection(id, title, size, icon, iconItem, description, enabled, sectionSlot, items);

@@ -89,7 +89,7 @@ sellgui:
     date-format: "yyyy/MM/dd HH:mm:ss"
 
   price-format:
-    # rounded-pricing uses two decimals. remove-trailing-zeros trims .00. abbreviate-numbers uses k/m/b.
+    # rounded-pricing uses two decimals. remove-trailing-zeros trims .00. abbreviate-numbers uses K through Td with two decimals.
     rounded-pricing: false
     remove-trailing-zeros: false
     abbreviate-numbers: true

@@ -315,6 +315,9 @@ public class GuiService implements Listener {
         fillBackground(inventory, "shop-section");
 
         for (ShopItem shopItem : section.itemsBySlot(currentPage).values()) {
+            if (!hasProductAccess(player, shopItem)) {
+                continue;
+            }
             ItemStack itemStack = createShopDisplayItem(player, section.id(), shopItem, shopItem.amount());
 
             if (shopItem.slot() >= 0 && shopItem.slot() < inventory.getSize()) {
@@ -367,6 +370,9 @@ public class GuiService implements Listener {
                 continue;
             }
             int slot = slots[index];
+            if (item != null && !hasProductAccess(player, item)) {
+                continue;
+            }
             holder.slotToEntry.put(slot, entry);
             if (globalEnchantmentEntry != null) {
                 inventory.setItem(slot, createGlobalEnchantmentRotatingDisplayItem(entry, globalEnchantmentEntry));
@@ -1023,7 +1029,8 @@ public class GuiService implements Listener {
                         "&#ffffffStack cap: &#03fc88" + item.effectiveStackSize(),
                         "&#ffffffGUI Slot: &#03fc88" + item.slot(),
                         "&#ffffffBuy: &#03fc88" + formatPrice(item.buyPrice()),
-                        "&#ffffffSell: &#03fc88" + formatPrice(item.sellPrice())
+                        "&#ffffffSell: &#03fc88" + formatPrice(item.sellPrice()),
+                        "&#ffffffAccess: &#03fc88" + requiredPermissionLabel(item)
                 )));
     }
 
@@ -1054,7 +1061,8 @@ public class GuiService implements Listener {
                 "&#ffffffPage: &#03fc88" + (item.page() + 1),
                 "&#ffffffAmount: &#03fc88" + item.amount(),
                 "&#ffffffStack cap: &#03fc88" + item.effectiveStackSize(),
-                "&#ffffffSlot: &#03fc88" + item.slot()
+                "&#ffffffSlot: &#03fc88" + item.slot(),
+                "&#ffffffAccess: &#03fc88" + requiredPermissionLabel(item)
         )));
 
         inventory.setItem(10, button(player, Material.NAME_TAG, "Edit Product ID", List.of("Current: " + item.id(), "Chat input, type cancel to abort."), "edit the product ID"));
@@ -1067,10 +1075,19 @@ public class GuiService implements Listener {
 
         inventory.setItem(19, EditorItemFactory.cycle(player, plugin.getMessages(), "Edit Type", editorItemTypeValue(item.type()), ITEM_TYPE_OPTIONS));
         inventory.setItem(20, button(player, Material.MAP, "Edit Page", List.of("Current: " + (item.page() + 1), "Type a page number, starting at 1."), "edit the page"));
-        inventory.setItem(21, button(player, Material.REPEATING_COMMAND_BLOCK, "Edit Action Data", List.of("Permission node / commands.", "Commands use | between lines."), "edit action data"));
+        inventory.setItem(21, button(player, Material.REPEATING_COMMAND_BLOCK, "Edit Action Data", List.of(
+                "Controls commands, enchantments, or permissions granted by the product.",
+                "Separate from Required Permission.",
+                "Commands use | between lines."
+        ), "edit action data"));
         inventory.setItem(22, button(player, Material.HOPPER, "Edit Stack Cap", List.of("Current: " + item.effectiveStackSize(), "Type a number 1-" + Math.min(64, item.material().getMaxStackSize())), "edit the stack cap"));
         inventory.setItem(23, button(player, Material.BARREL, "Edit Stock", List.of("Current: " + (item.stock() == null ? "unlimited" : item.stock()), "Type amount or -1 to disable."), "edit the stock"));
         inventory.setItem(24, button(player, Material.CLOCK, "Edit Buy Limit", List.of("Current: " + (item.buyLimit() == null ? "unlimited" : item.buyLimit()), "Type amount or -1 to disable."), "edit the buy limit"));
+        inventory.setItem(26, button(player, Material.TRIPWIRE_HOOK, "Required Permission", List.of(
+                "Current: " + requiredPermissionLabel(item),
+                "Only players with this permission can see and buy this product.",
+                "Type a permission node, or clear/disable/none/-1 to make it public."
+        ), "edit the required permission"));
         inventory.setItem(25, button(player, Material.LAVA_BUCKET, FoStyle.BAD, "Remove Product", List.of("Deletes this product from section."), "open confirmation"));
         inventory.setItem(FOUR_ROW_BACK_SLOT, GUI_BUTTONS.back(player));
 
@@ -1268,6 +1285,10 @@ public class GuiService implements Listener {
 
         ShopItem shopItem = section.itemsBySlot(holder.page()).get(slot);
         if (shopItem == null) {
+            return;
+        }
+
+        if (!hasProductAccess(player, shopItem)) {
             return;
         }
 
@@ -1939,7 +1960,7 @@ public class GuiService implements Listener {
                     "&#a7b8b0Expected: page number starting at 1. Type &#ff5d73cancel &#a7b8b0to abort.");
             case 21 -> startPrompt(player,
                     new PromptEdit(PromptType.ITEM_ACTION, null, holder.sectionId, holder.itemId, holder.page, holder.sectionPage),
-                    "&#a7b8b0Permission: node. Command: commands separated by |. Type &#ff5d73cancel &#a7b8b0to abort.");
+                    "&#a7b8b0Action data grants commands, enchantments, or permissions. It is separate from Required Permission. Type &#ff5d73cancel &#a7b8b0to abort.");
             case FOUR_ROW_BACK_SLOT -> openItemListEditor(player, holder.sectionId, holder.page, holder.sectionPage);
             case 23 -> startPrompt(player,
                     new PromptEdit(PromptType.ITEM_STOCK, null, holder.sectionId, holder.itemId, holder.page, holder.sectionPage),
@@ -1947,6 +1968,9 @@ public class GuiService implements Listener {
             case 24 -> startPrompt(player,
                     new PromptEdit(PromptType.ITEM_BUY_LIMIT, null, holder.sectionId, holder.itemId, holder.page, holder.sectionPage),
                     "&#a7b8b0Expected: buy limit amount, or -1/disable. Type &#ff5d73cancel &#a7b8b0to abort.");
+            case 26 -> startPrompt(player,
+                    new PromptEdit(PromptType.ITEM_REQUIRED_PERMISSION, null, holder.sectionId, holder.itemId, holder.page, holder.sectionPage),
+                    "&#a7b8b0Type a permission node, or clear/disable/none/-1 to make this product public. Type &#ff5d73cancel &#a7b8b0to abort.");
             case 22 -> startPrompt(player,
                     new PromptEdit(PromptType.ITEM_STACK_SIZE, null, holder.sectionId, holder.itemId, holder.page, holder.sectionPage),
                     "&#a7b8b0Expected: stack cap number. Type &#ff5d73cancel &#a7b8b0to abort.");
@@ -2085,6 +2109,11 @@ public class GuiService implements Listener {
             return;
         }
 
+        if (!hasProductAccess(player, item)) {
+            denyProductAccess(player, sectionId);
+            return;
+        }
+
         int amount = Math.clamp(selectedAmount, 1, item.effectiveStackSize());
         BuyItemHolder holder = new BuyItemHolder(sectionId, itemId, amount);
         String title = plugin.getFoConfig().guiString("buy-item", "title", "&8Buy: {item}").replace("{item}", item.id());
@@ -2098,7 +2127,7 @@ public class GuiService implements Listener {
         if (meta != null) {
             meta.setLore(List.of(
                     Text.colorize("&#ffffffSelected amount: &#03fc88" + amount),
-                    Text.colorize("&#ffffffPrice: &#03fc88" + plugin.getEconomyService().format(item.buyPrice() * amount)),
+                    Text.colorize("&#ffffffPrice: &#03fc88" + plugin.getEconomyService().formatCompact(item.buyPrice() * amount)),
                     Text.colorize("&#a7b8b0Use the shulker buttons below.")
             ));
             center.setItemMeta(meta);
@@ -2118,6 +2147,10 @@ public class GuiService implements Listener {
         }
         if (!item.canBuy()) {
             plugin.getMessages().send(player, "buy-disabled");
+            return;
+        }
+        if (!hasProductAccess(player, item)) {
+            denyProductAccess(player, sectionId);
             return;
         }
         if (!supportsBulkBuy(item)) {
@@ -2344,7 +2377,7 @@ public class GuiService implements Listener {
                 .replace("{amount}", String.valueOf(amount))
                 .replace("{stack_size}", String.valueOf(item.effectiveStackSize()))
                 .replace("{item}", item.id())
-                .replace("{price}", plugin.getEconomyService().format(item.buyPrice() * amount));
+                .replace("{price}", plugin.getEconomyService().formatCompact(item.buyPrice() * amount));
     }
 
     private String formatBuyMoreLine(String line, ShopItem item, int amount, int stacks) {
@@ -2377,8 +2410,9 @@ public class GuiService implements Listener {
         }
 
         if (event.getSlot() == holder.confirmSlot) {
-            buyItem(player, holder.sectionId, item, holder.selectedAmount);
-            openBuyItemGui(player, holder.sectionId, holder.itemId, holder.selectedAmount);
+            if (buyItem(player, holder.sectionId, item, holder.selectedAmount)) {
+                openBuyItemGui(player, holder.sectionId, holder.itemId, holder.selectedAmount);
+            }
             return;
         }
 
@@ -2413,72 +2447,78 @@ public class GuiService implements Listener {
 
         Integer amount = holder.slotToAmount.get(event.getSlot());
         if (amount != null) {
-            buyItem(player, holder.sectionId, item, amount);
-            openBuyMoreGui(player, holder.sectionId, holder.itemId, holder.returnAmount);
+            if (buyItem(player, holder.sectionId, item, amount)) {
+                openBuyMoreGui(player, holder.sectionId, holder.itemId, holder.returnAmount);
+            }
         }
     }
 
-    private void buyItem(Player player, String sectionId, ShopItem shopItem, int amount) {
+    private boolean buyItem(Player player, String sectionId, ShopItem shopItem, int amount) {
         amount = shopItem.type() == ShopItemType.PERMISSION ? 1 : Math.max(1, amount);
+
+        if (!hasProductAccess(player, shopItem)) {
+            denyProductAccess(player, sectionId);
+            return false;
+        }
 
         if (!plugin.getEconomyService().isAvailable()) {
             plugin.getMessages().send(player, "no-economy");
             plugin.getSounds().play(player, "shop.purchase-failure");
-            return;
+            return true;
         }
 
         if (!shopItem.canBuy() || !isFinitePositiveOrZero(shopItem.buyPrice())) {
             plugin.getMessages().send(player, "buy-disabled");
             plugin.getSounds().play(player, "shop.purchase-failure");
-            return;
+            return true;
         }
 
         if (!hasConfiguredPurchaseData(shopItem)) {
             plugin.getMessages().send(player, "buy-disabled");
             plugin.getSounds().play(player, "shop.purchase-failure");
-            return;
+            return true;
         }
 
         if (shopItem.type() == ShopItemType.PERMISSION && !canBuyPermissionItem(player, shopItem)) {
-            return;
+            return true;
         }
 
         int stock = plugin.getShopManager().getStock(sectionId, shopItem.id());
         if (stock >= 0 && amount > stock) {
             plugin.getMessages().send(player, "stock-insufficient", Map.of("{stock}", String.valueOf(stock)));
             plugin.getSounds().play(player, "shop.purchase-failure");
-            return;
+            return true;
         }
 
         int remainingLimit = plugin.getShopManager().getRemainingBuyLimit(player.getUniqueId(), sectionId, shopItem);
         if (remainingLimit >= 0 && amount > remainingLimit) {
             plugin.getMessages().send(player, "buy-limit-reached", Map.of("{limit}", String.valueOf(remainingLimit)));
             plugin.getSounds().play(player, "shop.purchase-failure");
-            return;
+            return true;
         }
 
         double totalCost = shopItem.buyPrice() * amount;
         if (totalCost < 0D || !Double.isFinite(totalCost)) {
             plugin.getMessages().send(player, "transaction-failed");
             plugin.getSounds().play(player, "shop.purchase-failure");
-            return;
+            return true;
         }
         if (plugin.getEconomyService().balance(player) < totalCost) {
-            plugin.getMessages().send(player, "not-enough-money", Map.of("{amount}", plugin.getEconomyService().format(totalCost)));
+            plugin.getMessages().send(player, "not-enough-money", Map.of("{amount}", plugin.getEconomyService().formatCompact(totalCost)));
             plugin.getSounds().play(player, "shop.purchase-failure");
-            return;
+            return true;
         }
 
         if (requiresInventorySpace(shopItem) && !canFitExact(player.getInventory(), shopItem, amount)) {
             plugin.getMessages().send(player, "inventory-full");
             plugin.getSounds().play(player, "shop.purchase-failure");
-            return;
+            return true;
         }
 
         if (!plugin.getEconomyService().withdraw(player, totalCost)) {
             plugin.getMessages().send(player, "transaction-failed");
             plugin.getSounds().play(player, "shop.purchase-failure");
-            return;
+            return true;
         }
 
         int purchasedAmount = executePurchaseDelivery(player, sectionId, shopItem, amount);
@@ -2490,16 +2530,28 @@ public class GuiService implements Listener {
 
         if (purchasedAmount <= 0) {
             plugin.getSounds().play(player, "shop.purchase-failure");
-            return;
+            return true;
         }
 
         plugin.getShopManager().recordPurchase(player.getUniqueId(), sectionId, shopItem, purchasedAmount);
         plugin.getMessages().send(player, "buy-success", Map.of(
                 "{amount}", String.valueOf(purchasedAmount),
                 "{item}", prettify(shopItem.material().name()),
-                "{price}", plugin.getEconomyService().format(shopItem.buyPrice() * purchasedAmount)
+                "{price}", plugin.getEconomyService().formatCompact(shopItem.buyPrice() * purchasedAmount)
         ));
         plugin.getSounds().play(player, "shop.purchase");
+        return true;
+    }
+
+    private boolean hasProductAccess(Player player, ShopItem item) {
+        return item == null || item.requiredPermission().isBlank()
+                || plugin.getPermissionService().has(player, item.requiredPermission());
+    }
+
+    private void denyProductAccess(Player player, String sectionId) {
+        plugin.getMessages().send(player, "product-permission-required");
+        plugin.getSounds().play(player, "shop.purchase-failure");
+        plugin.getShopManager().getSection(sectionId).ifPresent(section -> openShopSection(player, section));
     }
 
     private boolean canBuyPermissionItem(Player player, ShopItem item) {
@@ -3107,7 +3159,7 @@ public class GuiService implements Listener {
     }
 
     private String formatSellMoney(double amount) {
-        return plugin.getFoConfig().formatSellMoney(amount, plugin.getEconomyService().format(amount));
+        return plugin.getFoConfig().formatSellMoney(amount, plugin.getEconomyService().formatCompact(amount));
     }
 
     private String formatSoldLine(String layout, SoldLine line) {
@@ -3534,6 +3586,17 @@ public class GuiService implements Listener {
                 }
                 return PromptOutcome.failure();
             }
+            case ITEM_REQUIRED_PERMISSION -> {
+                String requiredPermission = input.isBlank() || isDisableInput(input) ? "" : input.trim();
+                if (!requiredPermission.isBlank() && requiredPermission.chars().anyMatch(Character::isWhitespace)) {
+                    plugin.getMessages().send(player, "editor-invalid", Map.of("{reason}", "Permission node cannot contain spaces."));
+                    return PromptOutcome.failure();
+                }
+                if (updateItemField(edit.sectionId, edit.itemId, "required-permission", requiredPermission, player)) {
+                    return PromptOutcome.success(edit.itemId);
+                }
+                return PromptOutcome.failure();
+            }
             case ITEM_ACTION -> {
                 ShopItem item = findItem(edit.sectionId, edit.itemId);
                 if (item == null) {
@@ -3750,7 +3813,7 @@ public class GuiService implements Listener {
             case ITEM_SEARCH -> openItemListEditor(player, edit.sectionId, 0, edit.sectionPage, updatedItemId);
             case NEW_SECTION_ID -> openSectionEditorList(player, edit.page);
             case SECTION_SIZE, SECTION_SLOT, SECTION_DESCRIPTION -> openSectionDetailEditor(player, edit.sectionId, edit.page);
-            case ITEM_ID, ITEM_MATERIAL, ITEM_AMOUNT, ITEM_SLOT, ITEM_BUY, ITEM_SELL, ITEM_TYPE, ITEM_PAGE, ITEM_ACTION, ITEM_STACK_SIZE, ITEM_STOCK, ITEM_BUY_LIMIT ->
+            case ITEM_ID, ITEM_MATERIAL, ITEM_AMOUNT, ITEM_SLOT, ITEM_BUY, ITEM_SELL, ITEM_TYPE, ITEM_PAGE, ITEM_REQUIRED_PERMISSION, ITEM_ACTION, ITEM_STACK_SIZE, ITEM_STOCK, ITEM_BUY_LIMIT ->
                     openItemEditor(player, edit.sectionId, updatedItemId == null ? edit.itemId : updatedItemId, edit.page, edit.sectionPage);
             case GLOBAL_PRICE -> openGlobalSellPriceList(player, true, edit.page, edit.configPath, sortFromOrdinal(edit.sectionPage));
         }
@@ -3768,7 +3831,7 @@ public class GuiService implements Listener {
             case ITEM_SEARCH -> openItemListEditor(player, edit.sectionId, edit.page, edit.sectionPage);
             case NEW_SECTION_ID -> openSectionEditorList(player, edit.page);
             case SECTION_SIZE, SECTION_SLOT, SECTION_DESCRIPTION -> openSectionDetailEditor(player, edit.sectionId, edit.page);
-            case ITEM_ID, ITEM_MATERIAL, ITEM_AMOUNT, ITEM_SLOT, ITEM_BUY, ITEM_SELL, ITEM_TYPE, ITEM_PAGE, ITEM_ACTION, ITEM_STACK_SIZE, ITEM_STOCK, ITEM_BUY_LIMIT ->
+            case ITEM_ID, ITEM_MATERIAL, ITEM_AMOUNT, ITEM_SLOT, ITEM_BUY, ITEM_SELL, ITEM_TYPE, ITEM_PAGE, ITEM_REQUIRED_PERMISSION, ITEM_ACTION, ITEM_STACK_SIZE, ITEM_STOCK, ITEM_BUY_LIMIT ->
                     openItemEditor(player, edit.sectionId, edit.itemId, edit.page, edit.sectionPage);
             case GLOBAL_PRICE -> openGlobalSellPriceList(player, true, edit.page, edit.configPath, sortFromOrdinal(edit.sectionPage));
         }
@@ -4097,6 +4160,7 @@ public class GuiService implements Listener {
         yaml.set(path + ".amount", Math.clamp(hand.getAmount(), 1, hand.getType().getMaxStackSize()));
         yaml.set(path + ".buy-price", -1D);
         yaml.set(path + ".sell-price", -1D);
+        yaml.set(path + ".required-permission", "");
         yaml.set(path + ".lore", List.of());
         if (hand.hasItemMeta()) {
             ItemMeta meta = hand.getItemMeta();
@@ -4183,7 +4247,7 @@ public class GuiService implements Listener {
 
         OptionalDouble parsed = LargeNumberParser.parseDouble(input);
         if (parsed.isEmpty()) {
-            plugin.getMessages().send(player, "editor-invalid", Map.of("{reason}", "Price must be a number, 50k/1.5m, or -1."));
+            plugin.getMessages().send(player, "editor-invalid", Map.of("{reason}", "Price must be a number, 50k/1.5m/1Qa, or -1."));
             return null;
         }
 
@@ -4214,7 +4278,8 @@ public class GuiService implements Listener {
     }
 
     private boolean isDisableInput(String input) {
-        return input.equalsIgnoreCase("disable") || input.equalsIgnoreCase("disabled") || input.equalsIgnoreCase("clear") || input.equals("-1");
+        return input.equalsIgnoreCase("disable") || input.equalsIgnoreCase("disabled") || input.equalsIgnoreCase("clear")
+                || input.equalsIgnoreCase("none") || input.equals("-1");
     }
 
     private boolean createSection(String input, Player player) {
@@ -4520,10 +4585,11 @@ public class GuiService implements Listener {
             case ITEM_MATERIAL -> "DIAMOND";
             case ITEM_AMOUNT -> "16";
             case ITEM_SLOT -> "13";
-            case ITEM_BUY, ITEM_SELL -> "50k";
+            case ITEM_BUY, ITEM_SELL -> "50k or 1Qa";
             case GLOBAL_PRICE -> "1.0";
             case ITEM_TYPE -> "item";
             case ITEM_PAGE -> "1";
+            case ITEM_REQUIRED_PERMISSION -> "foshop.vip";
             case ITEM_ACTION -> "say Hello | give {player} diamond 1";
             case ITEM_STOCK, ITEM_BUY_LIMIT -> "-1";
             case ITEM_STACK_SIZE -> "64";
@@ -4565,6 +4631,7 @@ public class GuiService implements Listener {
             case ITEM_SELL -> item == null ? "" : pricePromptValue(item.sellPrice());
             case ITEM_TYPE -> item == null ? "" : item.type().name().toLowerCase(Locale.ROOT);
             case ITEM_PAGE -> item == null ? "" : String.valueOf(item.page() + 1);
+            case ITEM_REQUIRED_PERMISSION -> item == null ? "" : item.requiredPermission();
             case ITEM_ACTION -> item == null ? "" : actionPromptValue(item);
             case ITEM_STOCK -> item == null || item.stock() == null ? "-1" : String.valueOf(item.stock());
             case ITEM_BUY_LIMIT -> item == null || item.buyLimit() == null ? "-1" : String.valueOf(item.buyLimit());
@@ -4616,6 +4683,7 @@ public class GuiService implements Listener {
             case ITEM_SELL -> "Sell Price";
             case ITEM_TYPE -> "Product Type";
             case ITEM_PAGE -> "Page";
+            case ITEM_REQUIRED_PERMISSION -> "Required Permission";
             case ITEM_ACTION -> "Action Data";
             case ITEM_STOCK -> "Stock";
             case ITEM_BUY_LIMIT -> "Buy Limit";
@@ -4642,7 +4710,7 @@ public class GuiService implements Listener {
     }
 
     private String pricePromptValue(double price) {
-        return price < 0D ? "-1" : Double.toString(price);
+        return price < 0D ? "-1" : plugin.getEconomyService().formatCompact(price);
     }
 
     private String actionPromptValue(ShopItem item) {
@@ -4655,6 +4723,10 @@ public class GuiService implements Listener {
             }
             case ITEM, DUMMY -> "";
         };
+    }
+
+    private String requiredPermissionLabel(ShopItem item) {
+        return item.requiredPermission().isBlank() ? "Everyone" : item.requiredPermission();
     }
 
     private String promptLogContext(PromptEdit edit) {
@@ -4796,7 +4868,7 @@ public class GuiService implements Listener {
         if (price < 0D) {
             return "disabled";
         }
-        return plugin.getEconomyService().format(price);
+        return plugin.getEconomyService().formatCompact(price);
     }
 
     private String formatGlobalPrice(double price) {
@@ -4997,10 +5069,10 @@ public class GuiService implements Listener {
                 lore.add(Text.colorize(applyTextPlaceholders(player, sectionId, item, amount, line)));
             }
             if (item.canBuy()) {
-                lore.add(Text.colorize("&#3ecf8eBuy: " + plugin.getEconomyService().format(item.buyPrice())));
+        lore.add(Text.colorize("&#3ecf8eBuy: " + plugin.getEconomyService().formatCompact(item.buyPrice())));
             }
             if (item.canSell()) {
-                lore.add(Text.colorize("&#ff5d73Sell: " + plugin.getEconomyService().format(item.sellPrice())));
+        lore.add(Text.colorize("&#ff5d73Sell: " + plugin.getEconomyService().formatCompact(item.sellPrice())));
             }
             int stock = plugin.getShopManager().getStock(sectionId, item.id());
             if (stock >= 0) {
@@ -5053,7 +5125,7 @@ public class GuiService implements Listener {
 
         meta.setDisplayName(Text.colorize("&#03fc88" + prettify(globalEntry.material().name())));
         List<String> lore = new ArrayList<>();
-        lore.add(Text.colorize("&#ff5d73Sell: " + plugin.getEconomyService().format(globalEntry.price())));
+        lore.add(Text.colorize("&#ff5d73Sell: " + plugin.getEconomyService().formatCompact(globalEntry.price())));
         lore.add(Text.colorize(""));
         List<String> boostLore = plugin.getFoConfig().guiStringList("rotating-shop", "boost-lore", List.of(
                 "&#ffffffBoost: &#03fc88{boost}x",
@@ -5083,7 +5155,7 @@ public class GuiService implements Listener {
 
         meta.setDisplayName(Text.colorize("&#03fc88" + enchantmentDisplayName(globalEntry)));
         List<String> lore = new ArrayList<>();
-        lore.add(Text.colorize("&#ff5d73Sell: " + plugin.getEconomyService().format(globalEntry.price())));
+        lore.add(Text.colorize("&#ff5d73Sell: " + plugin.getEconomyService().formatCompact(globalEntry.price())));
         lore.add(Text.colorize(""));
         List<String> boostLore = plugin.getFoConfig().guiStringList("rotating-shop", "boost-lore", List.of(
                 "&#ffffffBoost: &#03fc88{boost}x",
@@ -5111,7 +5183,7 @@ public class GuiService implements Listener {
 
         meta.setDisplayName(Text.colorize("&#03fc88" + prettify(globalEntry.potionType().name()) + " Potion"));
         List<String> lore = new ArrayList<>();
-        lore.add(Text.colorize("&#ff5d73Sell: " + plugin.getEconomyService().format(globalEntry.price())));
+        lore.add(Text.colorize("&#ff5d73Sell: " + plugin.getEconomyService().formatCompact(globalEntry.price())));
         lore.add(Text.colorize(""));
         List<String> boostLore = plugin.getFoConfig().guiStringList("rotating-shop", "boost-lore", List.of(
                 "&#ffffffBoost: &#03fc88{boost}x",
@@ -5129,8 +5201,8 @@ public class GuiService implements Listener {
 
     private String formatRotatingLine(String line, RotatingShopService.RotatingEntry entry, ShopItem item) {
         String boost = formatBoost(entry.multiplier());
-        String baseSell = plugin.getEconomyService().format(item.sellPrice());
-        String boostedSell = plugin.getEconomyService().format(item.sellPrice() * entry.multiplier());
+        String baseSell = plugin.getEconomyService().formatCompact(item.sellPrice());
+        String boostedSell = plugin.getEconomyService().formatCompact(item.sellPrice() * entry.multiplier());
         String resetTime = DurationUtil.format(plugin.getRotatingShopService().timeUntilResetMillis() / 1000L);
         return line
                 .replace("{section}", entry.sectionId())
@@ -5147,8 +5219,8 @@ public class GuiService implements Listener {
 
     private String formatGlobalRotatingLine(String line, RotatingShopService.RotatingEntry entry, GlobalSellPriceService.GlobalSellPriceEntry globalEntry) {
         String boost = formatBoost(entry.multiplier());
-        String baseSell = plugin.getEconomyService().format(globalEntry.price());
-        String boostedSell = plugin.getEconomyService().format(globalEntry.price() * entry.multiplier());
+        String baseSell = plugin.getEconomyService().formatCompact(globalEntry.price());
+        String boostedSell = plugin.getEconomyService().formatCompact(globalEntry.price() * entry.multiplier());
         String resetTime = DurationUtil.format(plugin.getRotatingShopService().timeUntilResetMillis() / 1000L);
         return line
                 .replace("{section}", "global")
@@ -5165,8 +5237,8 @@ public class GuiService implements Listener {
 
     private String formatGlobalEnchantmentRotatingLine(String line, RotatingShopService.RotatingEntry entry, GlobalSellPriceService.GlobalEnchantmentEntry globalEntry) {
         String boost = formatBoost(entry.multiplier());
-        String baseSell = plugin.getEconomyService().format(globalEntry.price());
-        String boostedSell = plugin.getEconomyService().format(globalEntry.price() * entry.multiplier());
+        String baseSell = plugin.getEconomyService().formatCompact(globalEntry.price());
+        String boostedSell = plugin.getEconomyService().formatCompact(globalEntry.price() * entry.multiplier());
         String resetTime = DurationUtil.format(plugin.getRotatingShopService().timeUntilResetMillis() / 1000L);
         return line
                 .replace("{section}", "global")
@@ -5183,8 +5255,8 @@ public class GuiService implements Listener {
 
     private String formatGlobalPotionRotatingLine(String line, RotatingShopService.RotatingEntry entry, GlobalSellPriceService.GlobalPotionEntry globalEntry) {
         String boost = formatBoost(entry.multiplier());
-        String baseSell = plugin.getEconomyService().format(globalEntry.price());
-        String boostedSell = plugin.getEconomyService().format(globalEntry.price() * entry.multiplier());
+        String baseSell = plugin.getEconomyService().formatCompact(globalEntry.price());
+        String boostedSell = plugin.getEconomyService().formatCompact(globalEntry.price() * entry.multiplier());
         String resetTime = DurationUtil.format(plugin.getRotatingShopService().timeUntilResetMillis() / 1000L);
         return line
                 .replace("{section}", "global")
@@ -5234,10 +5306,10 @@ public class GuiService implements Listener {
                 "section", sectionId,
                 "item", item.id(),
                 "amount", String.valueOf(amount),
-                "buy_price", plugin.getEconomyService().format(item.buyPrice()),
-                "buy", plugin.getEconomyService().format(item.buyPrice()),
-                "sell_price", plugin.getEconomyService().format(item.sellPrice()),
-                "sell", plugin.getEconomyService().format(item.sellPrice()),
+                "buy_price", plugin.getEconomyService().formatCompact(item.buyPrice()),
+                "buy", plugin.getEconomyService().formatCompact(item.buyPrice()),
+                "sell_price", plugin.getEconomyService().formatCompact(item.sellPrice()),
+                "sell", plugin.getEconomyService().formatCompact(item.sellPrice()),
                 "stock", String.valueOf(plugin.getShopManager().getStock(sectionId, item.id())),
                 "buy_limit", String.valueOf(plugin.getShopManager().getRemainingBuyLimit(player.getUniqueId(), sectionId, item))
         ));
@@ -5587,6 +5659,7 @@ public class GuiService implements Listener {
         ITEM_SELL,
         ITEM_TYPE,
         ITEM_PAGE,
+        ITEM_REQUIRED_PERMISSION,
         ITEM_ACTION,
         ITEM_STOCK,
         ITEM_BUY_LIMIT,

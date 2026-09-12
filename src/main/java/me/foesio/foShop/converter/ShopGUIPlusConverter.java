@@ -1325,7 +1325,8 @@ public class ShopGUIPlusConverter {
             String displayName = resolveProductDisplayName(entry.section(), material);
             Integer customModelData = resolveCustomModelData(entry.section());
             Map<String, Integer> enchants = resolveEnchants(entry.section());
-            String permission = resolvePermission(entry.section());
+            String permission = type == ShopItemType.PERMISSION ? resolvePermission(entry.section()) : null;
+            String requiredPermission = type == ShopItemType.PERMISSION ? "" : resolvePermission(entry.section());
             List<String> commands = resolveCommands(entry.section());
             String enchantment = resolveEnchantment(entry.section());
             int enchantmentLevel = Math.max(1, firstInt(entry.section(), 1,
@@ -1355,7 +1356,7 @@ public class ShopGUIPlusConverter {
 
             items.add(new ShopItem(itemId, type, material, page, slot, amount, buy, sell, lore, displayName, customModelData,
                     legacyEnchantmentType ? Map.of() : enchants, stackSize,
-                    itemStack, permission, commands, legacyEnchantmentType ? null : enchantment,
+                    itemStack, permission, requiredPermission, commands, legacyEnchantmentType ? null : enchantment,
                     legacyEnchantmentType ? 1 : enchantmentLevel, stock, buyLimit, limitResetSeconds, rawNbt));
             usedSlots.add(slotKey(page, slot));
         }

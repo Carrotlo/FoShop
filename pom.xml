@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>me.foesio</groupId>
     <artifactId>FoShop</artifactId>
-    <version>2.0</version>
+    <version>2.1</version>
     <packaging>jar</packaging>
     <name>FoShop</name>
     <properties>
@@ -86,7 +86,7 @@
         <dependency>
             <groupId>me.foesio</groupId>
             <artifactId>fo-plugin-core</artifactId>
-            <version>1.1</version>
+            <version>1.4</version>
         </dependency>
         <dependency>
             <groupId>com.github.retrooper</groupId>

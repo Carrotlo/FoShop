@@ -437,6 +437,7 @@ public class ShopManager {
             yaml.set(path + "stack-size", item.stackSize());
             yaml.set(path + "item-stack", item.itemStack());
             yaml.set(path + "permission-node", item.permission());
+            yaml.set(path + "required-permission", item.requiredPermission());
             yaml.set(path + "commands", item.commands().isEmpty() ? null : item.commands());
             yaml.set(path + "enchantment", item.enchantment());
             yaml.set(path + "enchantment-level", item.enchantmentLevel() <= 1 ? null : item.enchantmentLevel());

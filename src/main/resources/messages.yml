@@ -25,6 +25,7 @@ stock-insufficient: "{prefix}{bad}Only {theme}{stock}{bad} in stock."
 buy-limit-reached: "{prefix}{bad}Buy limit left: {theme}{limit}{bad}."
 permission-provider-missing: "{prefix}{bad}No Vault permission provider."
 permission-already-owned: "{prefix}{bad}Permission already owned."
+product-permission-required: "{prefix}{bad}You do not have permission to buy this product."
 
 buy-success: "{prefix}:emerald: {good}Bought {theme}{amount}x {item}{good} for {theme}{price}{good}."
 sell-success: "{prefix}:emerald: {good}Sold {theme}{amount}x {item}{good} for {theme}{price}{good}."

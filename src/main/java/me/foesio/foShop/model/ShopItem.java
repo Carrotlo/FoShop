@@ -22,6 +22,7 @@ public record ShopItem(
         Integer stackSize,
         ItemStack itemStack,
         String permission,
+        String requiredPermission,
         List<String> commands,
         String enchantment,
         int enchantmentLevel,
@@ -32,6 +33,7 @@ public record ShopItem(
 ) {
     public ShopItem {
         type = type == null ? ShopItemType.ITEM : type;
+        requiredPermission = requiredPermission == null ? "" : requiredPermission.trim();
         lore = lore == null ? List.of() : List.copyOf(lore);
         enchants = enchants == null ? Map.of() : Map.copyOf(enchants);
         commands = commands == null ? List.of() : List.copyOf(commands);
@@ -79,7 +81,7 @@ public record ShopItem(
             Integer stackSize
     ) {
         this(id, ShopItemType.ITEM, material, 0, slot, amount, buyPrice, sellPrice, lore, displayName, customModelData, enchants,
-                stackSize, null, null, List.of(), null, 1, null, null, null, null);
+                stackSize, null, null, "", List.of(), null, 1, null, null, null, null);
     }
 
     public boolean canBuy() {
