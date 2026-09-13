@@ -118,6 +118,7 @@ public class GuiService implements Listener {
     private static final int PLAYER_STORAGE_SLOT_COUNT = 36;
     private static final int THREE_ROW_BACK_SLOT = 22;
     private static final int FOUR_ROW_BACK_SLOT = 31;
+    private static final int FIVE_ROW_BACK_SLOT = 40;
     private static final int SIX_ROW_BACK_SLOT = 49;
     private static final int MAX_SELL_CONTAINER_DEPTH = 3;
     private static final int MAX_SELL_PROCESSING_STEPS = 2048;
@@ -1050,7 +1051,7 @@ public class GuiService implements Listener {
         }
 
         ItemEditorHolder holder = new ItemEditorHolder(sectionId, item.id(), page, sectionPage);
-        Inventory inventory = Bukkit.createInventory(holder, 36, plugin.getFoConfig().sectionTitleSmallCaps("&8Edit: " + item.id()));
+        Inventory inventory = Bukkit.createInventory(holder, 45, plugin.getFoConfig().sectionTitleSmallCaps("&8Edit: " + item.id()));
         holder.setInventory(inventory);
 
         fillBackground(inventory);
@@ -1083,13 +1084,13 @@ public class GuiService implements Listener {
         inventory.setItem(22, button(player, Material.HOPPER, "Edit Stack Cap", List.of("Current: " + item.effectiveStackSize(), "Type a number 1-" + Math.min(64, item.material().getMaxStackSize())), "edit the stack cap"));
         inventory.setItem(23, button(player, Material.BARREL, "Edit Stock", List.of("Current: " + (item.stock() == null ? "unlimited" : item.stock()), "Type amount or -1 to disable."), "edit the stock"));
         inventory.setItem(24, button(player, Material.CLOCK, "Edit Buy Limit", List.of("Current: " + (item.buyLimit() == null ? "unlimited" : item.buyLimit()), "Type amount or -1 to disable."), "edit the buy limit"));
-        inventory.setItem(26, button(player, Material.TRIPWIRE_HOOK, "Required Permission", List.of(
+        inventory.setItem(28, button(player, Material.TRIPWIRE_HOOK, "Required Permission", List.of(
                 "Current: " + requiredPermissionLabel(item),
                 "Only players with this permission can see and buy this product.",
                 "Type a permission node, or clear/disable/none/-1 to make it public."
         ), "edit the required permission"));
         inventory.setItem(25, button(player, Material.LAVA_BUCKET, FoStyle.BAD, "Remove Product", List.of("Deletes this product from section."), "open confirmation"));
-        inventory.setItem(FOUR_ROW_BACK_SLOT, GUI_BUTTONS.back(player));
+        inventory.setItem(FIVE_ROW_BACK_SLOT, GUI_BUTTONS.back(player));
 
         openInventory(player, inventory);
     }
@@ -1961,14 +1962,14 @@ public class GuiService implements Listener {
             case 21 -> startPrompt(player,
                     new PromptEdit(PromptType.ITEM_ACTION, null, holder.sectionId, holder.itemId, holder.page, holder.sectionPage),
                     "&#a7b8b0Action data grants commands, enchantments, or permissions. It is separate from Required Permission. Type &#ff5d73cancel &#a7b8b0to abort.");
-            case FOUR_ROW_BACK_SLOT -> openItemListEditor(player, holder.sectionId, holder.page, holder.sectionPage);
+            case FIVE_ROW_BACK_SLOT -> openItemListEditor(player, holder.sectionId, holder.page, holder.sectionPage);
             case 23 -> startPrompt(player,
                     new PromptEdit(PromptType.ITEM_STOCK, null, holder.sectionId, holder.itemId, holder.page, holder.sectionPage),
                     "&#a7b8b0Expected: stock amount, or -1/disable. Type &#ff5d73cancel &#a7b8b0to abort.");
             case 24 -> startPrompt(player,
                     new PromptEdit(PromptType.ITEM_BUY_LIMIT, null, holder.sectionId, holder.itemId, holder.page, holder.sectionPage),
                     "&#a7b8b0Expected: buy limit amount, or -1/disable. Type &#ff5d73cancel &#a7b8b0to abort.");
-            case 26 -> startPrompt(player,
+            case 28 -> startPrompt(player,
                     new PromptEdit(PromptType.ITEM_REQUIRED_PERMISSION, null, holder.sectionId, holder.itemId, holder.page, holder.sectionPage),
                     "&#a7b8b0Type a permission node, or clear/disable/none/-1 to make this product public. Type &#ff5d73cancel &#a7b8b0to abort.");
             case 22 -> startPrompt(player,
