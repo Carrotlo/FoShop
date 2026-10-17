@@ -1,0 +1,54 @@
+# Public shop section pages. Product items come from shops/*.yml.
+filler:
+  material: GRAY_STAINED_GLASS_PANE
+  amount: 1
+  name: " "
+  lore: []
+  custom-model-data: -1
+
+# These lines are appended after the product's own lore. Empty lists hide a line.
+item-lore:
+  buy:
+    - "&#3ecf8eBuy: {buy}"
+  sell:
+    - "&#ff5d73Sell: {sell}"
+  stock:
+    - "&#a7b8b0Stock: &#03fc88{stock}"
+  buy-limit:
+    - "&#a7b8b0Limit left: &#03fc88{buy_limit}"
+
+buttons:
+  back:
+    slot: -1 # -1 means plugin default: bottom center.
+    material: IRON_DOOR
+    amount: 1
+    name: ":iron_door: &#ff5d73&lBACK"
+    lore:
+      - "&8ʙᴜᴛᴛᴏɴ"
+      - " "
+      - "&#3ecf8e→ Click to Return ←"
+    custom-model-data: -1
+  previous:
+    slot: -1 # -1 means plugin default: bottom left.
+    material: ARROW
+    amount: 1
+    name: ":arrow: &#03fc88&lPREVIOUS PAGE"
+    lore:
+      - "&8ʙᴜᴛᴛᴏɴ"
+      - " "
+      - "&7&l | &fPage: &#03fc88{page}&f/&#03fc88{pages}"
+      - " "
+      - "&#3ecf8e→ Click to Go Back ←"
+    custom-model-data: -1
+  next:
+    slot: -1 # -1 means plugin default: bottom right.
+    material: ARROW
+    amount: 1
+    name: ":arrow: &#03fc88&lNEXT PAGE"
+    lore:
+      - "&8ʙᴜᴛᴛᴏɴ"
+      - " "
+      - "&7&l | &fPage: &#03fc88{page}&f/&#03fc88{pages}"
+      - " "
+      - "&#3ecf8e→ Click to Continue ←"
+    custom-model-data: -1

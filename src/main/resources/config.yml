@@ -13,6 +13,50 @@ colors:
   good: "&#3ecf8e"
   bad: "&#ff5d73"
 
+# Plugin-authored values inserted into public GUI placeholders.
+public-values:
+  stack-singular: "STACK"
+  stack-plural: "STACKS"
+  stack-plural-suffix: "s" # Legacy {plural} placeholder; prefer {stack_unit} for complete translated words.
+  worth-sort-name: "Name"
+  worth-sort-price: "Price"
+  worth-search-empty: "None"
+  worth-search-prompt: "&#a7b8b0Expected: search text. Type &#ff5d73cancel &#a7b8b0to abort."
+  worth-search-title: "Search"
+  worth-search-label: "Search"
+  worth-search-placeholder: "Search..."
+  worth-search-submit-label: "Search"
+  worth-search-submit-tooltip: ""
+  worth-search-submit-icon: "spyglass"
+  worth-search-submit-width: 120
+  worth-search-cancel-label: "Cancel"
+  worth-search-cancel-tooltip: ""
+  worth-search-cancel-icon: "barrier"
+  worth-search-cancel-width: 120
+  worth-search-body-width: 320
+  worth-search-input-width: 300
+  worth-search-max-length: 64
+  potion-suffix: " Potion"
+  # Names inserted into the blocked SellGUI game mode message. An empty or removed value hides the name.
+  gamemode-names:
+    SURVIVAL: "SURVIVAL"
+    CREATIVE: "CREATIVE"
+    ADVENTURE: "ADVENTURE"
+    SPECTATOR: "SPECTATOR"
+  # Optional names for generated {item} values and buy/sell feedback.
+  # Worth material/potion items keep their client-localized names unless guis/worth.yml sets a name template.
+  # IDs are the material/potion enum name or the enchantment entry ID; omit a key to use the generated name.
+  # Examples: materials.DIAMOND: "Diamant", potions.SPEED: "Snelheidsdrank".
+  item-names:
+    materials: {}
+    potions: {}
+    enchantments: {}
+
+# Stack choices shown in the public Buy More menu, in display order.
+# Use unique whole numbers from 1 to 9. Removing this key or setting [] hides the bulk-buy choice.
+public-gui:
+  bulk-stack-options: [1, 2, 3, 4, 6, 8, 9]
+
 # File logging works like debug mode and saves plugin activity to logs/latest.log. Default: false
 file-logging: false
 

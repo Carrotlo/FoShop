@@ -1,0 +1,158 @@
+title: "&8ᴡᴏʀᴛʜ"
+rows: 6
+filler:
+  enabled: true
+  material: "GRAY_STAINED_GLASS_PANE"
+  amount: 1
+  name: " "
+  lore: []
+buttons:
+  previous:
+    slot: 45
+    enabled: true
+    material: "ARROW"
+    amount: 1
+    name: ":arrow: &#03fc88&lPREVIOUS PAGE"
+    lore:
+      - "&8ʙᴜᴛᴛᴏɴ"
+      - " "
+      - "&7&l | &fPage: &#03fc88{page}&f/&#03fc88{pages}"
+      - " "
+      - "&#3ecf8e→ Click to Go Back ←"
+    action: "shop.worth-previous"
+    states:
+      unavailable:
+        material: "GRAY_STAINED_GLASS_PANE"
+        name: " "
+        lore: []
+        clickable: false
+  sort:
+    slot: 47
+    enabled: true
+    material: "COMPARATOR"
+    amount: 1
+    name: ":comparator: &#03fc88&lSORT: &f{sort}"
+    lore:
+      - "&8ʙᴜᴛᴛᴏɴ"
+      - " "
+      - "&7&l | &fCurrent: &#03fc88{sort}"
+      - "&7&l | &fNext: &#03fc88{next_sort}"
+      - " "
+      - "&#3ecf8e→ Click to Change Sort ←"
+    action: "shop.worth-sort"
+  search:
+    slot: 51
+    enabled: true
+    material: "OAK_SIGN"
+    amount: 1
+    name: ":oak_sign: &#03fc88&lSEARCH"
+    lore:
+      - "&8ʙᴜᴛᴛᴏɴ"
+      - " "
+      - "&7&l | &fCurrent: &#03fc88{query}"
+      - " "
+      - "&#3ecf8e→ Click to Search ←"
+    action: "shop.worth-search"
+  clear-search:
+    slot: 52
+    enabled: true
+    material: "BARRIER"
+    amount: 1
+    name: ":barrier: &#ff5d73&lCLEAR SEARCH"
+    lore:
+      - "&8ʙᴜᴛᴛᴏɴ"
+      - " "
+      - "&#3ecf8e→ Click to Clear ←"
+    action: "shop.worth-clear-search"
+    states:
+      unavailable:
+        material: "GRAY_STAINED_GLASS_PANE"
+        name: " "
+        lore: []
+        clickable: false
+  next:
+    slot: 53
+    enabled: true
+    material: "ARROW"
+    amount: 1
+    name: ":arrow: &#03fc88&lNEXT PAGE"
+    lore:
+      - "&8ʙᴜᴛᴛᴏɴ"
+      - " "
+      - "&7&l | &fPage: &#03fc88{page}&f/&#03fc88{pages}"
+      - " "
+      - "&#3ecf8e→ Click to Continue ←"
+    action: "shop.worth-next"
+    states:
+      unavailable:
+        material: "GRAY_STAINED_GLASS_PANE"
+        name: " "
+        lore: []
+        clickable: false
+entries:
+  center:
+    slots:
+      - 22
+    source-item:
+      lore-states:
+        material:
+          mode: "replace"
+          lines:
+            - "&#ffffffWorth: &#03fc88{worth}"
+        enchantment:
+          mode: "replace"
+          lines:
+            - "&#ffffffWorth: &#03fc88{worth}"
+          default-name: "&#ffffff{item}"
+        potion:
+          mode: "replace"
+          lines:
+            - "&#ffffffWorth: &#03fc88{worth}"
+    empty-item:
+      material: "GRAY_DYE"
+      amount: 1
+      name: "&#ff5d73No Matches"
+      lore:
+        - "&#ffffffNo prices matched your search."
+  prices:
+    slots:
+      - 10
+      - 11
+      - 12
+      - 13
+      - 14
+      - 15
+      - 16
+      - 19
+      - 20
+      - 21
+      - 23
+      - 24
+      - 25
+      - 28
+      - 29
+      - 30
+      - 31
+      - 32
+      - 33
+      - 34
+    source-item:
+      lore-states:
+        material:
+          mode: "replace"
+          lines:
+            - "&#ffffffWorth: &#03fc88{worth}"
+        enchantment:
+          mode: "replace"
+          lines:
+            - "&#ffffffWorth: &#03fc88{worth}"
+          default-name: "&#ffffff{item}"
+        potion:
+          mode: "replace"
+          lines:
+            - "&#ffffffWorth: &#03fc88{worth}"
+    empty-item:
+      material: "GRAY_STAINED_GLASS_PANE"
+      amount: 1
+      name: " "
+      lore: []

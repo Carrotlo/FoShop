@@ -1,15 +1,174 @@
-# Public shop section pages. Product items come from shops/*.yml.
+title: "{section_title}"
+rows: 3
 filler:
-  material: GRAY_STAINED_GLASS_PANE
+  enabled: true
+  material: "GRAY_STAINED_GLASS_PANE"
   amount: 1
   name: " "
   lore: []
-  custom-model-data: -1
-
 buttons:
   back:
-    slot: -1 # -1 means plugin default: bottom center.
+    slot: 22
+    enabled: true
+    material: "IRON_DOOR"
+    amount: 1
+    name: ":iron_door: &#ff5d73&lBACK"
+    lore:
+      - "&8ʙᴜᴛᴛᴏɴ"
+      - " "
+      - "&#3ecf8e→ Click to Return ←"
+    action: "shop.section-back"
   previous:
-    slot: -1 # -1 means plugin default: bottom left.
+    slot: 18
+    enabled: true
+    material: "ARROW"
+    amount: 1
+    name: ":arrow: &#03fc88&lPREVIOUS PAGE"
+    lore:
+      - "&8ʙᴜᴛᴛᴏɴ"
+      - " "
+      - "&7&l | &fPage: &#03fc88{page}&f/&#03fc88{pages}"
+      - " "
+      - "&#3ecf8e→ Click to Go Back ←"
+    action: "shop.section-previous"
+    states:
+      unavailable:
+        material: "GRAY_STAINED_GLASS_PANE"
+        name: " "
+        lore: []
+        clickable: false
   next:
-    slot: -1 # -1 means plugin default: bottom right.
+    slot: 26
+    enabled: true
+    material: "ARROW"
+    amount: 1
+    name: ":arrow: &#03fc88&lNEXT PAGE"
+    lore:
+      - "&8ʙᴜᴛᴛᴏɴ"
+      - " "
+      - "&7&l | &fPage: &#03fc88{page}&f/&#03fc88{pages}"
+      - " "
+      - "&#3ecf8e→ Click to Continue ←"
+    action: "shop.section-next"
+    states:
+      unavailable:
+        material: "GRAY_STAINED_GLASS_PANE"
+        name: " "
+        lore: []
+        clickable: false
+entries:
+  products:
+    slots:
+      - 0
+      - 1
+      - 2
+      - 3
+      - 4
+      - 5
+      - 6
+      - 7
+      - 8
+      - 9
+      - 10
+      - 11
+      - 12
+      - 13
+      - 14
+      - 15
+      - 16
+      - 17
+      - 19
+      - 20
+      - 21
+      - 23
+      - 24
+      - 25
+    source-item:
+      lore-states:
+        none:
+          mode: "preserve"
+        limit:
+          mode: "append"
+          lines:
+            - "&#a7b8b0Limit left: &#03fc88{buy_limit}"
+        stock:
+          mode: "append"
+          lines:
+            - "&#a7b8b0Stock: &#03fc88{stock}"
+        stock-limit:
+          mode: "append"
+          lines:
+            - "&#a7b8b0Stock: &#03fc88{stock}"
+            - "&#a7b8b0Limit left: &#03fc88{buy_limit}"
+        sell:
+          mode: "append"
+          lines:
+            - "&#ff5d73Sell: {sell}"
+        sell-limit:
+          mode: "append"
+          lines:
+            - "&#ff5d73Sell: {sell}"
+            - "&#a7b8b0Limit left: &#03fc88{buy_limit}"
+        sell-stock:
+          mode: "append"
+          lines:
+            - "&#ff5d73Sell: {sell}"
+            - "&#a7b8b0Stock: &#03fc88{stock}"
+        sell-stock-limit:
+          mode: "append"
+          lines:
+            - "&#ff5d73Sell: {sell}"
+            - "&#a7b8b0Stock: &#03fc88{stock}"
+            - "&#a7b8b0Limit left: &#03fc88{buy_limit}"
+        buy:
+          mode: "append"
+          lines:
+            - "&#3ecf8eBuy: {buy}"
+        buy-limit:
+          mode: "append"
+          lines:
+            - "&#3ecf8eBuy: {buy}"
+            - "&#a7b8b0Limit left: &#03fc88{buy_limit}"
+        buy-stock:
+          mode: "append"
+          lines:
+            - "&#3ecf8eBuy: {buy}"
+            - "&#a7b8b0Stock: &#03fc88{stock}"
+        buy-stock-limit:
+          mode: "append"
+          lines:
+            - "&#3ecf8eBuy: {buy}"
+            - "&#a7b8b0Stock: &#03fc88{stock}"
+            - "&#a7b8b0Limit left: &#03fc88{buy_limit}"
+        buy-sell:
+          mode: "append"
+          lines:
+            - "&#3ecf8eBuy: {buy}"
+            - "&#ff5d73Sell: {sell}"
+        buy-sell-limit:
+          mode: "append"
+          lines:
+            - "&#3ecf8eBuy: {buy}"
+            - "&#ff5d73Sell: {sell}"
+            - "&#a7b8b0Limit left: &#03fc88{buy_limit}"
+        buy-sell-stock:
+          mode: "append"
+          lines:
+            - "&#3ecf8eBuy: {buy}"
+            - "&#ff5d73Sell: {sell}"
+            - "&#a7b8b0Stock: &#03fc88{stock}"
+        buy-sell-stock-limit:
+          mode: "append"
+          lines:
+            - "&#3ecf8eBuy: {buy}"
+            - "&#ff5d73Sell: {sell}"
+            - "&#a7b8b0Stock: &#03fc88{stock}"
+            - "&#a7b8b0Limit left: &#03fc88{buy_limit}"
+    actions:
+      left: "shop.open-product"
+      shift-left: "shop.open-product"
+    empty-item:
+      material: "GRAY_STAINED_GLASS_PANE"
+      amount: 1
+      name: " "
+      lore: []

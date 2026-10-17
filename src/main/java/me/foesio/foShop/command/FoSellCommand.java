@@ -24,7 +24,7 @@ public class FoSellCommand implements CommandExecutor, TabCompleter {
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if (!(sender instanceof Player player)) {
-            plugin.getMessages().send(sender, "player-only");
+            plugin.sendConfigured(sender, "player-only");
             return true;
         }
 
@@ -33,7 +33,7 @@ public class FoSellCommand implements CommandExecutor, TabCompleter {
         }
 
         if (!sender.hasPermission(mode.permission())) {
-            plugin.getMessages().send(sender, "no-permission");
+            plugin.sendConfigured(sender, "no-permission");
             plugin.getAdminSounds().updateError(sender);
             return true;
         }
@@ -50,7 +50,7 @@ public class FoSellCommand implements CommandExecutor, TabCompleter {
     private boolean handleRoot(CommandSender sender, Player player, String[] args) {
         if (args.length == 0) {
             if (!sender.hasPermission("foshop.sellgui.use")) {
-                plugin.getMessages().send(sender, "no-permission");
+                plugin.sendConfigured(sender, "no-permission");
                 plugin.getAdminSounds().updateError(sender);
                 return true;
             }
@@ -62,7 +62,7 @@ public class FoSellCommand implements CommandExecutor, TabCompleter {
         switch (sub) {
             case "all", "inventory", "inv", "sellall" -> {
                 if (!sender.hasPermission("foshop.sellall")) {
-                    plugin.getMessages().send(sender, "no-permission");
+                    plugin.sendConfigured(sender, "no-permission");
                     plugin.getAdminSounds().updateError(sender);
                     return true;
                 }
@@ -70,7 +70,7 @@ public class FoSellCommand implements CommandExecutor, TabCompleter {
             }
             case "hand", "held", "mainhand", "sellhand" -> {
                 if (!sender.hasPermission("foshop.sellhand")) {
-                    plugin.getMessages().send(sender, "no-permission");
+                    plugin.sendConfigured(sender, "no-permission");
                     plugin.getAdminSounds().updateError(sender);
                     return true;
                 }
@@ -78,14 +78,14 @@ public class FoSellCommand implements CommandExecutor, TabCompleter {
             }
             case "gui", "menu", "open" -> {
                 if (!sender.hasPermission("foshop.sellgui.use")) {
-                    plugin.getMessages().send(sender, "no-permission");
+                    plugin.sendConfigured(sender, "no-permission");
                     plugin.getAdminSounds().updateError(sender);
                     return true;
                 }
                 plugin.getGuiService().openSellGui(player);
             }
             default -> {
-                plugin.getMessages().send(sender, "sell-usage");
+                plugin.sendConfigured(sender, "sell-usage");
                 plugin.getAdminSounds().updateError(sender);
             }
         }

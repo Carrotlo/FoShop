@@ -1,0 +1,20 @@
+# Public bulk-buy selector. Slot indexes are 0-based for a 27-slot GUI.
+title: "&8Buy More: {item}"
+filler:
+  material: GRAY_STAINED_GLASS_PANE
+  amount: 1
+  name: " "
+  lore: []
+  custom-model-data: -1
+
+option:
+  material: LIME_SHULKER_BOX
+  name: "&#03fc88{stacks} stack{plural}"
+  lore:
+    - "&#ffffffAmount: &#03fc88{amount}"
+    - "&#ffffffPrice: &#03fc88{price}"
+    - "&#ffffffClick to buy."
+
+buttons:
+  back:
+    slot: 22

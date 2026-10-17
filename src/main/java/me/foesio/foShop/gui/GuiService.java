@@ -15,11 +15,24 @@ import me.foesio.core.editor.EditorDialogInputs;
 import me.foesio.core.editor.EditorItemFactory;
 import me.foesio.core.dialog.DialogIcons;
 import me.foesio.core.gui.GuiButtonConfig;
+import me.foesio.core.gui.GuiTitles;
+import me.foesio.core.gui.publicgui.GuiLoadReport;
+import me.foesio.core.gui.publicgui.GuiDiagnostic;
+import me.foesio.core.gui.publicgui.PublicGuiDefinition;
+import me.foesio.core.gui.publicgui.PublicGuiClick;
+import me.foesio.core.gui.publicgui.PublicGuiContract;
+import me.foesio.core.gui.publicgui.PublicGuiFrame;
+import me.foesio.core.gui.publicgui.PublicGuiInventoryHolder;
+import me.foesio.core.gui.publicgui.PublicGuiRenderInput;
+import me.foesio.core.gui.publicgui.PublicGuiRenderer;
+import me.foesio.core.gui.publicgui.PublicGuiService;
 import me.foesio.core.gui.EntryBrowserClick;
 import me.foesio.core.gui.EntryBrowserHolder;
 import me.foesio.core.gui.EntryBrowserMenus;
 import me.foesio.core.gui.EntryBrowserRequest;
 import me.foesio.core.message.FoStyle;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import me.foesio.core.text.FoText;
 import me.foesio.core.inventory.InventoryDepositResult;
 import me.foesio.core.inventory.OverflowPolicy;
@@ -51,9 +64,8 @@ import me.foesio.foShop.util.ItemKeys;
 import me.foesio.foShop.util.ReloadFeedback;
 import me.foesio.foShop.util.Text;
 import me.foesio.foShop.util.WorthPriceFormatter;
+import me.foesio.foShop.validation.ShopValidationService;
 import net.md_5.bungee.api.ChatMessageType;
-import net.md_5.bungee.api.chat.BaseComponent;
-import net.md_5.bungee.api.chat.HoverEvent;
 import net.md_5.bungee.api.chat.TextComponent;
 import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
@@ -61,6 +73,7 @@ import org.bukkit.Material;
 import org.bukkit.Sound;
 import org.bukkit.block.Container;
 import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -86,17 +99,23 @@ import org.bukkit.inventory.meta.PotionMeta;
 import org.bukkit.potion.PotionType;
 
 import java.io.File;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalDouble;
 import java.util.OptionalLong;
+import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 
@@ -113,7 +132,6 @@ public class GuiService implements Listener {
             19, 20, 21, 22, 23, 24, 25,
             28, 29, 30, 31, 32, 33, 34
     };
-    private static final int[] BUY_MORE_STACK_OPTIONS = {1, 2, 3, 4, 6, 8, 9};
     private static final int[] BUY_MORE_SLOTS = {10, 11, 12, 13, 14, 15, 16};
     private static final int PLAYER_STORAGE_SLOT_COUNT = 36;
     private static final int THREE_ROW_BACK_SLOT = 22;
@@ -123,10 +141,21 @@ public class GuiService implements Listener {
     private static final int MAX_SELL_CONTAINER_DEPTH = 3;
     private static final int MAX_SELL_PROCESSING_STEPS = 2048;
     private static final int MAX_SELL_RECEIPT_LINES = 80;
-    private static final String OTHER_SOLD_ITEMS_LABEL = "Other Items";
     private static final String ROTATING_SECTIONS_SELECTOR_TITLE = "Rotating Sections";
     private static final String ROTATING_ITEMS_SELECTOR_TITLE_PREFIX = "Rotating Items: ";
     private static final GuiButtonConfig GUI_BUTTONS = GuiButtonConfig.defaults();
+
+    static String editorTitle(String label) {
+        // Convert code-owned titles before coloring: converting a legacy color
+        // code such as &8 after coloring would corrupt its letter-based codes.
+        return GuiTitles.format(Text.colorize("&8" + GuiTitles.smallCaps(label)));
+    }
+
+    static Component receiptSeparator(String configured) {
+        // The sprite renderer normalizes standalone whitespace on unsupported
+        // clients; the receipt separator must keep the owner's exact spacing.
+        return LegacyComponentSerializer.legacySection().deserialize(configured);
+    }
     private static final List<CycleOption> RECEIPT_TYPE_OPTIONS = List.of(
             new CycleOption("0", "Disabled"),
             new CycleOption("1", "Hover receipt")
@@ -143,10 +172,13 @@ public class GuiService implements Listener {
     );
 
     private final FoShop plugin;
+    private final PublicGuiService publicGuis;
+    private final PublicGuiService worthGuis;
     private final SellTransactionLogger transactionLogger;
     private final EditorSettingSaver configSettingSaver;
     private final ChatPromptManager chatPrompts;
     private final Map<UUID, Integer> rotatingItemSectionPages = new HashMap<>();
+    private final Map<UUID, String> rotatingItemSectionIds = new HashMap<>();
     private final Map<UUID, Integer> sectionItemBrowserPages = new HashMap<>();
     private final Set<UUID> sellingInProgress = new HashSet<>();
     private final Set<UUID> suppressConfirmDeleteClose = new HashSet<>();
@@ -154,12 +186,395 @@ public class GuiService implements Listener {
     private final Set<UUID> nativeDialogFallbackWarnings = new HashSet<>();
     private final Map<UUID, ScreenState> activeScreens = new HashMap<>();
     private final Set<UUID> pendingBackNavigations = new HashSet<>();
+    private final Map<UUID, SectionContext> publicSections = new HashMap<>();
+    private final Map<UUID, BuyContext> publicBuys = new HashMap<>();
+    private final Map<UUID, WorthContext> publicWorth = new HashMap<>();
+    private ShopManager.ReloadResult lastShopReloadResult;
+    private List<String> worthGuiIssues = List.of();
+    private List<Integer> bulkStackOptions = List.of();
+    private Map<String, String> publicItemNames = Map.of();
+
+    private record SectionContext(String sectionId, int page) {}
+    private record EditorBrowserContext(boolean sections, String sectionId) {}
+    private record BuyContext(String sectionId, String itemId, int amount, long shopRevision, long guiRevision) {}
+    private record WorthContext(int page, int pages, String query, WorthSort sort) {}
 
     public GuiService(FoShop plugin) {
         this.plugin = plugin;
         this.transactionLogger = new SellTransactionLogger(plugin);
         this.configSettingSaver = new EditorSettingSaver(plugin, () -> plugin.reloadAll());
         this.chatPrompts = new ChatPromptManager(plugin, plugin.getCore().scheduler());
+        this.publicGuis = configurePublicGuis();
+        this.worthGuis = configureWorthGuis();
+        this.publicGuis.start(this::stageShopLayout);
+        this.worthGuis.start();
+    }
+
+    private PublicGuiService.PreparedDependency stageShopLayout(Map<String, PublicGuiDefinition> proposed) {
+        Set<Integer> mainSlots = Set.copyOf(proposed.get("shop.main").entries().get("sections").slots());
+        Set<Integer> productSlots = Set.copyOf(proposed.get("shop.shop_section").entries().get("products").slots());
+        ShopValidationService candidate = new ShopValidationService();
+        candidate.configurePublicLayout(mainSlots, productSlots);
+        ShopManager.PreparedReload prepared = plugin.getShopManager().prepareReload(candidate);
+        boolean hasCachedGui = publicGuis.snapshot() != null;
+        List<GuiDiagnostic> diagnostics = new ArrayList<>(prepared.result().issues().stream()
+                .filter(issue -> hasCachedGui || issue.contains("public GUI layout:") || issue.contains("shop file invalid:")
+                        || issue.equals("No shop files found."))
+                .map(issue -> new GuiDiagnostic("shops", "layout", issue))
+                .toList());
+        List<Integer> candidateOptions = configuredBulkStackOptions(plugin.getConfig());
+        if (invalidBulkStackOptions(plugin.getConfig(), candidateOptions)) {
+            if (hasCachedGui) {
+                diagnostics.add(new GuiDiagnostic("config.yml", "public-gui.bulk-stack-options",
+                        "Use a list of unique whole stack counts from 1 to 9; previous choices remain active."));
+            } else {
+                candidateOptions = bundledBulkStackOptions();
+                plugin.getLogger().warning("Invalid public-gui.bulk-stack-options; using bundled choices in memory on startup.");
+            }
+        }
+        PublicItemNames candidateNames = readPublicItemNames(plugin.getConfig());
+        if (!candidateNames.errors().isEmpty()) {
+            if (hasCachedGui) {
+                candidateNames.errors().forEach(error -> diagnostics.add(
+                        new GuiDiagnostic("config.yml", "public-values.item-names", error)));
+            } else {
+                candidateNames.errors().forEach(error -> plugin.getLogger().warning(
+                        "Invalid public item name override: " + error + "; using generated name in memory."));
+            }
+        }
+        List<Integer> acceptedOptions = List.copyOf(candidateOptions);
+        return new PublicGuiService.PreparedDependency(diagnostics, () -> {
+            plugin.getValidationService().configurePublicLayout(mainSlots, productSlots);
+            plugin.getShopManager().publish(prepared);
+            lastShopReloadResult = prepared.result();
+            bulkStackOptions = acceptedOptions;
+            publicItemNames = candidateNames.values();
+        });
+    }
+
+    private record PublicItemNames(Map<String, String> values, List<String> errors) {}
+
+    private PublicItemNames readPublicItemNames(FileConfiguration config) {
+        Map<String, String> values = new HashMap<>();
+        List<String> errors = new ArrayList<>();
+        String rootPath = "public-values.item-names";
+        if (!config.isSet(rootPath)) {
+            return new PublicItemNames(Map.of(), List.of());
+        }
+        ConfigurationSection root = config.getConfigurationSection(rootPath);
+        if (root == null) {
+            return new PublicItemNames(Map.of(), List.of(rootPath + " must be a section"));
+        }
+        for (String kind : List.of("materials", "potions", "enchantments")) {
+            String kindPath = rootPath + "." + kind;
+            if (!root.isSet(kind)) continue;
+            ConfigurationSection names = root.getConfigurationSection(kind);
+            if (names == null) {
+                errors.add(kindPath + " must be a section");
+                continue;
+            }
+            for (String id : names.getKeys(false)) {
+                Object value = names.get(id);
+                if (value instanceof String name) {
+                    values.put(kind + "." + id, name);
+                } else {
+                    errors.add(kindPath + "." + id + " must be text");
+                }
+            }
+        }
+        return new PublicItemNames(Map.copyOf(values), List.copyOf(errors));
+    }
+
+    private List<Integer> bundledBulkStackOptions() {
+        try (var resource = plugin.getResource("config.yml")) {
+            if (resource == null) throw new IllegalStateException("Bundled config.yml is missing");
+            YamlConfiguration bundled = YamlConfiguration.loadConfiguration(
+                    new InputStreamReader(resource, StandardCharsets.UTF_8));
+            List<Integer> options = configuredBulkStackOptions(bundled);
+            if (options.isEmpty()) throw new IllegalStateException("Bundled bulk-stack-options are invalid");
+            return options;
+        } catch (IOException exception) {
+            throw new IllegalStateException("Could not read bundled bulk-stack-options", exception);
+        }
+    }
+
+    public ShopManager.ReloadResult lastShopReloadResult() {
+        return lastShopReloadResult;
+    }
+
+    public GuiLoadReport reloadPublicGuis() {
+        GuiLoadReport main = publicGuis.reload();
+        GuiLoadReport worth = worthGuis.reload();
+        worthGuiIssues = worth.successful() ? List.of()
+                : worth.diagnostics().stream().map(GuiDiagnostic::toString).toList();
+        if (!worth.successful()) {
+            plugin.getLogger().warning("Worth GUI reload failed; other public menus retain their own GUI snapshot.");
+        }
+        return main;
+    }
+
+    public List<String> worthGuiIssues() {
+        return worthGuiIssues;
+    }
+
+    private PublicGuiService configurePublicGuis() {
+        PublicGuiService guis = new PublicGuiService(plugin);
+        var root = plugin.getDataFolder().toPath().resolve("guis");
+        guis.menu("shop.main", root.resolve("main.yml"), coreMenu(Set.of("shop.open-section"),
+                Set.of("section", "section_id")));
+        guis.menu("shop.shop_section", root.resolve("shop-section.yml"), coreMenu(Set.of(
+                "shop.section-back", "shop.section-previous", "shop.section-next", "shop.open-product"),
+                Set.of("section_title", "buy", "sell", "stock", "buy_limit", "page", "pages")));
+        guis.menu("shop.buy_item", root.resolve("buy-item.yml"), coreMenu(Set.of(
+                "shop.amount-remove-64", "shop.amount-remove-10", "shop.amount-remove-1",
+                "shop.amount-add-1", "shop.amount-add-10", "shop.amount-add-64",
+                "shop.amount-cancel", "shop.amount-bulk", "shop.amount-confirm"),
+                Set.of("item", "amount", "price")));
+        guis.menu("shop.buy_more", root.resolve("buy-more.yml"), coreMenu(Set.of(
+                "shop.more-back", "shop.more-buy"), Set.of("item", "amount", "price", "stacks", "plural", "stack_unit")));
+        guis.menu("shop.rotating_shop", root.resolve("rotating-shop.yml"), coreMenu(Set.of(),
+                Set.of("item", "boost", "price", "base_price", "buy", "time")));
+        guis.menu("shop.sell_gui", root.resolve("sell-gui.yml"), new PublicGuiContract(
+                Set.of("shop.sell"), Map.of("sell-slots", new PublicGuiContract.GroupRule(
+                PublicGuiContract.GroupRole.PHYSICAL_INPUT, 1, 45)), Set.of(),
+                PublicGuiContract.InteractionMode.PLUGIN_OWNED));
+        guis.requireEntry("shop.main", "sections", 0)
+                .requireEntry("shop.shop_section", "products", 0)
+                .requireEntry("shop.buy_item", "preview", 1)
+                .requireEntry("shop.buy_more", "options", 0)
+                .requireEntry("shop.rotating_shop", "center", 1)
+                .requireEntry("shop.rotating_shop", "boosts", 0);
+        for (String state : List.of("none", "buy", "sell", "stock", "limit", "buy-sell",
+                "buy-stock", "buy-limit", "sell-stock", "sell-limit", "stock-limit",
+                "buy-sell-stock", "buy-sell-limit", "buy-stock-limit", "sell-stock-limit",
+                "buy-sell-stock-limit")) {
+            guis.requireEntryLoreState("shop.shop_section", "products", state);
+        }
+        for (String region : List.of("center", "boosts")) {
+            for (String state : List.of("shop-buy", "shop-sell-only", "global-material",
+                    "global-enchantment", "global-potion")) {
+                guis.requireEntryLoreState("shop.rotating_shop", region, state);
+            }
+        }
+        guis.pluginRoute("shop.sell_gui", this);
+        for (String action : Set.of("shop.open-section", "shop.section-back", "shop.section-previous",
+                "shop.section-next", "shop.open-product", "shop.amount-remove-64", "shop.amount-remove-10",
+                "shop.amount-remove-1", "shop.amount-add-1", "shop.amount-add-10", "shop.amount-add-64",
+                "shop.amount-cancel", "shop.amount-bulk", "shop.amount-confirm", "shop.more-back",
+                "shop.more-buy")) {
+            guis.action(action, this::handlePublicGuiClick);
+        }
+        guis.entryPoint("command:/foshop", "shop.main")
+                .entryPoint("command:/shop", "shop.main")
+                .entryPoint("section selection", "shop.shop_section")
+                .entryPoint("product selection", "shop.buy_item")
+                .entryPoint("bulk buy", "shop.buy_more")
+                .entryPoint("command:/fosellgui", "shop.sell_gui")
+                .entryPoint("command:/sellgui", "shop.sell_gui")
+                .entryPoint("command:/sell", "shop.sell_gui")
+                .entryPoint("command:/sell gui", "shop.sell_gui")
+                .entryPoint("command:/sell menu", "shop.sell_gui")
+                .entryPoint("command:/sell open", "shop.sell_gui")
+                .entryPoint("command:/rotatingshop", "shop.rotating_shop")
+                .entryPoint("command:/rshop", "shop.rotating_shop");
+        return guis;
+    }
+
+    private PublicGuiService configureWorthGuis() {
+        PublicGuiService guis = new PublicGuiService(plugin);
+        var root = plugin.getDataFolder().toPath().resolve("guis");
+        guis.menu("shop.worth", root.resolve("worth.yml"), coreMenu(Set.of(
+                "shop.worth-previous", "shop.worth-sort", "shop.worth-search",
+                "shop.worth-clear-search", "shop.worth-next"),
+                Set.of("item", "worth", "page", "pages", "sort", "next_sort", "query")));
+        guis.requireEntry("shop.worth", "center", 1)
+                .requireEntry("shop.worth", "prices", 0);
+        for (String region : List.of("center", "prices")) {
+            for (String state : List.of("material", "enchantment", "potion")) {
+                guis.requireEntryLoreState("shop.worth", region, state);
+            }
+        }
+        for (String action : Set.of("shop.worth-previous", "shop.worth-sort", "shop.worth-search",
+                "shop.worth-clear-search", "shop.worth-next")) {
+            guis.action(action, this::handlePublicGuiClick);
+        }
+        guis.entryPoint("command:/worth", "shop.worth")
+                .entryPoint("command:/prices", "shop.worth");
+        return guis;
+    }
+
+    private PublicGuiContract coreMenu(Set<String> actions, Set<String> placeholders) {
+        return new PublicGuiContract(actions, Map.of(), placeholders, PublicGuiContract.InteractionMode.CORE);
+    }
+
+    private void handlePublicGuiClick(PublicGuiClick click) {
+        Player player = click.player();
+        String action = click.actionId();
+        UUID id = player.getUniqueId();
+        if (action.equals("shop.open-section")) {
+            plugin.getShopManager().getSection(click.entryId()).filter(ShopSection::enabled).ifPresent(section -> {
+                plugin.getSounds().play(player, "gui.select");
+                openShopSection(player, section);
+            });
+            return;
+        }
+        if (action.startsWith("shop.section-") || action.equals("shop.open-product")) {
+            SectionContext context = publicSections.get(id);
+            ShopSection section = context == null ? null : plugin.getShopManager().getSection(context.sectionId()).orElse(null);
+            if (section == null || !section.enabled()) {
+                openMainShop(player);
+                return;
+            }
+            switch (action) {
+                case "shop.section-back" -> {
+                    markBackNavigation(player);
+                    openMainShop(player);
+                }
+                case "shop.section-previous" -> {
+                    if (context.page() > 0) {
+                        plugin.getSounds().play(player, "gui.page-previous");
+                        openShopSection(player, section, context.page() - 1);
+                    }
+                }
+                case "shop.section-next" -> {
+                    if (context.page() < section.totalPages() - 1) {
+                        plugin.getSounds().play(player, "gui.page-next");
+                        openShopSection(player, section, context.page() + 1);
+                    }
+                }
+                case "shop.open-product" -> {
+                    ShopItem item = section.itemsBySlot(context.page()).get(click.rawSlot());
+                    if (item == null || !item.id().equals(click.entryId()) || !hasProductAccess(player, item)
+                            || item.type() == ShopItemType.DUMMY) {
+                        return;
+                    }
+                    if (!item.canBuy()) {
+                        plugin.sendConfigured(player, "buy-disabled");
+                        plugin.getSounds().play(player, "shop.purchase-failure");
+                    } else {
+                        plugin.getSounds().play(player, "gui.select");
+                        openBuyItemGui(player, section.id(), item.id(), item.amount());
+                    }
+                }
+                default -> { }
+            }
+            return;
+        }
+        if (action.startsWith("shop.amount-") || action.startsWith("shop.more-")) {
+            BuyContext context = publicBuys.get(id);
+            ShopItem item = context == null ? null : findPublicItem(context.sectionId(), context.itemId());
+            if (item == null) {
+                plugin.sendConfigured(player, "gui-unavailable");
+                openMainShop(player);
+                return;
+            }
+            if (!hasProductAccess(player, item)) {
+                denyProductAccess(player, context.sectionId());
+                return;
+            }
+            if (publicGuis.snapshot() == null) {
+                plugin.sendConfigured(player, "gui-unavailable");
+                return;
+            }
+            if (context.shopRevision() != plugin.getShopManager().priceRevision()
+                    || context.guiRevision() != publicGuis.snapshot().revision()) {
+                if (action.startsWith("shop.more-")) {
+                    openBuyMoreGui(player, context.sectionId(), context.itemId(), context.amount());
+                } else {
+                    openBuyItemGui(player, context.sectionId(), context.itemId(), context.amount());
+                }
+                return;
+            }
+            int delta = switch (action) {
+                case "shop.amount-remove-64" -> -64;
+                case "shop.amount-remove-10" -> -10;
+                case "shop.amount-remove-1" -> -1;
+                case "shop.amount-add-1" -> 1;
+                case "shop.amount-add-10" -> 10;
+                case "shop.amount-add-64" -> 64;
+                default -> 0;
+            };
+            if (delta != 0) {
+                delta = plugin.getConfig().getInt("public-gui.amount-changes."
+                        + action.substring("shop.amount-".length()), delta);
+                plugin.getSounds().play(player, "gui.cycle");
+                openBuyItemGui(player, context.sectionId(), context.itemId(), context.amount() + delta);
+                return;
+            }
+            switch (action) {
+                case "shop.amount-confirm" -> {
+                    if (buyItem(player, context.sectionId(), item, context.amount())) {
+                        openBuyItemGui(player, context.sectionId(), context.itemId(), context.amount());
+                    }
+                }
+                case "shop.amount-bulk" -> openBuyMoreGui(player, context.sectionId(), context.itemId(), context.amount());
+                case "shop.amount-cancel" -> {
+                    markBackNavigation(player);
+                    plugin.getSounds().play(player, "gui.cancel");
+                    plugin.getShopManager().getSection(context.sectionId()).ifPresent(section -> openShopSection(player, section));
+                }
+                case "shop.more-back" -> {
+                    markBackNavigation(player);
+                    openBuyItemGui(player, context.sectionId(), context.itemId(), context.amount());
+                }
+                case "shop.more-buy" -> {
+                    int stacks;
+                    try {
+                        stacks = Integer.parseInt(click.entryId());
+                    } catch (NumberFormatException exception) {
+                        return;
+                    }
+                    if (visibleBulkStackOptions().contains(stacks)
+                            && buyItem(player, context.sectionId(), item,
+                            stacks * item.effectiveStackSize())) {
+                        openBuyMoreGui(player, context.sectionId(), context.itemId(), context.amount());
+                    }
+                }
+                default -> { }
+            }
+            return;
+        }
+        WorthContext worth = publicWorth.get(id);
+        if (worth == null) {
+            return;
+        }
+        if (!worthEnabled()) {
+            closeWorthIfOpen(player);
+            plugin.sendConfigured(player, "worth-disabled");
+            return;
+        }
+        switch (action) {
+            case "shop.worth-previous" -> {
+                if (worth.page() > 0) {
+                    pageSound(player, false, false);
+                    openGlobalSellPriceList(player, false, worth.page() - 1, worth.query(), worth.sort());
+                }
+            }
+            case "shop.worth-next" -> {
+                if (worth.page() < worth.pages() - 1) {
+                    pageSound(player, false, true);
+                    openGlobalSellPriceList(player, false, worth.page() + 1, worth.query(), worth.sort());
+                }
+            }
+            case "shop.worth-sort" -> {
+                plugin.getSounds().play(player, "gui.sort");
+                openGlobalSellPriceList(player, false, 0, worth.query(),
+                        worth.sort() == WorthSort.NAME ? WorthSort.PRICE : WorthSort.NAME);
+            }
+            case "shop.worth-search" -> {
+                searchSound(player, false, false);
+                startPrompt(player, new PromptEdit(PromptType.GLOBAL_PRICE_SEARCH, "worth", null, null,
+                        worth.page(), worth.sort().ordinal(), worth.query()),
+                        publicValue("worth-search-prompt"));
+            }
+            case "shop.worth-clear-search" -> {
+                if (!worth.query().isBlank()) {
+                    searchSound(player, false, true);
+                    openGlobalSellPriceList(player, false, 0, "", worth.sort());
+                }
+            }
+            default -> { }
+        }
     }
 
     private void openInventory(Player player, Inventory inventory) {
@@ -238,53 +653,42 @@ public class GuiService implements Listener {
     }
 
     public void openMainShop(Player player) {
-        MainMenuHolder holder = new MainMenuHolder();
-        Inventory inventory = Bukkit.createInventory(holder, plugin.getFoConfig().getMainSize(), plugin.getFoConfig().mainTitleSmallCaps());
-        holder.setInventory(inventory);
-
-        fillBackground(inventory, "main");
-
-        int autoSlot = 10;
+        if (publicGuis.snapshot() == null) {
+            plugin.sendConfigured(player, "gui-unavailable");
+            return;
+        }
+        var definition = publicGuis.snapshot().require("shop.main");
+        List<Integer> available = definition.entries().get("sections").slots();
+        Map<Integer, PublicGuiRenderInput.EntryValue> entries = new HashMap<>();
         for (ShopSection section : plugin.getShopManager().getSectionsOrdered()) {
             if (!section.enabled()) {
                 continue;
             }
             int slot = section.slot();
-            if (slot < 0 || slot >= inventory.getSize()) {
-                logGuiWarning("main", "Section " + section.id() + " has invalid main menu slot " + slot + "; using automatic slot.");
-                slot = nextFreeMainSlot(holder, autoSlot, inventory.getSize());
-            } else if (holder.slotToSection.containsKey(slot)) {
-                logGuiWarning("main", "Section " + section.id() + " main menu slot " + slot + " is already used; using automatic slot.");
-                slot = nextFreeMainSlot(holder, autoSlot, inventory.getSize());
-            }
-            if (slot < 0 || slot >= inventory.getSize()) {
-                logGuiWarning("main", "No free main menu slot for section " + section.id() + "; skipped.");
+            if (!available.contains(slot) || entries.containsKey(slot)) {
+                logGuiWarning("main", "Section " + section.id() + " has an unavailable configured slot " + slot);
                 continue;
             }
-            autoSlot = Math.max(autoSlot, slot + 1);
-            holder.slotToSection.put(slot, section.id());
-
             ItemStack icon = section.iconItem() == null ? new ItemStack(section.icon()) : section.iconItem().clone();
-            ItemMeta iconMeta = icon.getItemMeta();
-            if (iconMeta != null) {
-                if (!iconMeta.hasDisplayName()) {
-                    iconMeta.setDisplayName(Text.colorize("&#03fc88" + prettify(section.id())));
-                } else {
-                    iconMeta.setDisplayName(Text.colorize(iconMeta.getDisplayName()));
+            ItemMeta meta = icon.getItemMeta();
+            if (meta != null) {
+                if (meta.hasDisplayName()) {
+                    meta.setDisplayName(Text.colorize(applyPlaceholderApi(player, meta.getDisplayName())));
                 }
                 List<String> description = formatSectionDescription(player, section);
                 if (description != null) {
-                    iconMeta.setLore(description);
-                } else if (iconMeta.hasLore()) {
-                    iconMeta.setLore(colorizeLore(iconMeta.getLore()));
+                    meta.setLore(description);
+                } else if (meta.hasLore()) {
+                    meta.setLore(colorizeLore(meta.getLore()));
                 }
-                iconMeta.addItemFlags(ItemFlag.HIDE_ATTRIBUTES);
-                icon.setItemMeta(iconMeta);
+                icon.setItemMeta(meta);
             }
-            inventory.setItem(slot, icon);
+            entries.put(slot, new PublicGuiRenderInput.EntryValue(section.id(), icon,
+                    Map.of("section", section.title(), "section_id", section.id())));
         }
-
-        openInventory(player, inventory);
+        publicGuis.openEntryPoint(player, "command:/shop", new PublicGuiRenderInput(
+                Map.of(), Map.of(), Map.of(), Map.of("sections", entries)));
+        screenOpened(player, player.getOpenInventory().getTopInventory().getHolder());
     }
 
     private int nextFreeMainSlot(MainMenuHolder holder, int start, int size) {
@@ -307,99 +711,158 @@ public class GuiService implements Listener {
     }
 
     public void openShopSection(Player player, ShopSection section, int page) {
-        int currentPage = Math.clamp(page, 0, section.totalPages() - 1);
-        SectionHolder holder = new SectionHolder(section.id(), currentPage);
-        String title = section.title().replace("%page%", String.valueOf(currentPage + 1));
-        Inventory inventory = Bukkit.createInventory(holder, section.size(), plugin.getFoConfig().sectionTitleSmallCaps(title));
-        holder.setInventory(inventory);
-
-        fillBackground(inventory, "shop-section");
-
-        for (ShopItem shopItem : section.itemsBySlot(currentPage).values()) {
-            if (!hasProductAccess(player, shopItem)) {
+        if (publicGuis.snapshot() == null) {
+            plugin.sendConfigured(player, "gui-unavailable");
+            return;
+        }
+        ShopSection activeSection = section == null ? null
+                : plugin.getShopManager().getSection(section.id()).orElse(null);
+        if (activeSection == null || !activeSection.enabled()) {
+            openMainShop(player);
+            return;
+        }
+        int currentPage = Math.clamp(page, 0, activeSection.totalPages() - 1);
+        var definition = publicGuis.snapshot().require("shop.shop_section");
+        List<Integer> productSlots = definition.entries().get("products").slots();
+        Map<Integer, PublicGuiRenderInput.EntryValue> entries = new HashMap<>();
+        for (ShopItem item : activeSection.itemsBySlot(currentPage).values()) {
+            if (!hasProductAccess(player, item)) {
                 continue;
             }
-            ItemStack itemStack = createShopDisplayItem(player, section.id(), shopItem, shopItem.amount());
-
-            if (shopItem.slot() >= 0 && shopItem.slot() < inventory.getSize()) {
-                inventory.setItem(shopItem.slot(), itemStack);
+            if (!productSlots.contains(item.slot())) {
+                logGuiWarning("shop-section", "Product " + item.id() + " has slot " + item.slot()
+                        + " outside the configured product region; skipped.");
+                continue;
             }
+            int amount = item.amount();
+            int stock = plugin.getShopManager().getStock(activeSection.id(), item.id());
+            int limit = plugin.getShopManager().getRemainingBuyLimit(player.getUniqueId(), activeSection.id(), item);
+            List<String> stateParts = new ArrayList<>();
+            if (item.canBuy()) stateParts.add("buy");
+            if (item.canSell()) stateParts.add("sell");
+            if (stock >= 0) stateParts.add("stock");
+            if (limit >= 0) stateParts.add("limit");
+            String state = stateParts.isEmpty() ? "none" : String.join("-", stateParts);
+            ItemStack source = createPurchaseStack(item, amount);
+            ItemMeta meta = source.getItemMeta();
+            if (meta != null) {
+                if (meta.hasDisplayName()) {
+                    meta.setDisplayName(Text.colorize(applyTextPlaceholders(player, activeSection.id(), item,
+                            amount, meta.getDisplayName())));
+                }
+                if (meta.hasLore()) {
+                    meta.setLore(meta.getLore().stream().map(line -> Text.colorize(
+                            applyTextPlaceholders(player, activeSection.id(), item, amount, line))).toList());
+                }
+                source.setItemMeta(meta);
+            }
+            entries.put(item.slot(), new PublicGuiRenderInput.EntryValue(item.id(), source,
+                    Map.of("buy", plugin.getEconomyService().formatCompact(item.buyPrice()),
+                            "sell", plugin.getEconomyService().formatCompact(item.sellPrice()),
+                            "stock", String.valueOf(stock), "buy_limit", String.valueOf(limit)), state));
         }
-
-        holder.backSlot = readGuiSlot("shop-section", "buttons.back", inventory.getSize() - 5, inventory.getSize());
-        inventory.setItem(holder.backSlot, GUI_BUTTONS.back(player));
-        if (section.totalPages() > 1) {
-            holder.previousSlot = readGuiSlot("shop-section", "buttons.previous", inventory.getSize() - 9, inventory.getSize());
-            holder.nextSlot = readGuiSlot("shop-section", "buttons.next", inventory.getSize() - 1, inventory.getSize());
-            setPreviousPageButton(player, inventory, holder.previousSlot, currentPage, section.totalPages());
-            setNextPageButton(player, inventory, holder.nextSlot, currentPage, section.totalPages());
-        }
-
-        openInventory(player, inventory);
+        Map<String, String> placeholders = Map.of("section_title",
+                activeSection.title().replace("%page%", String.valueOf(currentPage + 1)),
+                "page", String.valueOf(currentPage + 1), "pages", String.valueOf(activeSection.totalPages()));
+        Map<String, String> states = new HashMap<>();
+        if (currentPage == 0) states.put("previous", "unavailable");
+        if (currentPage >= activeSection.totalPages() - 1) states.put("next", "unavailable");
+        publicSections.put(player.getUniqueId(), new SectionContext(activeSection.id(), currentPage));
+        publicGuis.open(player, "shop.shop_section", new PublicGuiRenderInput(
+                placeholders, states, Map.of(), Map.of("products", entries)));
+        screenOpened(player, player.getOpenInventory().getTopInventory().getHolder());
     }
 
     public void openRotatingShop(Player player) {
         if (!plugin.getRotatingShopService().isEnabled()) {
-            plugin.getMessages().send(player, "rotating-shop-disabled");
+            plugin.sendConfigured(player, "rotating-shop-disabled");
             return;
         }
-
-        RotatingShopHolder holder = new RotatingShopHolder();
-        String title = plugin.getFoConfig().guiString("rotating-shop", "title", "&8Rotating Shop");
-        Inventory inventory = Bukkit.createInventory(holder, 27, plugin.getFoConfig().sectionTitleSmallCaps(title));
-        holder.setInventory(inventory);
-
-        fillBackground(inventory, "rotating-shop");
-
-        List<RotatingShopService.RotatingEntry> entries = plugin.getRotatingShopService().activeEntries();
-        if (entries.isEmpty()) {
-            GuiButton empty = readGuiButton("rotating-shop", "empty", 13, Material.GRAY_DYE,
-                    "&#ff5d73No Boosts", List.of("&#ffffffNo sellable rotating items available."), inventory.getSize());
-            inventory.setItem(empty.slot(), createButtonItem(player, empty));
-            openInventory(player, inventory);
+        if (publicGuis.snapshot() == null) {
+            plugin.sendConfigured(player, "gui-unavailable");
             return;
         }
-
-        int[] slots = configuredSlots("rotating-shop", "slots", new int[]{11, 12, 13, 14, 15}, entries.size(), inventory.getSize());
-        for (int index = 0; index < entries.size() && index < slots.length; index++) {
-            RotatingShopService.RotatingEntry entry = entries.get(index);
-            GlobalSellPriceService.GlobalSellPriceEntry globalEntry = plugin.getRotatingShopService().findGlobalEntry(entry).orElse(null);
-            GlobalSellPriceService.GlobalPotionEntry globalPotionEntry = plugin.getRotatingShopService().findGlobalPotionEntry(entry).orElse(null);
-            GlobalSellPriceService.GlobalEnchantmentEntry globalEnchantmentEntry = plugin.getRotatingShopService().findGlobalEnchantmentEntry(entry).orElse(null);
+        var definition = publicGuis.snapshot().require("shop.rotating_shop");
+        List<Integer> slots = visibleEntrySlots(definition, "center", "boosts");
+        Map<Integer, PublicGuiRenderInput.EntryValue> center = new HashMap<>();
+        Map<Integer, PublicGuiRenderInput.EntryValue> boosts = new HashMap<>();
+        int index = 0;
+        for (RotatingShopService.RotatingEntry entry : plugin.getRotatingShopService().activeEntries()) {
+            if (index >= slots.size()) break;
+            var globalMaterial = plugin.getRotatingShopService().findGlobalEntry(entry).orElse(null);
+            var globalPotion = plugin.getRotatingShopService().findGlobalPotionEntry(entry).orElse(null);
+            var globalEnchantment = plugin.getRotatingShopService().findGlobalEnchantmentEntry(entry).orElse(null);
             ShopItem item = plugin.getRotatingShopService().findItem(entry).orElse(null);
-            if (item == null && globalEntry == null && globalPotionEntry == null && globalEnchantmentEntry == null) {
-                continue;
-            }
-            int slot = slots[index];
-            if (item != null && !hasProductAccess(player, item)) {
-                continue;
-            }
-            holder.slotToEntry.put(slot, entry);
-            if (globalEnchantmentEntry != null) {
-                inventory.setItem(slot, createGlobalEnchantmentRotatingDisplayItem(entry, globalEnchantmentEntry));
-            } else if (globalPotionEntry != null) {
-                inventory.setItem(slot, createGlobalPotionRotatingDisplayItem(entry, globalPotionEntry));
-            } else if (globalEntry != null) {
-                inventory.setItem(slot, createGlobalRotatingDisplayItem(entry, globalEntry));
+            ItemStack source;
+            String state;
+            String display;
+            double sell;
+            double buy = 0D;
+            if (globalEnchantment != null) {
+                source = globalEnchantmentBaseStack(globalEnchantment);
+                display = enchantmentDisplayName(globalEnchantment);
+                sell = globalEnchantment.price();
+                state = "global-enchantment";
+            } else if (globalPotion != null) {
+                source = globalPotionBaseStack(globalPotion);
+                display = publicPotionName(globalPotion.potionType().name());
+                sell = globalPotion.price();
+                state = "global-potion";
+            } else if (globalMaterial != null) {
+                source = new ItemStack(globalMaterial.material());
+                display = publicMaterialName(globalMaterial.material());
+                sell = globalMaterial.price();
+                state = "global-material";
+            } else if (item != null && hasProductAccess(player, item)) {
+                source = createPurchaseStack(item, item.amount());
+                display = purchaseDisplayName(player, entry.sectionId(), item, item.amount());
+                sell = item.sellPrice();
+                buy = item.buyPrice();
+                state = item.canBuy() ? "shop-buy" : "shop-sell-only";
             } else {
-                inventory.setItem(slot, createRotatingDisplayItem(player, entry, item));
+                continue;
             }
+            Map<String, String> values = Map.of("item", display, "boost", formatBoost(entry.multiplier()),
+                    "base_price", plugin.getEconomyService().formatCompact(sell),
+                    "price", plugin.getEconomyService().formatCompact(sell * entry.multiplier()),
+                    "buy", plugin.getEconomyService().formatCompact(buy),
+                    "time", DurationUtil.formatConfigured(
+                            plugin.getRotatingShopService().timeUntilResetMillis() / 1000L,
+                            plugin::renderConfigured));
+            PublicGuiRenderInput.EntryValue value = new PublicGuiRenderInput.EntryValue(entry.itemId(), source,
+                    values, state);
+            (definition.entries().get("center").enabled() && index == 0 ? center : boosts)
+                    .put(slots.get(index), value);
+            index++;
         }
-
-        openInventory(player, inventory);
+        publicGuis.openEntryPoint(player, "command:/rotatingshop", new PublicGuiRenderInput(
+                Map.of(), Map.of(), Map.of(), Map.of("center", center, "boosts", boosts)));
+        screenOpened(player, player.getOpenInventory().getTopInventory().getHolder());
     }
 
     public void openWorth(Player player) {
-        if (plugin.getGlobalSellPriceService() == null || !plugin.getGlobalSellPriceService().isEnabled()) {
-            plugin.getMessages().send(player, "worth-disabled");
+        if (!worthEnabled()) {
+            plugin.sendConfigured(player, "worth-disabled");
             return;
         }
         openGlobalSellPriceList(player, false, 0, "", WorthSort.NAME);
     }
 
+    private boolean worthEnabled() {
+        return plugin.getGlobalSellPriceService() != null
+                && plugin.getGlobalSellPriceService().isEnabled();
+    }
+
+    private void closeWorthIfOpen(Player player) {
+        if (player.getOpenInventory().getTopInventory().getHolder() instanceof PublicGuiInventoryHolder holder
+                && "shop.worth".equals(holder.frame().definition().menuId())) {
+            player.closeInventory();
+        }
+    }
+
     private void openGlobalSellPriceEditor(Player player) {
         GlobalSellPriceEditorHolder holder = new GlobalSellPriceEditorHolder();
-        Inventory inventory = Bukkit.createInventory(holder, 27, plugin.getFoConfig().sectionTitleSmallCaps("&8Global Prices"));
+        Inventory inventory = Bukkit.createInventory(holder, 27, editorTitle("Global Prices"));
         holder.setInventory(inventory);
 
         fillBackground(inventory);
@@ -422,16 +885,26 @@ public class GuiService implements Listener {
     }
 
     private void openGlobalSellPriceList(Player player, boolean editor, int page, String query, WorthSort sort) {
+        if (!editor) {
+            openPublicWorthList(player, page, query, sort);
+            return;
+        }
         String search = query == null ? "" : query.trim().toLowerCase(Locale.ROOT);
         WorthSort activeSort = sort == null ? WorthSort.NAME : sort;
         List<GlobalPriceListEntry> entries = globalPriceEntries(search, activeSort, editor);
         int totalPages = Math.max(1, (int) Math.ceil(entries.size() / (double) GLOBAL_PRICE_SLOTS.length));
         int currentPage = Math.clamp(page, 0, totalPages - 1);
         GlobalSellPriceListHolder holder = new GlobalSellPriceListHolder(editor, currentPage, totalPages, search, activeSort);
-        Inventory inventory = Bukkit.createInventory(holder, 54, plugin.getFoConfig().sectionTitleSmallCaps(editor ? "&8Global Prices" : "&8Worth"));
+        String title = editor ? editorTitle("Global Prices") : plugin.getFoConfig().sectionTitleSmallCaps(
+                plugin.getFoConfig().guiString("worth", "title", "&8Worth"));
+        Inventory inventory = Bukkit.createInventory(holder, 54, title);
         holder.setInventory(inventory);
 
-        fillBackground(inventory);
+        if (editor) {
+            fillBackground(inventory);
+        } else {
+            fillBackground(inventory, "worth");
+        }
 
         int start = currentPage * GLOBAL_PRICE_SLOTS.length;
         for (int i = 0; i < GLOBAL_PRICE_SLOTS.length; i++) {
@@ -443,75 +916,158 @@ public class GuiService implements Listener {
             GlobalPriceListEntry entry = entries.get(index);
             int slot = GLOBAL_PRICE_SLOTS[i];
             holder.slotToEntry.put(slot, entry);
-            inventory.setItem(slot, globalPriceItem(entry, editor));
+            inventory.setItem(slot, globalPriceItem(player, entry, editor));
         }
 
         if (entries.isEmpty()) {
-            inventory.setItem(22, createItem(Material.GRAY_DYE, "&#ff5d73No Matches", List.of("&#ffffffNo global sell prices matched your search.")));
+            if (editor) {
+                inventory.setItem(22, createItem(Material.GRAY_DYE, "&#ff5d73No Matches", List.of("&#ffffffNo global sell prices matched your search.")));
+            } else {
+                GuiButton empty = readGuiButton("worth", "empty", 22, Material.GRAY_DYE,
+                        "&#ff5d73No Matches", List.of("&#ffffffNo prices matched your search."), inventory.getSize());
+                boolean contentSlot = false;
+                for (int slot : GLOBAL_PRICE_SLOTS) {
+                    if (slot == empty.slot()) {
+                        contentSlot = true;
+                        break;
+                    }
+                }
+                if (!contentSlot) {
+                    logGuiWarning("worth", "empty.slot must use a content slot; using 22.");
+                    empty = new GuiButton(22, empty.material(), empty.amount(), empty.name(), empty.lore(), empty.customModelData());
+                }
+                inventory.setItem(empty.slot(), createButtonItem(player, empty));
+            }
         }
 
-        setPreviousPageButton(player, inventory, 45, currentPage, totalPages);
-        inventory.setItem(47, EditorItemFactory.cycle(player, plugin.getMessages(), "Sort", activeSort.name(), WORTH_SORT_OPTIONS));
         if (editor) {
+            holder.previousSlot = 45;
+            holder.sortSlot = 47;
+            holder.backSlot = 49;
+            holder.searchSlot = 51;
+            holder.clearSearchSlot = 52;
+            holder.nextSlot = 53;
+            setPreviousPageButton(player, inventory, holder.previousSlot, currentPage, totalPages);
+            inventory.setItem(holder.sortSlot, EditorItemFactory.cycle(player, plugin.getMessages(), "Sort", activeSort.name(), WORTH_SORT_OPTIONS));
             inventory.setItem(49, GUI_BUTTONS.back(player));
+            inventory.setItem(holder.searchSlot, GUI_BUTTONS.search(player, search));
+            setClearSearchButton(player, inventory, holder.clearSearchSlot, "worth", search);
+            setNextPageButton(player, inventory, holder.nextSlot, currentPage, totalPages);
+        } else {
+            placeWorthControls(player, inventory, holder, currentPage, totalPages, search, activeSort);
         }
-        inventory.setItem(51, GUI_BUTTONS.search(player, search));
-        setClearSearchButton(player, inventory, 52, "worth", search);
-        setNextPageButton(player, inventory, 53, currentPage, totalPages);
 
         openInventory(player, inventory);
+    }
+
+    private void openPublicWorthList(Player player, int page, String query, WorthSort sort) {
+        if (!worthEnabled()) {
+            closeWorthIfOpen(player);
+            plugin.sendConfigured(player, "worth-disabled");
+            return;
+        }
+        if (worthGuis.snapshot() == null) {
+            plugin.sendConfigured(player, "gui-unavailable");
+            return;
+        }
+        String search = query == null ? "" : query.trim().toLowerCase(Locale.ROOT);
+        WorthSort activeSort = sort == null ? WorthSort.NAME : sort;
+        List<GlobalPriceListEntry> entries = globalPriceEntries(search, activeSort, false);
+        var definition = worthGuis.snapshot().require("shop.worth");
+        List<Integer> slots = visibleWorthSlots(definition);
+        int pages = worthPageCount(entries.size(), slots.size());
+        int currentPage = Math.clamp(page, 0, pages - 1);
+        Map<Integer, PublicGuiRenderInput.EntryValue> center = new HashMap<>();
+        Map<Integer, PublicGuiRenderInput.EntryValue> prices = new HashMap<>();
+        for (int index = 0; index < slots.size(); index++) {
+            int entryIndex = currentPage * slots.size() + index;
+            if (entryIndex >= entries.size()) break;
+            GlobalPriceListEntry entry = entries.get(entryIndex);
+            String display = publicGlobalDisplayName(entry);
+            PublicGuiRenderInput.EntryValue value = new PublicGuiRenderInput.EntryValue(entry.itemId(),
+                    globalPriceBaseStack(entry), Map.of("item", display,
+                    "worth", formatGlobalPrice(globalListPrice(entry))),
+                    entry.isEnchantment() ? "enchantment" : entry.isPotion() ? "potion" : "material");
+            (definition.entries().get("center").enabled() && index == 0 ? center : prices)
+                    .put(slots.get(index), value);
+        }
+        Map<String, String> placeholders = Map.of("page", String.valueOf(currentPage + 1),
+                "pages", String.valueOf(pages), "sort", worthSortLabel(activeSort),
+                "next_sort", worthSortLabel(activeSort == WorthSort.NAME ? WorthSort.PRICE : WorthSort.NAME),
+                "query", search.isBlank() ? publicValue("worth-search-empty") : search);
+        Map<String, String> states = new HashMap<>();
+        if (currentPage == 0) states.put("previous", "unavailable");
+        if (currentPage >= pages - 1) states.put("next", "unavailable");
+        if (search.isBlank()) states.put("clear-search", "unavailable");
+        publicWorth.put(player.getUniqueId(), new WorthContext(currentPage, pages, search, activeSort));
+        worthGuis.openEntryPoint(player, "command:/worth", new PublicGuiRenderInput(placeholders,
+                states, Map.of(), Map.of("center", center, "prices", prices)));
+        screenOpened(player, player.getOpenInventory().getTopInventory().getHolder());
+    }
+
+    static List<Integer> visibleWorthSlots(PublicGuiDefinition definition) {
+        return visibleEntrySlots(definition, "center", "prices");
+    }
+
+    static List<Integer> visibleEntrySlots(PublicGuiDefinition definition, String first, String second) {
+        List<Integer> slots = new ArrayList<>();
+        if (definition.entries().get(first).enabled()) {
+            slots.addAll(definition.entries().get(first).slots());
+        }
+        if (definition.entries().get(second).enabled()) {
+            slots.addAll(definition.entries().get(second).slots());
+        }
+        return slots;
+    }
+
+    static int worthPageCount(int entryCount, int visibleSlotCount) {
+        return visibleSlotCount == 0 ? 1
+                : Math.max(1, (entryCount + visibleSlotCount - 1) / visibleSlotCount);
     }
 
     public void openSellGui(Player player) {
-        if (plugin.getFoConfig().isSellGamemodeBlocked(player.getGameMode().name())) {
-            plugin.getMessages().send(player, "sellgui-gamemode-not-allowed", Map.of("{gamemode}", player.getGameMode().name()));
-            plugin.getSounds().play(player, "sell.failure");
+        if (denyBlockedSellGamemode(player)) {
             return;
         }
-
-        SellGuiHolder holder = new SellGuiHolder();
-        Inventory inventory = Bukkit.createInventory(holder, plugin.getFoConfig().getSellSize(), plugin.getFoConfig().sellTitleSmallCaps());
-        holder.setInventory(inventory);
-
-        int inputEnd = inventory.getSize() - 9;
-        for (int slot = inputEnd; slot < inventory.getSize(); slot++) {
-            inventory.setItem(slot, createFillerItem("sell-gui"));
+        if (publicGuis.snapshot() == null) {
+            plugin.sendConfigured(player, "gui-unavailable");
+            return;
         }
-
-        GuiButton sellButton = readGuiButton("sell-gui", "buttons.sell", inventory.getSize() - 5, Material.EMERALD,
-                "&#03fc88Sell Items",
-                List.of(
-                        "&#ffffffPut items in the top rows.",
-                        "&#ffffffClick to sell all sellable items.",
-                        "&#a7b8b0Unsellable items are returned."
-                ),
-                inventory.getSize());
-        holder.sellSlot = sellButton.slot();
-        inventory.setItem(sellButton.slot(), createButtonItem(player, sellButton));
-
-        applySellGuiDecorations(inventory, holder);
-        openInventory(player, inventory);
+        PublicGuiFrame frame = publicGuis.plan("shop.sell_gui", PublicGuiRenderInput.empty());
+        SellGuiHolder holder = new SellGuiHolder();
+        holder.frame = frame;
+        holder.sellSlot = frame.definition().buttons().get("sell").slot();
+        frame.definition().decorations().forEach((id, decoration) -> {
+            holder.decorationSlots.addAll(decoration.slots());
+            List<String> playerCommands = plugin.getConfig().getStringList(
+                    "public-gui.sell-decoration-commands." + id + ".player");
+            List<String> consoleCommands = plugin.getConfig().getStringList(
+                    "public-gui.sell-decoration-commands." + id + ".console");
+            for (int slot : decoration.slots()) {
+                holder.playerCommands.put(slot, playerCommands);
+                holder.consoleCommands.put(slot, consoleCommands);
+            }
+        });
+        Inventory inventory = Bukkit.createInventory(holder, frame.definition().size(),
+                DialogIcons.fallbackText(frame.title()));
+        holder.setInventory(inventory);
+        PublicGuiRenderer.renderInto(player, inventory, frame);
+        player.openInventory(inventory);
+        screenOpened(player, holder);
     }
 
     public Set<Integer> sellGuiInputSlots(Inventory inventory) {
-        if (inventory == null || !(inventory.getHolder() instanceof SellGuiHolder holder)) {
+        if (inventory == null || !(inventory.getHolder() instanceof SellGuiHolder holder)
+                || holder.frame == null) {
             return Set.of();
         }
-        int inputEnd = inventory.getSize() - 9;
-        Set<Integer> slots = new HashSet<>(Math.max(0, inputEnd));
-        for (int slot = 0; slot < inputEnd; slot++) {
-            if (!holder.decorationSlots.contains(slot)) {
-                slots.add(slot);
-            }
-        }
-        return Set.copyOf(slots);
+        return Collections.unmodifiableSet(new LinkedHashSet<>(holder.frame.definition().requireGroup("sell-slots")));
     }
 
     private void applySellGuiDecorations(Inventory inventory, SellGuiHolder holder) {
         ConfigurationSection decorations = plugin.getFoConfig().guiSection("sell-gui", "decorations");
         Object rawDecorations = plugin.getFoConfig().guiObject("sell-gui", "decorations");
-        boolean emptyGuiDecorations = decorations != null && decorations.getKeys(false).isEmpty();
-        if ((decorations == null && rawDecorations == null) || emptyGuiDecorations) {
+        if (!plugin.getFoConfig().isPublicGuiMigrationReady()) {
             decorations = plugin.getConfig().getConfigurationSection("gui.sell.decorations");
             rawDecorations = plugin.getConfig().get("gui.sell.decorations");
         }
@@ -525,7 +1081,7 @@ public class GuiService implements Listener {
                                 mapInt(map, "amount", mapInt(map, "item.quantity", mapInt(map, "item.amount", 1))),
                                 mapString(map, "name", mapString(map, "item.name", " ")),
                                 firstNonEmptyList(mapStringList(map, "lore"), mapStringList(map, "item.lore")),
-                                mapInt(map, "customModelData", mapInt(map, "item.customModelData", -1)),
+                                mapInt(map, "custom-model-data", mapInt(map, "customModelData", mapInt(map, "item.custom-model-data", mapInt(map, "item.customModelData", -1)))),
                                 firstNonEmptyList(mapStringList(map, "commandsOnClick"), mapStringList(map, "commands-on-click"), mapStringList(map, "player-commands")),
                                 firstNonEmptyList(mapStringList(map, "commandsOnClickConsole"), mapStringList(map, "commands-on-click-console"), mapStringList(map, "console-commands"))
                         );
@@ -547,7 +1103,10 @@ public class GuiService implements Listener {
                     section.getInt("amount", section.getInt("item.quantity", section.getInt("item.amount", 1))),
                     section.getString("name", section.getString("item.name", " ")),
                     firstNonEmptyList(section.getStringList("lore"), section.getStringList("item.lore")),
-                    section.contains("customModelData") ? section.getInt("customModelData") : section.getInt("item.customModelData", -1),
+                    section.contains("custom-model-data") ? section.getInt("custom-model-data")
+                            : section.contains("customModelData") ? section.getInt("customModelData")
+                            : section.contains("item.custom-model-data") ? section.getInt("item.custom-model-data")
+                            : section.getInt("item.customModelData", -1),
                     firstNonEmptyList(
                     section.getStringList("commandsOnClick"),
                     section.getStringList("commands-on-click"),
@@ -568,6 +1127,14 @@ public class GuiService implements Listener {
             logGuiWarning("sell-gui", "Invalid decoration slot " + slot + "; skipped.");
             return;
         }
+        if (slot == holder.sellSlot) {
+            logGuiWarning("sell-gui", "Decoration slot " + slot + " collides with buttons.sell; decoration skipped.");
+            return;
+        }
+        if (holder.decorationSlots.contains(slot)) {
+            logGuiWarning("sell-gui", "Multiple decorations use slot " + slot + "; later decoration skipped.");
+            return;
+        }
 
         Material material = matchMaterial(materialName, Material.GRAY_STAINED_GLASS_PANE, "sell-gui decoration slot " + slot);
         ItemStack decoration = createItem(material, name == null ? " " : name, lore);
@@ -586,7 +1153,7 @@ public class GuiService implements Listener {
 
     public void openAdminEditor(Player player) {
         AdminEditorHolder holder = new AdminEditorHolder();
-        Inventory inventory = Bukkit.createInventory(holder, 27, plugin.getFoConfig().sectionTitleSmallCaps("&8FoShop Editor"));
+        Inventory inventory = Bukkit.createInventory(holder, 27, editorTitle("FoShop Editor"));
         holder.setInventory(inventory);
 
         fillBackground(inventory);
@@ -607,12 +1174,14 @@ public class GuiService implements Listener {
 
     private void openSettingsEditor(Player player) {
         SettingsEditorHolder holder = new SettingsEditorHolder();
-        Inventory inventory = Bukkit.createInventory(holder, 36, plugin.getFoConfig().sectionTitleSmallCaps("&8FoShop Settings"));
+        Inventory inventory = Bukkit.createInventory(holder, 36, editorTitle("FoShop Settings"));
         holder.setInventory(inventory);
 
         fillBackground(inventory);
 
-        inventory.setItem(10, button(player, Material.CHEST, "Main Shop Rows", List.of("Current: " + plugin.getFoConfig().getMainRows(), "Click to enter 1-6 rows."), "edit the shop rows"));
+        inventory.setItem(10, createItem(Material.CHEST, "&#03fc88Main Shop Layout", List.of(
+                "&#ffffffRows: &#03fc88" + (publicGuis.snapshot() == null ? "?" : publicGuis.snapshot().require("shop.main").rows()),
+                "&#a7b8b0Edit guis/main.yml to change the layout.")));
         inventory.setItem(11, toggleItem(player, "Rounded Pricing", plugin.getConfig().getBoolean("sellgui.price-format.rounded-pricing", false), "Format sell values with two decimals."));
         inventory.setItem(12, toggleItem(player, "Trim Zeros", plugin.getConfig().getBoolean("sellgui.price-format.remove-trailing-zeros", false), "Remove trailing .00 from sell values."));
         inventory.setItem(13, toggleItem(player, "Abbreviate Prices", plugin.getFoConfig().isSellAbbreviateNumbers(), "Use k/m/b for large sell values."));
@@ -631,7 +1200,7 @@ public class GuiService implements Listener {
 
     private void openSellBoosterEditor(Player player) {
         SellBoosterEditorHolder holder = new SellBoosterEditorHolder();
-        Inventory inventory = Bukkit.createInventory(holder, 36, plugin.getFoConfig().sectionTitleSmallCaps("&8Sell Boosters"));
+        Inventory inventory = Bukkit.createInventory(holder, 36, editorTitle("Sell Boosters"));
         holder.setInventory(inventory);
 
         fillBackground(inventory);
@@ -658,7 +1227,7 @@ public class GuiService implements Listener {
         int totalPages = Math.max(1, (int) Math.ceil(boosters.size() / (double) PAGE_SLOTS.length));
         int currentPage = Math.clamp(page, 0, totalPages - 1);
         ActiveSellBoostersHolder holder = new ActiveSellBoostersHolder(currentPage, totalPages);
-        Inventory inventory = Bukkit.createInventory(holder, 54, plugin.getFoConfig().sectionTitleSmallCaps("&8Active Sell Boosters"));
+        Inventory inventory = Bukkit.createInventory(holder, 54, editorTitle("Active Sell Boosters"));
         holder.setInventory(inventory);
 
         fillBackground(inventory);
@@ -691,7 +1260,7 @@ public class GuiService implements Listener {
 
     private void openRotatingShopEditor(Player player) {
         RotatingEditorHolder holder = new RotatingEditorHolder();
-        Inventory inventory = Bukkit.createInventory(holder, 27, plugin.getFoConfig().sectionTitleSmallCaps("&8Rotating Shop"));
+        Inventory inventory = Bukkit.createInventory(holder, 27, editorTitle("Rotating Shop"));
         holder.setInventory(inventory);
 
         fillBackground(inventory);
@@ -754,7 +1323,7 @@ public class GuiService implements Listener {
         }
 
         TriStateSelectionRequest request = TriStateSelectionRequest.builder()
-                .title(ROTATING_SECTIONS_SELECTOR_TITLE)
+                .title(editorTitle(ROTATING_SECTIONS_SELECTOR_TITLE))
                 .entries(entries)
                 .states(states)
                 .cycleOrder(List.of(TriStateSelectionState.ENABLED, TriStateSelectionState.DISABLED))
@@ -776,13 +1345,13 @@ public class GuiService implements Listener {
     private void openRotatingSectionDetailEditor(Player player, String sectionId, int sectionPage) {
         ShopSection section = plugin.getShopManager().getSection(sectionId).orElse(null);
         if (section == null) {
-            plugin.getMessages().send(player, "editor-invalid", Map.of("{reason}", "Section not found."));
+            plugin.sendConfigured(player, "editor-invalid", Map.of("{reason}", "Section not found."));
             openRotatingSectionEditorList(player, sectionPage);
             return;
         }
 
         RotatingSectionDetailHolder holder = new RotatingSectionDetailHolder(sectionId, sectionPage);
-        Inventory inventory = Bukkit.createInventory(holder, 27, plugin.getFoConfig().sectionTitleSmallCaps("&8Rotating: " + section.id()));
+        Inventory inventory = Bukkit.createInventory(holder, 27, editorTitle("Rotating: " + section.id()));
         holder.setInventory(inventory);
 
         fillBackground(inventory);
@@ -807,12 +1376,13 @@ public class GuiService implements Listener {
     private void openRotatingItemEditorList(Player player, String sectionId, int page, int sectionPage, String query) {
         ShopSection section = plugin.getShopManager().getSection(sectionId).orElse(null);
         if (section == null) {
-            plugin.getMessages().send(player, "editor-invalid", Map.of("{reason}", "Section not found."));
+            plugin.sendConfigured(player, "editor-invalid", Map.of("{reason}", "Section not found."));
             openRotatingSectionEditorList(player, sectionPage);
             return;
         }
 
         rotatingItemSectionPages.put(player.getUniqueId(), sectionPage);
+        rotatingItemSectionIds.put(player.getUniqueId(), sectionId);
         List<ShopItem> items = rotatingSellableItems(section, "");
         List<String> itemIds = items.stream().map(ShopItem::id).toList();
         Map<String, ShopItem> itemById = new HashMap<>();
@@ -848,7 +1418,7 @@ public class GuiService implements Listener {
         }
 
         TriStateSelectionRequest request = TriStateSelectionRequest.builder()
-                .title(ROTATING_ITEMS_SELECTOR_TITLE_PREFIX + section.id())
+                .title(editorTitle(ROTATING_ITEMS_SELECTOR_TITLE_PREFIX + section.id()))
                 .entries(entries)
                 .states(states)
                 .cycleOrder(List.of(TriStateSelectionState.ENABLED, TriStateSelectionState.DISABLED))
@@ -890,7 +1460,8 @@ public class GuiService implements Listener {
                 .map(this::sectionBrowserEntry)
                 .toList();
         EntryBrowserMenus.open(player, EntryBrowserRequest.builder()
-                .title("Section Editor")
+                .title(editorTitle("Section Editor"))
+                .context(new EditorBrowserContext(true, null))
                 .entries(entries)
                 .page(page)
                 .filter(search)
@@ -929,22 +1500,24 @@ public class GuiService implements Listener {
     private void openSectionDetailEditor(Player player, String sectionId, int sectionPage) {
         ShopSection section = plugin.getShopManager().getSection(sectionId).orElse(null);
         if (section == null) {
-            plugin.getMessages().send(player, "editor-invalid", Map.of("{reason}", "Section not found."));
+            plugin.sendConfigured(player, "editor-invalid", Map.of("{reason}", "Section not found."));
             openSectionEditorList(player, sectionPage);
             return;
         }
 
         SectionDetailHolder holder = new SectionDetailHolder(sectionId, sectionPage);
-        Inventory inventory = Bukkit.createInventory(holder, 27, plugin.getFoConfig().sectionTitleSmallCaps("&8Section: " + section.id()));
+        Inventory inventory = Bukkit.createInventory(holder, 27, editorTitle("Section: " + section.id()));
         holder.setInventory(inventory);
 
         fillBackground(inventory);
 
         inventory.setItem(10, button(player, Material.CHEST, "Products", List.of("Open product browser."), "browse products"));
         inventory.setItem(11, createSectionIconCopyItem(section));
-        inventory.setItem(12, button(player, Material.HOPPER, "Edit Size", List.of("Current: " + section.size(), "Click to enter 9-54 divisible by 9."), "edit the size"));
+        inventory.setItem(12, createItem(Material.HOPPER, "&#03fc88Product Layout", List.of(
+                "&#ffffffRows: &#03fc88" + (publicGuis.snapshot() == null ? "?" : publicGuis.snapshot().require("shop.shop_section").rows()),
+                "&#a7b8b0Edit guis/shop-section.yml to change the layout.")));
         inventory.setItem(13, button(player, Material.WRITABLE_BOOK, "Edit Description", List.of("Lines: " + section.description().size(), "Use | between lines."), "edit the description"));
-        inventory.setItem(14, button(player, Material.COMPASS, "Main Menu Slot", List.of("Current: " + section.slot(), "Click to lock this section to a /foshop slot.", "Visible range now: 0-" + (plugin.getFoConfig().getMainSize() - 1)), "edit the menu slot"));
+        inventory.setItem(14, button(player, Material.COMPASS, "Main Menu Slot", List.of("Current: " + section.slot(), "Choose a slot in guis/main.yml entries.sections.slots."), "edit the menu slot"));
         inventory.setItem(15, toggleItem(player, "Section Enabled", section.enabled(), "Show this section in /shop."));
         inventory.setItem(16, button(player, Material.LAVA_BUCKET, FoStyle.BAD, "Remove Section", List.of("Deletes this section and all products in it."), "open confirmation"));
         inventory.setItem(THREE_ROW_BACK_SLOT, GUI_BUTTONS.back(player));
@@ -987,7 +1560,7 @@ public class GuiService implements Listener {
     private void openItemListEditor(Player player, String sectionId, int page, int sectionPage, String query) {
         ShopSection section = plugin.getShopManager().getSection(sectionId).orElse(null);
         if (section == null) {
-            plugin.getMessages().send(player, "editor-invalid", Map.of("{reason}", "Section not found."));
+            plugin.sendConfigured(player, "editor-invalid", Map.of("{reason}", "Section not found."));
             openSectionEditorList(player, sectionPage);
             return;
         }
@@ -1005,7 +1578,8 @@ public class GuiService implements Listener {
                 .map(this::itemBrowserEntry)
                 .toList();
         EntryBrowserMenus.open(player, EntryBrowserRequest.builder()
-                .title("Items: " + sectionId)
+                .title(editorTitle("Items: " + sectionId))
+                .context(new EditorBrowserContext(false, sectionId))
                 .entries(entries)
                 .page(page)
                 .filter(search)
@@ -1038,20 +1612,20 @@ public class GuiService implements Listener {
     private void openItemEditor(Player player, String sectionId, String itemId, int page, int sectionPage) {
         ShopSection section = plugin.getShopManager().getSection(sectionId).orElse(null);
         if (section == null) {
-            plugin.getMessages().send(player, "editor-invalid", Map.of("{reason}", "Section not found."));
+            plugin.sendConfigured(player, "editor-invalid", Map.of("{reason}", "Section not found."));
             openSectionEditorList(player, sectionPage);
             return;
         }
 
         ShopItem item = section.items().stream().filter(current -> current.id().equalsIgnoreCase(itemId)).findFirst().orElse(null);
         if (item == null) {
-            plugin.getMessages().send(player, "editor-invalid", Map.of("{reason}", "Product not found."));
+            plugin.sendConfigured(player, "editor-invalid", Map.of("{reason}", "Product not found."));
             openItemListEditor(player, sectionId, page, sectionPage);
             return;
         }
 
         ItemEditorHolder holder = new ItemEditorHolder(sectionId, item.id(), page, sectionPage);
-        Inventory inventory = Bukkit.createInventory(holder, 45, plugin.getFoConfig().sectionTitleSmallCaps("&8Edit: " + item.id()));
+        Inventory inventory = Bukkit.createInventory(holder, 45, editorTitle("Edit: " + item.id()));
         holder.setInventory(inventory);
 
         fillBackground(inventory);
@@ -1070,7 +1644,7 @@ public class GuiService implements Listener {
         inventory.setItem(11, button(player, item.material(), "Edit Material", List.of("Current: " + item.material().name(), "Hold cursor item + click to copy material/name/lore/model/enchants."), "edit the material"));
         inventory.setItem(12, button(player, Material.CHEST, "Edit Amount", List.of("Current: " + item.amount(), "Type a number 1-" + item.effectiveStackSize()), "edit the amount"));
 
-        inventory.setItem(14, button(player, Material.ITEM_FRAME, "Edit GUI Slot", List.of("Current: " + item.slot(), "Type a slot index (0-" + (section.size() - 1) + ")."), "edit the GUI slot"));
+        inventory.setItem(14, button(player, Material.ITEM_FRAME, "Edit GUI Slot", List.of("Current: " + item.slot(), "Choose a slot in guis/shop-section.yml entries.products.slots."), "edit the GUI slot"));
         inventory.setItem(15, button(player, Material.EMERALD, "Edit Buy Price", List.of("Current: " + formatPrice(item.buyPrice()), "Type number or -1/disable."), "edit the buy price"));
         inventory.setItem(16, button(player, Material.GOLD_INGOT, "Edit Sell Price", List.of("Current: " + formatPrice(item.sellPrice()), "Type number or -1/disable."), "edit the sell price"));
 
@@ -1104,7 +1678,9 @@ public class GuiService implements Listener {
         Inventory top = event.getView().getTopInventory();
         InventoryHolder holder = top.getHolder();
 
-        if (event.getClickedInventory() != null && event.getClickedInventory().equals(top) && isBackButton(event.getCurrentItem())) {
+        if (holder instanceof FoHolder && !(holder instanceof SellGuiHolder)
+                && event.getClickedInventory() != null && event.getClickedInventory().equals(top)
+                && isBackButton(event.getCurrentItem())) {
             markBackNavigation(player);
         }
 
@@ -1268,6 +1844,7 @@ public class GuiService implements Listener {
         }
 
         if (slot == holder.backSlot) {
+            markBackNavigation(player);
             openMainShop(player);
             return;
         }
@@ -1298,7 +1875,7 @@ public class GuiService implements Listener {
         }
 
         if (!shopItem.canBuy()) {
-            plugin.getMessages().send(player, "buy-disabled");
+            plugin.sendConfigured(player, "buy-disabled");
             plugin.getSounds().play(player, "shop.purchase-failure");
             return;
         }
@@ -1354,8 +1931,7 @@ public class GuiService implements Listener {
         event.setCancelled(true);
         Runnable reopenSettings = () -> openSettingsEditor(player);
         switch (event.getSlot()) {
-            case 10 -> startPrompt(player, new PromptEdit(PromptType.MAIN_ROWS, null, null, null, 0, 0),
-                    "&#a7b8b0Expected: main /foshop rows from &#03fc881-6&#a7b8b0. Type &#ff5d73cancel &#a7b8b0to abort.");
+            case 10 -> { }
             case 11 -> toggleBooleanSetting(player, "sellgui.price-format.rounded-pricing", reopenSettings);
             case 12 -> toggleBooleanSetting(player, "sellgui.price-format.remove-trailing-zeros", reopenSettings);
             case 13 -> toggleBooleanSetting(player, "sellgui.price-format.abbreviate-numbers", reopenSettings);
@@ -1385,7 +1961,7 @@ public class GuiService implements Listener {
     private void cycleItemType(Player player, ItemEditorHolder holder) {
         ShopItem item = findItem(holder.sectionId, holder.itemId);
         if (item == null) {
-            plugin.getMessages().send(player, "editor-invalid", Map.of("{reason}", "Product not found."));
+            plugin.sendConfigured(player, "editor-invalid", Map.of("{reason}", "Product not found."));
             openItemListEditor(player, holder.sectionId, holder.page, holder.sectionPage);
             return;
         }
@@ -1393,7 +1969,7 @@ public class GuiService implements Listener {
         String current = editorItemTypeValue(item.type());
         String next = CycleOptions.nextValue(current, ITEM_TYPE_OPTIONS);
         if (updateItemField(holder.sectionId, holder.itemId, "type", next, player)) {
-            plugin.getMessages().send(player, "editor-saved");
+            plugin.sendConfigured(player, "editor-saved");
             plugin.getEditorSounds().cycle(player);
             openItemEditor(player, holder.sectionId, holder.itemId, holder.page, holder.sectionPage);
         }
@@ -1444,7 +2020,7 @@ public class GuiService implements Listener {
                     "&#a7b8b0Expected: duration like &#03fc881d&#a7b8b0, &#03fc8812h&#a7b8b0, &#03fc8830m&#a7b8b0, or seconds. Minimum 60s. Type &#ff5d73cancel &#a7b8b0to abort.");
             case 13 -> {
                 plugin.getRotatingShopService().resetNow();
-                plugin.getMessages().send(player, "rotating-shop-reset");
+                plugin.sendConfigured(player, "rotating-shop-reset");
                 plugin.getSounds().play(player, "shop.rotating-reset");
                 openRotatingShopEditor(player);
             }
@@ -1541,53 +2117,51 @@ public class GuiService implements Listener {
         }
 
         event.setCancelled(true);
-        switch (event.getSlot()) {
-            case 45 -> {
-                if (holder.page > 0) {
-                    pageSound(player, holder.editor, false);
-                    openGlobalSellPriceList(player, holder.editor, holder.page - 1, holder.query, holder.sort);
-                }
-                return;
+        int slot = event.getSlot();
+        if (slot == holder.previousSlot) {
+            if (holder.page > 0) {
+                pageSound(player, holder.editor, false);
+                openGlobalSellPriceList(player, holder.editor, holder.page - 1, holder.query, holder.sort);
             }
-            case 47 -> {
-                String next = CycleOptions.nextValue(holder.sort.name(), WORTH_SORT_OPTIONS);
-                if (holder.editor) {
-                    plugin.getEditorSounds().cycle(player);
-                } else {
-                    plugin.getSounds().play(player, "gui.sort");
-                }
-                openGlobalSellPriceList(player, holder.editor, 0, holder.query, sortFromValue(next));
-                return;
+            return;
+        }
+        if (slot == holder.sortSlot) {
+            String next = CycleOptions.nextValue(holder.sort.name(), WORTH_SORT_OPTIONS);
+            if (holder.editor) {
+                plugin.getEditorSounds().cycle(player);
+            } else {
+                plugin.getSounds().play(player, "gui.sort");
             }
-            case SIX_ROW_BACK_SLOT -> {
-                if (holder.editor) {
-                    openGlobalSellPriceEditor(player);
-                }
-                return;
+            openGlobalSellPriceList(player, holder.editor, 0, holder.query, sortFromValue(next));
+            return;
+        }
+        if (slot == holder.backSlot) {
+            if (holder.editor) {
+                openGlobalSellPriceEditor(player);
             }
-            case 51 -> {
-                searchSound(player, holder.editor, false);
-                startPrompt(player,
-                        new PromptEdit(PromptType.GLOBAL_PRICE_SEARCH, holder.editor ? "editor" : "worth", null, null, holder.page, holder.sort.ordinal()),
-                        "&#a7b8b0Expected: material search text. Type &#ff5d73cancel &#a7b8b0to abort.");
-                return;
+            return;
+        }
+        if (slot == holder.searchSlot) {
+            searchSound(player, holder.editor, false);
+            startPrompt(player,
+                    new PromptEdit(PromptType.GLOBAL_PRICE_SEARCH, holder.editor ? "editor" : "worth",
+                            null, null, holder.page, holder.sort.ordinal(), holder.query),
+                    "&#a7b8b0Expected: material search text. Type &#ff5d73cancel &#a7b8b0to abort.");
+            return;
+        }
+        if (slot == holder.clearSearchSlot) {
+            if (!holder.query.isBlank()) {
+                searchSound(player, holder.editor, true);
+                openGlobalSellPriceList(player, holder.editor, 0, "", holder.sort);
             }
-            case 52 -> {
-                if (!holder.query.isBlank()) {
-                    searchSound(player, holder.editor, true);
-                    openGlobalSellPriceList(player, holder.editor, 0, "", holder.sort);
-                }
-                return;
+            return;
+        }
+        if (slot == holder.nextSlot) {
+            if (holder.page < holder.totalPages - 1) {
+                pageSound(player, holder.editor, true);
+                openGlobalSellPriceList(player, holder.editor, holder.page + 1, holder.query, holder.sort);
             }
-            case 53 -> {
-                if (holder.page < holder.totalPages - 1) {
-                    pageSound(player, holder.editor, true);
-                    openGlobalSellPriceList(player, holder.editor, holder.page + 1, holder.query, holder.sort);
-                }
-                return;
-            }
-            default -> {
-            }
+            return;
         }
 
         GlobalPriceListEntry globalEntry = holder.slotToEntry.get(event.getSlot());
@@ -1607,7 +2181,7 @@ public class GuiService implements Listener {
             }
             if (saved) {
                 plugin.getRotatingShopService().reload();
-                plugin.getMessages().send(player, "editor-saved");
+                plugin.sendConfigured(player, "editor-saved");
                 plugin.getEditorSounds().toggle(player, !current);
             } else {
                 plugin.getEditorSounds().error(player);
@@ -1628,7 +2202,7 @@ public class GuiService implements Listener {
             }
             if (saved) {
                 plugin.getRotatingShopService().reload();
-                plugin.getMessages().send(player, "editor-saved");
+                plugin.sendConfigured(player, "editor-saved");
                 plugin.getEditorSounds().toggle(player, !current);
             } else {
                 plugin.getEditorSounds().error(player);
@@ -1650,8 +2224,8 @@ public class GuiService implements Listener {
         event.setCancelled(true);
         TriStateSelectionRequest request = holder.request();
         String title = request.title();
-        boolean sectionsSelector = ROTATING_SECTIONS_SELECTOR_TITLE.equals(title);
-        boolean itemsSelector = title.startsWith(ROTATING_ITEMS_SELECTOR_TITLE_PREFIX);
+        boolean sectionsSelector = editorTitle(ROTATING_SECTIONS_SELECTOR_TITLE).equals(title);
+        boolean itemsSelector = title.startsWith(editorTitle(ROTATING_ITEMS_SELECTOR_TITLE_PREFIX));
         if (!sectionsSelector && !itemsSelector) {
             return;
         }
@@ -1684,7 +2258,7 @@ public class GuiService implements Listener {
                             new PromptEdit(PromptType.ROTATING_SECTION_SEARCH, null, null, null, request.page(), 0),
                             "&#a7b8b0Expected: section search text. Type &#ff5d73cancel &#a7b8b0to abort.");
                 } else {
-                    String sectionId = rotatingItemSectionId(request);
+                    String sectionId = rotatingItemSectionId(player);
                     int sectionPage = rotatingItemSectionPages.getOrDefault(player.getUniqueId(), 0);
                     startPrompt(player,
                             new PromptEdit(PromptType.ROTATING_ITEM_SEARCH, null, sectionId, null, request.page(), sectionPage),
@@ -1695,7 +2269,7 @@ public class GuiService implements Listener {
                 if (sectionsSelector) {
                     openRotatingShopEditor(player);
                 } else {
-                    String sectionId = rotatingItemSectionId(request);
+                    String sectionId = rotatingItemSectionId(player);
                     int sectionPage = rotatingItemSectionPages.getOrDefault(player.getUniqueId(), 0);
                     openRotatingSectionDetailEditor(player, sectionId, sectionPage);
                 }
@@ -1706,7 +2280,7 @@ public class GuiService implements Listener {
                     saveConfigValue(player, "rotating-shop.sections." + click.key(), next,
                             () -> openRotatingSectionEditorList(player, click.page(), click.filter()));
                 } else {
-                    String sectionId = rotatingItemSectionId(request);
+                    String sectionId = rotatingItemSectionId(player);
                     int sectionPage = rotatingItemSectionPages.getOrDefault(player.getUniqueId(), 0);
                     saveConfigValue(player, "rotating-shop.items." + sectionId + "." + click.key(), next,
                             () -> openRotatingItemEditorList(player, sectionId, click.page(), sectionPage, click.filter()));
@@ -1717,12 +2291,8 @@ public class GuiService implements Listener {
         }
     }
 
-    private String rotatingItemSectionId(TriStateSelectionRequest request) {
-        String title = request.title();
-        if (!title.startsWith(ROTATING_ITEMS_SELECTOR_TITLE_PREFIX)) {
-            return "";
-        }
-        return title.substring(ROTATING_ITEMS_SELECTOR_TITLE_PREFIX.length());
+    private String rotatingItemSectionId(Player player) {
+        return rotatingItemSectionIds.getOrDefault(player.getUniqueId(), "");
     }
 
     private void handleRotatingSectionDetailClick(InventoryClickEvent event, Player player, Inventory top, RotatingSectionDetailHolder holder) {
@@ -1758,14 +2328,14 @@ public class GuiService implements Listener {
     private boolean saveConfigValue(Player player, String path, Object value, Runnable reopen) {
         EditorSaveResult result = configSettingSaver.save(path, value);
         if (!result.successful()) {
-            plugin.getMessages().send(player, "editor-invalid", Map.of("{reason}", result.errorMessage()));
+            plugin.sendConfigured(player, "editor-invalid", Map.of("{reason}", result.errorMessage()));
             plugin.getEditorSounds().error(player);
             if (reopen != null) {
                 reopen.run();
             }
             return false;
         }
-        plugin.getMessages().send(player, "editor-saved");
+        plugin.sendConfigured(player, "editor-saved");
         if (path.equals("sellgui.receipts.type") || path.startsWith("rotating-shop.sections.") || path.startsWith("rotating-shop.items.")) {
             plugin.getEditorSounds().cycle(player);
         } else if (value instanceof Boolean enabled) {
@@ -1806,9 +2376,11 @@ public class GuiService implements Listener {
     private void handleEntryBrowserClick(InventoryClickEvent event, Player player, EntryBrowserHolder holder) {
         EntryBrowserRequest request = holder.request();
         EntryBrowserClick click = EntryBrowserMenus.handleClick(event.getSlot(), holder);
-        String title = request.title();
-        boolean sectionBrowser = "Section Editor".equals(title);
-        boolean itemBrowser = title.startsWith("Items: ");
+        if (!(request.context() instanceof EditorBrowserContext context)) {
+            return;
+        }
+        boolean sectionBrowser = context.sections();
+        boolean itemBrowser = !sectionBrowser && context.sectionId() != null;
         if (!sectionBrowser && !itemBrowser) {
             return;
         }
@@ -1847,7 +2419,7 @@ public class GuiService implements Listener {
             return;
         }
 
-        String sectionId = title.substring("Items: ".length());
+        String sectionId = context.sectionId();
         int sectionPage = sectionItemBrowserPages.getOrDefault(player.getUniqueId(), 0);
         switch (click.action()) {
             case ENTRY -> openItemEditor(player, sectionId, click.entryId(), request.page(), sectionPage);
@@ -1888,23 +2460,21 @@ public class GuiService implements Listener {
             case 10 -> openItemListEditor(player, holder.sectionId, 0, holder.sectionPage);
             case 11 -> {
                 if (applySectionIconFromCursor(holder.sectionId, event.getCursor(), player)) {
-                    plugin.getMessages().send(player, "editor-saved");
+                    plugin.sendConfigured(player, "editor-saved");
                     plugin.getEditorSounds().add(player);
                     openSectionDetailEditor(player, holder.sectionId, holder.sectionPage);
                 }
             }
-            case 12 -> startPrompt(player,
-                    new PromptEdit(PromptType.SECTION_SIZE, null, holder.sectionId, null, holder.sectionPage, 0),
-                    "&#a7b8b0Expected: number between 9 and 54 divisible by 9. Type &#ff5d73cancel &#a7b8b0to abort.");
+            case 12 -> { }
             case 13 -> startPrompt(player,
                     new PromptEdit(PromptType.SECTION_DESCRIPTION, null, holder.sectionId, null, holder.sectionPage, 0),
                     "&#a7b8b0Expected: section description lines separated by &#03fc88|&#a7b8b0. Type &#ff5d73cancel &#a7b8b0to abort, or &#ff5d73clear &#a7b8b0to remove.");
             case 14 -> startPrompt(player,
                     new PromptEdit(PromptType.SECTION_SLOT, null, holder.sectionId, null, holder.sectionPage, 0),
-                    "&#a7b8b0Expected: /foshop slot from &#03fc880-53&#a7b8b0. Slots outside the current GUI rows stay saved but are not visible yet. Type &#ff5d73cancel &#a7b8b0to abort.");
+                    "&#a7b8b0Expected: a slot in guis/main.yml entries.sections.slots. Type &#ff5d73cancel &#a7b8b0to abort.");
             case 15 -> {
                 if (toggleSectionEnabled(holder.sectionId, player)) {
-                    plugin.getMessages().send(player, "editor-saved");
+                    plugin.sendConfigured(player, "editor-saved");
                     boolean enabled = plugin.getShopManager().getSection(holder.sectionId)
                             .map(ShopSection::enabled)
                             .orElse(false);
@@ -1933,7 +2503,7 @@ public class GuiService implements Listener {
             case 11 -> {
                 if (hasCursorItem(event)) {
                     if (applyItemFromCursor(holder.sectionId, holder.itemId, event.getCursor(), player)) {
-                        plugin.getMessages().send(player, "editor-saved");
+                        plugin.sendConfigured(player, "editor-saved");
                         plugin.getEditorSounds().add(player);
                         openItemEditor(player, holder.sectionId, holder.itemId, holder.page, holder.sectionPage);
                     }
@@ -1983,7 +2553,7 @@ public class GuiService implements Listener {
 
     private void openConfirmDeleteItem(Player player, String sectionId, String itemId, int page, int sectionPage) {
         ConfirmDeleteItemHolder holder = new ConfirmDeleteItemHolder(sectionId, itemId, page, sectionPage);
-        Inventory inventory = Bukkit.createInventory(holder, 27, plugin.getFoConfig().sectionTitleSmallCaps("&8Confirm Delete"));
+        Inventory inventory = Bukkit.createInventory(holder, 27, editorTitle("Confirm Delete"));
         holder.setInventory(inventory);
 
         fillBackground(inventory);
@@ -1995,7 +2565,7 @@ public class GuiService implements Listener {
 
     private void openConfirmDeleteSection(Player player, String sectionId, int sectionPage) {
         ConfirmDeleteSectionHolder holder = new ConfirmDeleteSectionHolder(sectionId, sectionPage);
-        Inventory inventory = Bukkit.createInventory(holder, 27, plugin.getFoConfig().sectionTitleSmallCaps("&8Confirm Delete"));
+        Inventory inventory = Bukkit.createInventory(holder, 27, editorTitle("Confirm Delete"));
         holder.setInventory(inventory);
 
         fillBackground(inventory);
@@ -2014,7 +2584,7 @@ public class GuiService implements Listener {
         if (event.getSlot() == 11) {
             if (removeItem(holder.sectionId, holder.itemId, player)) {
                 suppressConfirmDeleteClose.add(player.getUniqueId());
-                plugin.getMessages().send(player, "editor-saved");
+                plugin.sendConfigured(player, "editor-saved");
                 plugin.getEditorSounds().delete(player);
                 openItemListEditor(player, holder.sectionId, holder.page, holder.sectionPage);
             } else {
@@ -2027,7 +2597,7 @@ public class GuiService implements Listener {
 
         if (event.getSlot() == 15) {
             suppressConfirmDeleteClose.add(player.getUniqueId());
-            plugin.getMessages().send(player, "editor-cancelled");
+            plugin.sendConfigured(player, "editor-cancelled");
             markBackNavigation(player);
             openItemEditor(player, holder.sectionId, holder.itemId, holder.page, holder.sectionPage);
         }
@@ -2042,7 +2612,7 @@ public class GuiService implements Listener {
         if (event.getSlot() == 11) {
             suppressConfirmDeleteClose.add(player.getUniqueId());
             if (removeSection(holder.sectionId, player)) {
-                plugin.getMessages().send(player, "editor-saved");
+                plugin.sendConfigured(player, "editor-saved");
                 plugin.getEditorSounds().delete(player);
             } else {
                 plugin.getEditorSounds().error(player);
@@ -2053,7 +2623,7 @@ public class GuiService implements Listener {
 
         if (event.getSlot() == 15) {
             suppressConfirmDeleteClose.add(player.getUniqueId());
-            plugin.getMessages().send(player, "editor-cancelled");
+            plugin.sendConfigured(player, "editor-cancelled");
             markBackNavigation(player);
             openSectionDetailEditor(player, holder.sectionId, holder.sectionPage);
         }
@@ -2061,7 +2631,7 @@ public class GuiService implements Listener {
 
     private void openConfirmRemoveSellBooster(Player player, String boosterId, int page) {
         ConfirmRemoveSellBoosterHolder holder = new ConfirmRemoveSellBoosterHolder(boosterId, page);
-        Inventory inventory = Bukkit.createInventory(holder, 27, plugin.getFoConfig().sectionTitleSmallCaps("&8Confirm Remove"));
+        Inventory inventory = Bukkit.createInventory(holder, 27, editorTitle("Confirm Remove"));
         holder.setInventory(inventory);
 
         fillBackground(inventory);
@@ -2080,10 +2650,10 @@ public class GuiService implements Listener {
         if (event.getSlot() == 11) {
             suppressConfirmRemoveBoosterClose.add(player.getUniqueId());
             if (plugin.getSellBoosterService().remove(holder.boosterId)) {
-                plugin.getMessages().send(player, "editor-saved");
+                plugin.sendConfigured(player, "editor-saved");
                 plugin.getSounds().play(player, "shop.booster-removed");
             } else {
-                plugin.getMessages().send(player, "editor-invalid", Map.of("{reason}", "Booster not found."));
+                plugin.sendConfigured(player, "editor-invalid", Map.of("{reason}", "Booster not found."));
                 plugin.getEditorSounds().error(player);
             }
             openActiveSellBoosters(player, holder.page);
@@ -2092,62 +2662,48 @@ public class GuiService implements Listener {
 
         if (event.getSlot() == 15) {
             suppressConfirmRemoveBoosterClose.add(player.getUniqueId());
-            plugin.getMessages().send(player, "editor-cancelled");
+            plugin.sendConfigured(player, "editor-cancelled");
             markBackNavigation(player);
             openActiveSellBoosters(player, holder.page);
         }
     }
 
     private void openBuyItemGui(Player player, String sectionId, String itemId, int selectedAmount) {
-        ShopItem item = findItem(sectionId, itemId);
-        if (item == null) {
-            plugin.getMessages().send(player, "editor-invalid", Map.of("{reason}", "Product not found."));
+        ShopItem item = findPublicItem(sectionId, itemId);
+        if (item == null || publicGuis.snapshot() == null) {
+            plugin.sendConfigured(player, "gui-unavailable");
             return;
         }
-
         if (!item.canBuy()) {
-            plugin.getMessages().send(player, "buy-disabled");
+            plugin.sendConfigured(player, "buy-disabled");
             return;
         }
-
         if (!hasProductAccess(player, item)) {
             denyProductAccess(player, sectionId);
             return;
         }
-
         int amount = Math.clamp(selectedAmount, 1, item.effectiveStackSize());
-        BuyItemHolder holder = new BuyItemHolder(sectionId, itemId, amount);
-        String title = plugin.getFoConfig().guiString("buy-item", "title", "&8Buy: {item}").replace("{item}", item.id());
-        Inventory inventory = Bukkit.createInventory(holder, 27, plugin.getFoConfig().sectionTitleSmallCaps(title));
-        holder.setInventory(inventory);
-
-        fillBackground(inventory, "buy-item");
-
-        ItemStack center = createPurchaseStack(item, Math.clamp(amount, 1, item.effectiveStackSize()));
-        ItemMeta meta = center.getItemMeta();
-        if (meta != null) {
-            meta.setLore(List.of(
-                    Text.colorize("&#ffffffSelected amount: &#03fc88" + amount),
-                    Text.colorize("&#ffffffPrice: &#03fc88" + plugin.getEconomyService().formatCompact(item.buyPrice() * amount)),
-                    Text.colorize("&#a7b8b0Use the shulker buttons below.")
-            ));
-            center.setItemMeta(meta);
-        }
-        inventory.setItem(13, center);
-
-        placeAmountSelectionButtons(player, inventory, holder, item, amount);
-
-        openInventory(player, inventory);
+        int slot = publicGuis.snapshot().require("shop.buy_item").entries().get("preview").slots().getFirst();
+        ItemStack source = createPurchaseStack(item, amount);
+        String itemName = DialogIcons.fallbackText(purchaseDisplayName(player, sectionId, item, amount));
+        Map<String, String> values = Map.of("item", itemName, "amount", String.valueOf(amount),
+                "price", plugin.getEconomyService().formatCompact(item.buyPrice() * amount));
+        publicBuys.put(player.getUniqueId(), new BuyContext(sectionId, itemId, amount,
+                plugin.getShopManager().priceRevision(), publicGuis.snapshot().revision()));
+        publicGuis.open(player, "shop.buy_item", new PublicGuiRenderInput(values,
+                supportsBulkBuy(item) ? Map.of() : Map.of("bulk", "unavailable"), Map.of(),
+                Map.of("preview", Map.of(slot, new PublicGuiRenderInput.EntryValue(item.id(), source, values)))));
+        screenOpened(player, player.getOpenInventory().getTopInventory().getHolder());
     }
 
     private void openBuyMoreGui(Player player, String sectionId, String itemId, int returnAmount) {
-        ShopItem item = findItem(sectionId, itemId);
-        if (item == null) {
-            plugin.getMessages().send(player, "editor-invalid", Map.of("{reason}", "Product not found."));
+        ShopItem item = findPublicItem(sectionId, itemId);
+        if (item == null || publicGuis.snapshot() == null) {
+            plugin.sendConfigured(player, "gui-unavailable");
             return;
         }
         if (!item.canBuy()) {
-            plugin.getMessages().send(player, "buy-disabled");
+            plugin.sendConfigured(player, "buy-disabled");
             return;
         }
         if (!hasProductAccess(player, item)) {
@@ -2158,51 +2714,43 @@ public class GuiService implements Listener {
             openBuyItemGui(player, sectionId, itemId, returnAmount);
             return;
         }
-
-        BuyMoreHolder holder = new BuyMoreHolder(sectionId, itemId, returnAmount);
-        String title = plugin.getFoConfig().guiString("buy-more", "title", "&8Buy More: {item}").replace("{item}", item.id());
-        Inventory inventory = Bukkit.createInventory(holder, 27, plugin.getFoConfig().sectionTitleSmallCaps(title));
-        holder.setInventory(inventory);
-
-        fillBackground(inventory, "buy-more");
-
-        int[] options = BUY_MORE_STACK_OPTIONS;
-        int[] slots = BUY_MORE_SLOTS;
-        Material optionMaterial = materialFromGui("buy-more", "option.material", Material.LIME_SHULKER_BOX);
-        String optionName = plugin.getFoConfig().guiString("buy-more", "option.name", "&#03fc88{stacks} stack{plural}");
-        List<String> optionLore = plugin.getFoConfig().guiStringList("buy-more", "option.lore", List.of(
-                "&#ffffffAmount: &#03fc88{amount}",
-                "&#ffffffPrice: &#03fc88{price}",
-                "&#ffffffClick to buy."
-        ));
-        for (int i = 0; i < options.length && i < slots.length; i++) {
-            int stacks = options[i];
-            int totalAmount = stacks * item.effectiveStackSize();
-            holder.slotToAmount.put(slots[i], totalAmount);
-            inventory.setItem(slots[i], createItem(optionMaterial,
-                    formatBuyMoreLine(optionName, item, totalAmount, stacks),
-                    optionLore.stream().map(line -> formatBuyMoreLine(line, item, totalAmount, stacks)).toList()));
+        List<Integer> slots = publicGuis.snapshot().require("shop.buy_more").entries().get("options").slots();
+        List<Integer> options = visibleBulkStackOptions();
+        Map<Integer, PublicGuiRenderInput.EntryValue> entries = new HashMap<>();
+        String itemName = DialogIcons.fallbackText(purchaseDisplayName(player, sectionId, item, returnAmount));
+        for (int index = 0; index < options.size(); index++) {
+            int stacks = options.get(index);
+            int amount = stacks * item.effectiveStackSize();
+            entries.put(slots.get(index), new PublicGuiRenderInput.EntryValue(String.valueOf(stacks), null,
+                    Map.of("item", itemName, "stacks", String.valueOf(stacks),
+                            "plural", stacks == 1 ? "" : publicValue("stack-plural-suffix"), "amount", String.valueOf(amount),
+                            "stack_unit", publicValue(stacks == 1 ? "stack-singular" : "stack-plural"),
+                            "price", plugin.getEconomyService().formatCompact(item.buyPrice() * amount))));
         }
-
-        holder.backSlot = readGuiSlot("buy-more", "buttons.back", THREE_ROW_BACK_SLOT, inventory.getSize());
-        inventory.setItem(holder.backSlot, GUI_BUTTONS.back(player));
-        openInventory(player, inventory);
+        publicBuys.put(player.getUniqueId(), new BuyContext(sectionId, itemId, returnAmount,
+                plugin.getShopManager().priceRevision(), publicGuis.snapshot().revision()));
+        publicGuis.open(player, "shop.buy_more", new PublicGuiRenderInput(Map.of("item", itemName),
+                Map.of(), Map.of(), Map.of("options", entries)));
+        screenOpened(player, player.getOpenInventory().getTopInventory().getHolder());
     }
 
-    private void placeAmountSelectionButtons(Player player, Inventory inventory, BuyItemHolder holder, ShopItem item, int amount) {
-        placeAmountButton(player, inventory, holder, "remove-64", 10, -64, Material.RED_STAINED_GLASS_PANE, "&#ff5d73-64", List.of("&#ffffffRemove 64."), item, amount);
-        placeAmountButton(player, inventory, holder, "remove-10", 11, -10, Material.RED_STAINED_GLASS_PANE, "&#ff5d73-10", List.of("&#ffffffRemove 10."), item, amount);
-        placeAmountButton(player, inventory, holder, "remove-1", 12, -1, Material.RED_STAINED_GLASS_PANE, "&#ff5d73-1", List.of("&#ffffffRemove 1."), item, amount);
-        placeAmountButton(player, inventory, holder, "add-1", 14, 1, Material.LIME_STAINED_GLASS_PANE, "&#3ecf8e+1", List.of("&#ffffffAdd 1."), item, amount);
-        placeAmountButton(player, inventory, holder, "add-10", 15, 10, Material.LIME_STAINED_GLASS_PANE, "&#3ecf8e+10", List.of("&#ffffffAdd 10."), item, amount);
-        placeAmountButton(player, inventory, holder, "add-64", 16, 64, Material.LIME_STAINED_GLASS_PANE, "&#3ecf8e+64", List.of("&#ffffffAdd 64."), item, amount);
+    private void placeAmountSelectionButtons(Player player, Inventory inventory, BuyItemHolder holder, ShopItem item, int amount,
+                                             Set<Integer> occupied) {
+        placeAmountButton(player, inventory, holder, "remove-64", 10, -64, Material.RED_STAINED_GLASS_PANE, "&#ff5d73-64", List.of("&#ffffffRemove 64."), item, amount, occupied);
+        placeAmountButton(player, inventory, holder, "remove-10", 11, -10, Material.RED_STAINED_GLASS_PANE, "&#ff5d73-10", List.of("&#ffffffRemove 10."), item, amount, occupied);
+        placeAmountButton(player, inventory, holder, "remove-1", 12, -1, Material.RED_STAINED_GLASS_PANE, "&#ff5d73-1", List.of("&#ffffffRemove 1."), item, amount, occupied);
+        placeAmountButton(player, inventory, holder, "add-1", 14, 1, Material.LIME_STAINED_GLASS_PANE, "&#3ecf8e+1", List.of("&#ffffffAdd 1."), item, amount, occupied);
+        placeAmountButton(player, inventory, holder, "add-10", 15, 10, Material.LIME_STAINED_GLASS_PANE, "&#3ecf8e+10", List.of("&#ffffffAdd 10."), item, amount, occupied);
+        placeAmountButton(player, inventory, holder, "add-64", 16, 64, Material.LIME_STAINED_GLASS_PANE, "&#3ecf8e+64", List.of("&#ffffffAdd 64."), item, amount, occupied);
 
-        holder.cancelSlot = readGuiSlot("buy-item", "buttons.cancel", THREE_ROW_BACK_SLOT, inventory.getSize());
-        inventory.setItem(holder.cancelSlot, GUI_BUTTONS.back(player));
+        GuiButton cancel = resolveGuiButton("buy-item", "buttons.cancel", THREE_ROW_BACK_SLOT, Material.IRON_DOOR,
+                "&#ff5d73Back", List.of("&#ffffffReturn to the shop section."), inventory.getSize(), occupied);
+        holder.cancelSlot = cancel.slot();
+        inventory.setItem(holder.cancelSlot, createButtonItem(player, cancel));
 
         if (supportsBulkBuy(item)) {
-            GuiButton bulk = readGuiButton("buy-item", "buttons.bulk", 21, Material.HOPPER,
-                    "&#03fc88Buy More", List.of("&#ffffffChoose stack amount preset."), inventory.getSize());
+            GuiButton bulk = resolveGuiButton("buy-item", "buttons.bulk", 21, Material.HOPPER,
+                    "&#03fc88Buy More", List.of("&#ffffffChoose stack amount preset."), inventory.getSize(), occupied);
             holder.bulkSlot = bulk.slot();
             inventory.setItem(bulk.slot(), createButtonItem(player, bulk, formatAmountLine(bulk.name(), item, amount),
                     bulk.lore().stream().map(line -> formatAmountLine(line, item, amount)).toList()));
@@ -2210,28 +2758,26 @@ public class GuiService implements Listener {
             holder.bulkSlot = -1;
         }
 
-        GuiButton confirm = readGuiButton("buy-item", "buttons.confirm", 23, Material.LIME_SHULKER_BOX,
+        GuiButton confirm = resolveGuiButton("buy-item", "buttons.confirm", 23, Material.LIME_SHULKER_BOX,
                 "&#3ecf8eConfirm Buy", List.of(
                         "&#ffffffBuy: &#03fc88{amount}",
                         "&#ffffffPrice: &#03fc88{price}"
-                ), inventory.getSize());
+                ), inventory.getSize(), occupied);
         holder.confirmSlot = confirm.slot();
         inventory.setItem(confirm.slot(), createButtonItem(player, confirm, formatAmountLine(confirm.name(), item, amount),
                 confirm.lore().stream().map(line -> formatAmountLine(line, item, amount)).toList()));
     }
 
     private void placeAmountButton(Player player, Inventory inventory, BuyItemHolder holder, String key, int defaultSlot, int defaultDelta,
-                                   Material defaultMaterial, String defaultName, List<String> defaultLore, ShopItem item, int amount) {
+                                   Material defaultMaterial, String defaultName, List<String> defaultLore, ShopItem item, int amount,
+                                   Set<Integer> occupied) {
         ConfigurationSection section = plugin.getFoConfig().guiSection("buy-item", "buttons." + key);
-        int slot = sanitizeGuiSlot(section == null ? defaultSlot : section.getInt("slot", defaultSlot), defaultSlot, inventory.getSize(), "buy-item buttons." + key + ".slot");
         int delta = section == null ? defaultDelta : section.getInt("change", defaultDelta);
-        Material material = section == null ? defaultMaterial : materialFromSection(section, "material", defaultMaterial);
-        String name = section == null ? defaultName : section.getString("name", defaultName);
-        List<String> lore = section == null ? defaultLore : sectionStringList(section, "lore", defaultLore);
-
-        holder.slotToDelta.put(slot, delta);
-        inventory.setItem(slot, EditorItemFactory.item(player, material, formatAmountLine(name, item, amount),
-                lore.stream().map(line -> formatAmountLine(line, item, amount)).toList()));
+        GuiButton button = resolveGuiButton("buy-item", "buttons." + key, defaultSlot, defaultMaterial, defaultName,
+                defaultLore, inventory.getSize(), occupied);
+        holder.slotToDelta.put(button.slot(), delta);
+        inventory.setItem(button.slot(), createButtonItem(player, button, formatAmountLine(button.name(), item, amount),
+                button.lore().stream().map(line -> formatAmountLine(line, item, amount)).toList()));
     }
 
     private GuiButton readGuiButton(String file, String path, int defaultSlot, Material defaultMaterial, String defaultName, List<String> defaultLore, int inventorySize) {
@@ -2249,6 +2795,17 @@ public class GuiService implements Listener {
                 sectionStringList(section, "lore", defaultLore),
                 section.contains("custom-model-data") ? section.getInt("custom-model-data") : section.getInt("customModelData", -1)
         );
+    }
+
+    private GuiButton resolveGuiButton(String file, String path, int defaultSlot, Material defaultMaterial,
+                                       String defaultName, List<String> defaultLore, int inventorySize,
+                                       Set<Integer> occupied) {
+        GuiButton configured = readGuiButton(file, path, defaultSlot, defaultMaterial, defaultName, defaultLore, inventorySize);
+        int resolvedSlot = GuiSlotResolver.resolve(configured.slot(), defaultSlot, inventorySize, occupied);
+        if (resolvedSlot != configured.slot()) {
+            logGuiWarning(file, path + ".slot " + configured.slot() + " collides with visible content; using " + resolvedSlot + ".");
+        }
+        return new GuiButton(resolvedSlot, configured.material(), configured.amount(), configured.name(), configured.lore(), configured.customModelData());
     }
 
     private int readGuiSlot(String file, String path, int defaultSlot, int inventorySize) {
@@ -2278,21 +2835,110 @@ public class GuiService implements Listener {
         }
     }
 
-    private int[] configuredSlots(String file, String path, int[] defaults, int maxSlots, int inventorySize) {
-        List<Integer> configured = plugin.getFoConfig().guiIntegerList(file, path, List.of());
-        if (configured.isEmpty()) {
-            int length = Math.min(defaults.length, maxSlots);
-            int[] out = new int[length];
-            System.arraycopy(defaults, 0, out, 0, length);
-            return out;
+    private ItemStack pageButton(Player player, GuiButton button, int page, int totalPages) {
+        return configuredButton(player, button, Map.of(
+                "page", String.valueOf(page),
+                "pages", String.valueOf(totalPages)
+        ));
+    }
+
+    private void placeWorthControls(Player player, Inventory inventory, GlobalSellPriceListHolder holder,
+                                    int currentPage, int totalPages, String search, WorthSort sort) {
+        Set<Integer> occupied = new HashSet<>();
+        for (int contentSlot : GLOBAL_PRICE_SLOTS) {
+            occupied.add(contentSlot);
         }
 
-        return configured.stream()
-                .map(slot -> sanitizeGuiSlot(slot, -1, inventorySize, file + " " + path))
-                .filter(slot -> slot >= 0)
-                .limit(maxSlots)
-                .mapToInt(Integer::intValue)
-                .toArray();
+        GuiButton previous = resolveGuiButton("worth", "buttons.previous", 45, Material.ARROW,
+                "&#03fc88Previous Page", List.of("&#ffffffPage {page}/{pages}"), inventory.getSize(), occupied);
+        GuiButton sortButton = resolveGuiButton("worth", "buttons.sort", 47, Material.COMPARATOR,
+                "&#03fc88Sort: {sort}", List.of("&#ffffffNext: {next_sort}"), inventory.getSize(), occupied);
+        GuiButton searchButton = resolveGuiButton("worth", "buttons.search", 51, Material.OAK_SIGN,
+                "&#03fc88Search", List.of("&#ffffffCurrent: {query}"), inventory.getSize(), occupied);
+        GuiButton clearSearch = resolveGuiButton("worth", "buttons.clear-search", 52, Material.BARRIER,
+                "&#ff5d73Clear Search", List.of(), inventory.getSize(), occupied);
+        GuiButton next = resolveGuiButton("worth", "buttons.next", 53, Material.ARROW,
+                "&#03fc88Next Page", List.of("&#ffffffPage {page}/{pages}"), inventory.getSize(), occupied);
+
+        holder.previousSlot = previous.slot();
+        holder.sortSlot = sortButton.slot();
+        holder.searchSlot = searchButton.slot();
+        holder.clearSearchSlot = clearSearch.slot();
+        holder.nextSlot = next.slot();
+
+        if (currentPage > 0) {
+            inventory.setItem(previous.slot(), pageButton(player, previous, currentPage, totalPages));
+        }
+        String currentSort = worthSortLabel(sort);
+        String nextSort = worthSortLabel(sort == WorthSort.NAME ? WorthSort.PRICE : WorthSort.NAME);
+        inventory.setItem(sortButton.slot(), configuredButton(player, sortButton, Map.of(
+                "sort", currentSort,
+                "next_sort", nextSort
+        )));
+        String visibleQuery = search == null || search.isBlank()
+                ? publicValue("worth-search-empty")
+                : search;
+        inventory.setItem(searchButton.slot(), configuredButton(player, searchButton, Map.of("query", visibleQuery)));
+        if (search != null && !search.isBlank()) {
+            inventory.setItem(clearSearch.slot(), createButtonItem(player, clearSearch));
+        }
+        if (currentPage < totalPages - 1) {
+            inventory.setItem(next.slot(), pageButton(player, next, currentPage + 2, totalPages));
+        }
+    }
+
+    private String worthSortLabel(WorthSort sort) {
+        return publicValue(sort == WorthSort.PRICE ? "worth-sort-price" : "worth-sort-name");
+    }
+
+    private String publicValue(String key) {
+        String path = "public-values." + key;
+        return plugin.getConfig().isSet(path) ? Objects.toString(plugin.getConfig().getString(path), "") : "";
+    }
+
+    private String publicMaterialName(Material material) {
+        return publicItemName("materials", material.name(), prettify(material.name()));
+    }
+
+    private String publicPotionName(String potionType) {
+        return publicItemName("potions", potionType, prettify(potionType) + publicValue("potion-suffix"));
+    }
+
+    private String publicItemName(String kind, String id, String fallback) {
+        return publicItemNames.getOrDefault(kind + "." + id, fallback);
+    }
+
+    private int publicIntValue(String key) {
+        String path = "public-values." + key;
+        return plugin.getConfig().isSet(path) ? plugin.getConfig().getInt(path) : 0;
+    }
+
+    private DialogButton publicDialogButton(String key) {
+        return new DialogButton(publicValue(key + "-label"), publicValue(key + "-tooltip"),
+                publicIntValue(key + "-width"), publicValue(key + "-icon"));
+    }
+
+    private ItemStack configuredButton(Player player, GuiButton button, Map<String, String> placeholders) {
+        String name = replaceGuiPlaceholders(button.name(), placeholders);
+        List<String> lore = button.lore().stream().map(line -> replaceGuiPlaceholders(line, placeholders)).toList();
+        return createButtonItem(player, button, name, lore);
+    }
+
+    private String replaceGuiPlaceholders(String input, Map<String, String> placeholders) {
+        String output = input == null ? "" : input;
+        for (Map.Entry<String, String> entry : placeholders.entrySet()) {
+            output = output.replace("{" + entry.getKey() + "}", entry.getValue());
+        }
+        return output;
+    }
+
+    private int[] configuredSlots(String file, String path, int[] defaults, int maxSlots, int inventorySize) {
+        List<Integer> configured = plugin.getFoConfig().guiIntegerList(file, path, List.of());
+        int[] resolved = GuiSlotResolver.uniqueSlots(configured, defaults, maxSlots, inventorySize);
+        if (!configured.isEmpty() && resolved.length < Math.min(maxSlots, defaults.length)) {
+            logGuiWarning(file, path + " does not contain enough unique valid slots; safe defaults filled the missing positions.");
+        }
+        return resolved;
     }
 
     private int sanitizeGuiSlot(int slot, int fallback) {
@@ -2316,8 +2962,11 @@ public class GuiService implements Listener {
     }
 
     private List<String> sectionStringList(ConfigurationSection section, String path, List<String> fallback) {
+        if (!section.contains(path)) {
+            return fallback;
+        }
         List<String> values = section.getStringList(path);
-        return values.isEmpty() ? fallback : values;
+        return values;
     }
 
     @SafeVarargs
@@ -2384,11 +3033,45 @@ public class GuiService implements Listener {
     private String formatBuyMoreLine(String line, ShopItem item, int amount, int stacks) {
         return formatAmountLine(line, item, amount)
                 .replace("{stacks}", String.valueOf(stacks))
-                .replace("{plural}", stacks == 1 ? "" : "s");
+                .replace("{plural}", stacks == 1 ? "" : publicValue("stack-plural-suffix"));
     }
 
     private boolean supportsBulkBuy(ShopItem item) {
-        return item.type() != ShopItemType.PERMISSION;
+        return item.type() != ShopItemType.PERMISSION
+                && !visibleBulkStackOptions().isEmpty();
+    }
+
+    private List<Integer> visibleBulkStackOptions() {
+        if (publicGuis.snapshot() == null) return List.of();
+        return visibleBulkStackOptions(bulkStackOptions,
+                publicGuis.snapshot().require("shop.buy_more").entries().get("options"));
+    }
+
+    static List<Integer> visibleBulkStackOptions(List<Integer> options, PublicGuiDefinition.Entry region) {
+        return region.enabled() ? options.subList(0, Math.min(options.size(), region.slots().size())) : List.of();
+    }
+
+    static List<Integer> configuredBulkStackOptions(FileConfiguration config) {
+        String path = "public-gui.bulk-stack-options";
+        if (!config.isSet(path) || !(config.get(path) instanceof List<?> raw)) {
+            return List.of();
+        }
+        Set<Integer> options = new LinkedHashSet<>();
+        for (Object value : raw) {
+            if (!(value instanceof Number number) || !Double.isFinite(number.doubleValue())
+                    || number.doubleValue() != number.intValue() || number.intValue() < 1
+                    || number.intValue() > 9 || !options.add(number.intValue())) {
+                return List.of();
+            }
+        }
+        return List.copyOf(options);
+    }
+
+    static boolean invalidBulkStackOptions(FileConfiguration config, List<Integer> options) {
+        String path = "public-gui.bulk-stack-options";
+        if (!config.isSet(path)) return false; // Owner removed this optional choice list.
+        Object raw = config.get(path);
+        return !(raw instanceof List<?> list) || !list.isEmpty() && options.isEmpty();
     }
 
     private void handleBuyItemGuiClick(InventoryClickEvent event, Player player, Inventory top, BuyItemHolder holder) {
@@ -2405,7 +3088,7 @@ public class GuiService implements Listener {
 
         Integer delta = holder.slotToDelta.get(event.getSlot());
         if (delta != null) {
-            plugin.getSounds().playWithPitchVariation(player, "gui.cycle", 0.06F);
+            plugin.getSounds().play(player, "gui.cycle");
             openBuyItemGui(player, holder.sectionId, holder.itemId, holder.selectedAmount + delta);
             return;
         }
@@ -2423,6 +3106,7 @@ public class GuiService implements Listener {
         }
 
         if (event.getSlot() == holder.cancelSlot) {
+            markBackNavigation(player);
             plugin.getSounds().play(player, "gui.cancel");
             plugin.getShopManager().getSection(holder.sectionId).ifPresent(section -> openShopSection(player, section));
         }
@@ -2455,6 +3139,12 @@ public class GuiService implements Listener {
     }
 
     private boolean buyItem(Player player, String sectionId, ShopItem shopItem, int amount) {
+        ShopSection currentSection = plugin.getShopManager().getSection(sectionId).orElse(null);
+        if (!isCurrentPublicItem(currentSection, shopItem)) {
+            plugin.sendConfigured(player, "gui-unavailable");
+            openMainShop(player);
+            return false;
+        }
         amount = shopItem.type() == ShopItemType.PERMISSION ? 1 : Math.max(1, amount);
 
         if (!hasProductAccess(player, shopItem)) {
@@ -2463,19 +3153,19 @@ public class GuiService implements Listener {
         }
 
         if (!plugin.getEconomyService().isAvailable()) {
-            plugin.getMessages().send(player, "no-economy");
+            plugin.sendConfigured(player, "no-economy");
             plugin.getSounds().play(player, "shop.purchase-failure");
             return true;
         }
 
         if (!shopItem.canBuy() || !isFinitePositiveOrZero(shopItem.buyPrice())) {
-            plugin.getMessages().send(player, "buy-disabled");
+            plugin.sendConfigured(player, "buy-disabled");
             plugin.getSounds().play(player, "shop.purchase-failure");
             return true;
         }
 
         if (!hasConfiguredPurchaseData(shopItem)) {
-            plugin.getMessages().send(player, "buy-disabled");
+            plugin.sendConfigured(player, "buy-disabled");
             plugin.getSounds().play(player, "shop.purchase-failure");
             return true;
         }
@@ -2486,38 +3176,38 @@ public class GuiService implements Listener {
 
         int stock = plugin.getShopManager().getStock(sectionId, shopItem.id());
         if (stock >= 0 && amount > stock) {
-            plugin.getMessages().send(player, "stock-insufficient", Map.of("{stock}", String.valueOf(stock)));
+            plugin.sendConfigured(player, "stock-insufficient", Map.of("{stock}", String.valueOf(stock)));
             plugin.getSounds().play(player, "shop.purchase-failure");
             return true;
         }
 
         int remainingLimit = plugin.getShopManager().getRemainingBuyLimit(player.getUniqueId(), sectionId, shopItem);
         if (remainingLimit >= 0 && amount > remainingLimit) {
-            plugin.getMessages().send(player, "buy-limit-reached", Map.of("{limit}", String.valueOf(remainingLimit)));
+            plugin.sendConfigured(player, "buy-limit-reached", Map.of("{limit}", String.valueOf(remainingLimit)));
             plugin.getSounds().play(player, "shop.purchase-failure");
             return true;
         }
 
         double totalCost = shopItem.buyPrice() * amount;
         if (totalCost < 0D || !Double.isFinite(totalCost)) {
-            plugin.getMessages().send(player, "transaction-failed");
+            plugin.sendConfigured(player, "transaction-failed");
             plugin.getSounds().play(player, "shop.purchase-failure");
             return true;
         }
         if (plugin.getEconomyService().balance(player) < totalCost) {
-            plugin.getMessages().send(player, "not-enough-money", Map.of("{amount}", plugin.getEconomyService().formatCompact(totalCost)));
+            plugin.sendConfigured(player, "not-enough-money", Map.of("{amount}", plugin.getEconomyService().formatCompact(totalCost)));
             plugin.getSounds().play(player, "shop.purchase-failure");
             return true;
         }
 
         if (requiresInventorySpace(shopItem) && !canFitExact(player.getInventory(), shopItem, amount)) {
-            plugin.getMessages().send(player, "inventory-full");
+            plugin.sendConfigured(player, "inventory-full");
             plugin.getSounds().play(player, "shop.purchase-failure");
             return true;
         }
 
         if (!plugin.getEconomyService().withdraw(player, totalCost)) {
-            plugin.getMessages().send(player, "transaction-failed");
+            plugin.sendConfigured(player, "transaction-failed");
             plugin.getSounds().play(player, "shop.purchase-failure");
             return true;
         }
@@ -2526,7 +3216,7 @@ public class GuiService implements Listener {
         if (purchasedAmount < amount) {
             double refund = (amount - purchasedAmount) * shopItem.buyPrice();
             plugin.getEconomyService().deposit(player, refund);
-            plugin.getMessages().send(player, "inventory-full");
+            plugin.sendConfigured(player, "inventory-full");
         }
 
         if (purchasedAmount <= 0) {
@@ -2535,13 +3225,21 @@ public class GuiService implements Listener {
         }
 
         plugin.getShopManager().recordPurchase(player.getUniqueId(), sectionId, shopItem, purchasedAmount);
-        plugin.getMessages().send(player, "buy-success", Map.of(
+        plugin.sendConfigured(player, "buy-success", Map.of(
                 "{amount}", String.valueOf(purchasedAmount),
-                "{item}", prettify(shopItem.material().name()),
+                "{item}", purchaseDisplayName(player, sectionId, shopItem, purchasedAmount),
                 "{price}", plugin.getEconomyService().formatCompact(shopItem.buyPrice() * purchasedAmount)
         ));
         plugin.getSounds().play(player, "shop.purchase");
         return true;
+    }
+
+    private String purchaseDisplayName(Player player, String sectionId, ShopItem item, int amount) {
+        ItemStack source = createPurchaseStack(item, 1);
+        ItemMeta meta = source.getItemMeta();
+        String name = meta != null && meta.hasDisplayName()
+                ? meta.getDisplayName() : publicMaterialName(item.material());
+        return applyTextPlaceholders(player, sectionId, item, amount, name);
     }
 
     private boolean hasProductAccess(Player player, ShopItem item) {
@@ -2550,7 +3248,7 @@ public class GuiService implements Listener {
     }
 
     private void denyProductAccess(Player player, String sectionId) {
-        plugin.getMessages().send(player, "product-permission-required");
+        plugin.sendConfigured(player, "product-permission-required");
         plugin.getSounds().play(player, "shop.purchase-failure");
         plugin.getShopManager().getSection(sectionId).ifPresent(section -> openShopSection(player, section));
     }
@@ -2560,11 +3258,11 @@ public class GuiService implements Listener {
             return false;
         }
         if (!plugin.getPermissionService().isEnabled()) {
-            plugin.getMessages().send(player, "permission-provider-missing");
+            plugin.sendConfigured(player, "permission-provider-missing");
             return false;
         }
         if (plugin.getPermissionService().has(player, item.permission())) {
-            plugin.getMessages().send(player, "permission-already-owned");
+            plugin.sendConfigured(player, "permission-already-owned");
             return false;
         }
         return true;
@@ -2582,7 +3280,7 @@ public class GuiService implements Listener {
     }
 
     private void handleSellClick(InventoryClickEvent event, Player player, Inventory top, SellGuiHolder holder) {
-        int inputEnd = top.getSize() - 9;
+        Set<Integer> inputSlots = sellGuiInputSlots(top);
 
         if (event.getAction() == InventoryAction.COLLECT_TO_CURSOR && canCollectProtectedSellItem(event.getCursor(), top, holder)) {
             event.setCancelled(true);
@@ -2607,45 +3305,78 @@ public class GuiService implements Listener {
                 runSellGuiDecorationCommands(player, holder, slot);
                 return;
             }
-
-            if (slot >= inputEnd) {
+            if (slot == holder.sellSlot) {
                 event.setCancelled(true);
-
-                if (slot == holder.sellSlot) {
-                    if (!plugin.getEconomyService().isAvailable()) {
-                        plugin.getMessages().send(player, "no-economy");
-                        return;
-                    }
-                    if (!sellingInProgress.add(player.getUniqueId())) {
-                        plugin.getMessages().send(player, "sellgui-already-processing");
-                        return;
-                    }
-                    sellFromGui(player, top);
+                if (!holder.frame.bindings().containsKey(slot)) {
+                    return;
                 }
+                if (denyBlockedSellGamemode(player)) {
+                    return;
+                }
+                if (!plugin.getEconomyService().isAvailable()) {
+                    plugin.sendConfigured(player, "no-economy");
+                    return;
+                }
+                if (!sellingInProgress.add(player.getUniqueId())) {
+                    plugin.sendConfigured(player, "sellgui-already-processing");
+                    return;
+                }
+                sellFromGui(player, top);
+                return;
+            }
+
+            if (!inputSlots.contains(slot)) {
+                event.setCancelled(true);
             }
             return;
         }
 
-        if (event.getAction() == InventoryAction.MOVE_TO_OTHER_INVENTORY && !canAcceptSellInputItem(top, holder, event.getCurrentItem())) {
+        if (event.getAction() == InventoryAction.MOVE_TO_OTHER_INVENTORY) {
             event.setCancelled(true);
+            ItemStack incoming = event.getCurrentItem();
+            if (incoming == null || incoming.getType() == Material.AIR) {
+                return;
+            }
+            ItemStack remaining = incoming.clone();
+            for (int slot : inputSlots) {
+                ItemStack existing = top.getItem(slot);
+                if (existing == null || existing.getType() == Material.AIR || !existing.isSimilar(remaining)) {
+                    continue;
+                }
+                int transfer = Math.min(remaining.getAmount(), existing.getMaxStackSize() - existing.getAmount());
+                if (transfer > 0) {
+                    existing.setAmount(existing.getAmount() + transfer);
+                    top.setItem(slot, existing);
+                    remaining.setAmount(remaining.getAmount() - transfer);
+                }
+                if (remaining.getAmount() == 0) break;
+            }
+            if (remaining.getAmount() > 0) {
+                for (int slot : inputSlots) {
+                    ItemStack existing = top.getItem(slot);
+                    if (existing != null && existing.getType() != Material.AIR) continue;
+                    int transfer = Math.min(remaining.getAmount(), remaining.getMaxStackSize());
+                    ItemStack moved = remaining.clone();
+                    moved.setAmount(transfer);
+                    top.setItem(slot, moved);
+                    remaining.setAmount(remaining.getAmount() - transfer);
+                    if (remaining.getAmount() == 0) break;
+                }
+            }
+            event.setCurrentItem(remaining.getAmount() == 0 ? null : remaining);
         }
     }
 
     private boolean isProtectedSellSlot(int rawSlot, Inventory top, SellGuiHolder holder) {
-        int inputEnd = top.getSize() - 9;
         return rawSlot >= 0 && rawSlot < top.getSize()
-                && (rawSlot >= inputEnd || holder.decorationSlots.contains(rawSlot));
+                && !sellGuiInputSlots(top).contains(rawSlot);
     }
 
     private boolean canAcceptSellInputItem(Inventory top, SellGuiHolder holder, ItemStack incoming) {
         if (incoming == null || incoming.getType() == Material.AIR) {
             return false;
         }
-        int inputEnd = top.getSize() - 9;
-        for (int slot = 0; slot < inputEnd; slot++) {
-            if (holder.decorationSlots.contains(slot)) {
-                continue;
-            }
+        for (int slot : sellGuiInputSlots(top)) {
             ItemStack item = top.getItem(slot);
             if (item == null || item.getType() == Material.AIR) {
                 return true;
@@ -2661,9 +3392,9 @@ public class GuiService implements Listener {
         if (cursor == null || cursor.getType() == Material.AIR) {
             return false;
         }
-        int inputEnd = top.getSize() - 9;
-        for (int slot = inputEnd; slot < top.getSize(); slot++) {
-            if (isSimilarNonAir(cursor, top.getItem(slot))) {
+        Set<Integer> inputs = sellGuiInputSlots(top);
+        for (int slot = 0; slot < top.getSize(); slot++) {
+            if (!inputs.contains(slot) && isSimilarNonAir(cursor, top.getItem(slot))) {
                 return true;
             }
         }
@@ -2671,6 +3402,9 @@ public class GuiService implements Listener {
             if (slot >= 0 && slot < top.getSize() && isSimilarNonAir(cursor, top.getItem(slot))) {
                 return true;
             }
+        }
+        if (holder.sellSlot >= 0 && holder.sellSlot < top.getSize() && isSimilarNonAir(cursor, top.getItem(holder.sellSlot))) {
+            return true;
         }
         return false;
     }
@@ -2726,7 +3460,7 @@ public class GuiService implements Listener {
 
         if (!foundItems) {
             sellingInProgress.remove(player.getUniqueId());
-            plugin.getMessages().send(player, "sellall-empty");
+            plugin.sendConfigured(player, "sellall-empty");
             plugin.getSounds().play(player, "sell.failure");
             return;
         }
@@ -2743,7 +3477,7 @@ public class GuiService implements Listener {
         ItemStack hand = inventory.getItemInMainHand();
         if (hand == null || hand.getType() == Material.AIR) {
             sellingInProgress.remove(player.getUniqueId());
-            plugin.getMessages().send(player, "sellhand-empty");
+            plugin.sendConfigured(player, "sellhand-empty");
             plugin.getSounds().play(player, "sell.failure");
             return;
         }
@@ -2751,7 +3485,7 @@ public class GuiService implements Listener {
         SellResult result = processSellItem(player, hand.clone(), new SellProcessingContext());
         if (result.soldUnits <= 0) {
             sellingInProgress.remove(player.getUniqueId());
-            plugin.getMessages().send(player, "sellgui-none");
+            plugin.sendConfigured(player, "sellgui-none");
             plugin.getSounds().play(player, "sell.failure");
             return;
         }
@@ -2765,35 +3499,39 @@ public class GuiService implements Listener {
     }
 
     private boolean startDirectSell(Player player) {
-        if (plugin.getFoConfig().isSellGamemodeBlocked(player.getGameMode().name())) {
-            plugin.getMessages().send(player, "sellgui-gamemode-not-allowed", Map.of("{gamemode}", player.getGameMode().name()));
-            plugin.getSounds().play(player, "sell.failure");
+        if (denyBlockedSellGamemode(player)) {
             return false;
         }
 
         if (!plugin.getEconomyService().isAvailable()) {
-            plugin.getMessages().send(player, "no-economy");
+            plugin.sendConfigured(player, "no-economy");
             plugin.getSounds().play(player, "sell.failure");
             return false;
         }
 
         if (!sellingInProgress.add(player.getUniqueId())) {
-            plugin.getMessages().send(player, "sellgui-already-processing");
+            plugin.sendConfigured(player, "sellgui-already-processing");
             return false;
         }
 
         return true;
     }
 
+    private boolean denyBlockedSellGamemode(Player player) {
+        String gamemode = player.getGameMode().name();
+        if (!plugin.getFoConfig().isSellGamemodeBlocked(gamemode)) {
+            return false;
+        }
+        String displayName = plugin.getFoConfig().publicGamemodeName(gamemode);
+        plugin.sendConfigured(player, "sellgui-gamemode-not-allowed", Map.of("{gamemode}", displayName));
+        plugin.getSounds().play(player, "sell.failure");
+        return true;
+    }
+
     private void sellFromGui(Player player, Inventory inventory) {
-        int inputEnd = inventory.getSize() - 9;
-        SellGuiHolder holder = inventory.getHolder() instanceof SellGuiHolder sellGuiHolder ? sellGuiHolder : null;
         List<ItemStack> snapshot = new ArrayList<>();
 
-        for (int slot = 0; slot < inputEnd; slot++) {
-            if (holder != null && holder.decorationSlots.contains(slot)) {
-                continue;
-            }
+        for (int slot : sellGuiInputSlots(inventory)) {
             ItemStack item = inventory.getItem(slot);
             if (item == null || item.getType() == Material.AIR) {
                 continue;
@@ -2804,7 +3542,7 @@ public class GuiService implements Listener {
 
         if (snapshot.isEmpty()) {
             sellingInProgress.remove(player.getUniqueId());
-            plugin.getMessages().send(player, "sellgui-empty");
+            plugin.sendConfigured(player, "sellgui-empty");
             plugin.getSounds().play(player, "sell.failure");
             return;
         }
@@ -2838,23 +3576,23 @@ public class GuiService implements Listener {
                         || !plugin.getEconomyService().deposit(player, totalResult.earned)) {
                     overflowed |= depositSellItems(player, totalResult.soldItems);
                     if (overflowed) {
-                        plugin.getMessages().send(player, "sellgui-inventory-full");
+                        plugin.sendConfigured(player, "sellgui-inventory-full");
                     }
-                    plugin.getMessages().send(player, "no-economy");
+                    plugin.sendConfigured(player, "no-economy");
                     plugin.getSounds().play(player, "sell.failure");
                     return;
                 }
                 if (overflowed) {
-                    plugin.getMessages().send(player, "sellgui-inventory-full");
+                    plugin.sendConfigured(player, "sellgui-inventory-full");
                 }
                 sendSellSuccess(player, totalResult);
                 plugin.getSounds().play(player, "sell.success");
                 transactionLogger.write(player, totalResult.soldUnits, formatSellMoney(totalResult.earned), buildSoldList(totalResult));
             } else {
                 if (overflowed) {
-                    plugin.getMessages().send(player, "sellgui-inventory-full");
+                    plugin.sendConfigured(player, "sellgui-inventory-full");
                 }
-                plugin.getMessages().send(player, "sellgui-none");
+                plugin.sendConfigured(player, "sellgui-none");
                 plugin.getSounds().play(player, "sell.failure");
             }
         } finally {
@@ -2899,14 +3637,15 @@ public class GuiService implements Listener {
         placeholders.put("{items}", list);
         placeholders.put("%items%", list);
 
-        String message = plugin.getMessages().render("sellgui-success", "", placeholders);
         if (plugin.getFoConfig().getSellReceiptType() == 1 && !result.soldLines.isEmpty()) {
-            sendReceiptMessage(player, message, placeholders, result);
+            sendReceiptMessage(player, placeholders, result);
         } else {
-            Text.send(player, message);
+            plugin.sendConfigured(player, "sellgui-success", placeholders);
         }
 
-        if (plugin.getFoConfig().isSellTitlesEnabled()) {
+        if (plugin.getFoConfig().isSellTitlesEnabled()
+                && (!plugin.getFoConfig().getSellTitleMessage().isBlank()
+                || !plugin.getFoConfig().getSellSubtitleMessage().isBlank())) {
             player.sendTitle(
                     Text.format(plugin.getFoConfig().getSellTitleMessage(), placeholders),
                     Text.format(plugin.getFoConfig().getSellSubtitleMessage(), placeholders),
@@ -2916,30 +3655,33 @@ public class GuiService implements Listener {
             );
         }
 
-        if (plugin.getFoConfig().isSellActionBarEnabled()) {
+        if (plugin.getFoConfig().isSellActionBarEnabled()
+                && !plugin.getFoConfig().getSellActionBarMessage().isBlank()) {
             player.spigot().sendMessage(ChatMessageType.ACTION_BAR,
                     TextComponent.fromLegacyText(Text.format(plugin.getFoConfig().getSellActionBarMessage(), placeholders)));
         }
     }
 
-    private void sendReceiptMessage(Player player, String message, Map<String, String> placeholders, SellResult result) {
-        String receiptText = plugin.getFoConfig().getSellReceiptText();
-        String hover = buildReceiptHover(placeholders, result);
-
-        TextComponent root = new TextComponent(TextComponent.fromLegacyText(message + " "));
-        TextComponent receipt = new TextComponent(TextComponent.fromLegacyText(Text.colorize(receiptText)));
-        receipt.setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT,
-                new net.md_5.bungee.api.chat.hover.content.Text(TextComponent.fromLegacyText(hover))));
-        root.addExtra(receipt);
-        player.spigot().sendMessage(root);
+    private void sendReceiptMessage(Player player, Map<String, String> placeholders, SellResult result) {
+        String receiptText = plugin.configuredMessageTemplate("sellgui-receipt-text");
+        if (receiptText.isBlank()) {
+            plugin.sendConfigured(player, "sellgui-success", placeholders);
+            return;
+        }
+        Component message = plugin.renderConfiguredComponent(player, "sellgui-success", placeholders);
+        Component separator = receiptSeparator(plugin.renderConfiguredSeparator("sellgui-receipt-separator"));
+        Component receipt = plugin.getMessages().renderTemplateComponent(player, receiptText, Map.of())
+                .hoverEvent(DialogIcons.render(player, buildReceiptHover(placeholders, result)));
+        player.sendMessage(message.append(separator).append(receipt));
     }
 
     private String buildReceiptHover(Map<String, String> placeholders, SellResult result) {
         String title = Text.format(plugin.getFoConfig().getSellReceiptTitle(), placeholders);
         String layout = plugin.getFoConfig().getSellReceiptItemLayout();
+        String lineSeparator = plugin.renderConfiguredSeparator("sellgui-receipt-line-separator");
         StringBuilder builder = new StringBuilder(title);
         for (SoldLine line : result.soldLines) {
-            builder.append(Text.colorize(formatSoldLine(layout, line))).append('\n');
+            builder.append(Text.colorize(formatSoldLine(layout, line))).append(lineSeparator);
         }
         return builder.toString();
     }
@@ -2947,9 +3689,10 @@ public class GuiService implements Listener {
     private String buildSoldList(SellResult result) {
         List<String> lines = new ArrayList<>();
         for (SoldLine line : result.soldLines) {
-            lines.add(line.amount() + "x " + line.item());
+            lines.add(plugin.renderConfigured("sellgui-list-item-layout", Map.of(
+                    "{amount}", String.valueOf(line.amount()), "{item}", soldLineItemName(line))));
         }
-        return String.join(", ", lines);
+        return String.join(plugin.renderConfiguredSeparator("sellgui-list-separator"), lines);
     }
 
     private SellResult processSellItem(Player player, ItemStack stack) {
@@ -3156,7 +3899,7 @@ public class GuiService implements Listener {
         if (meta != null && meta.hasDisplayName()) {
             return meta.getDisplayName();
         }
-        return prettify(stack.getType().name());
+        return publicMaterialName(stack.getType());
     }
 
     private String formatSellMoney(double amount) {
@@ -3167,12 +3910,16 @@ public class GuiService implements Listener {
         return layout
                 .replace("{amount}", String.valueOf(line.amount()))
                 .replace("%amount%", String.valueOf(line.amount()))
-                .replace("{item}", line.item())
-                .replace("%item%", line.item())
+                .replace("{item}", soldLineItemName(line))
+                .replace("%item%", soldLineItemName(line))
                 .replace("{price}", formatSellMoney(line.price()))
                 .replace("%price%", formatSellMoney(line.price()))
                 .replace("{earning}", formatSellMoney(line.price()))
                 .replace("%earning%", formatSellMoney(line.price()));
+    }
+
+    private String soldLineItemName(SoldLine line) {
+        return line.overflow() ? plugin.renderConfigured("sellgui-receipt-other-items") : line.item();
     }
 
     @EventHandler
@@ -3201,9 +3948,8 @@ public class GuiService implements Listener {
             return;
         }
 
-        int inputEnd = top.getSize() - 9;
         for (int rawSlot : event.getRawSlots()) {
-            if ((rawSlot >= inputEnd && rawSlot < top.getSize()) || holder.decorationSlots.contains(rawSlot)) {
+            if (rawSlot >= 0 && rawSlot < top.getSize() && !sellGuiInputSlots(top).contains(rawSlot)) {
                 event.setCancelled(true);
                 return;
             }
@@ -3217,7 +3963,9 @@ public class GuiService implements Listener {
         }
 
         Inventory top = event.getInventory();
-        if (plugin.getCore() != null && plugin.getCore().inventoryCloseSuppressor().consumeSuppressedClose(player)) {
+        boolean suppressed = plugin.getCore() != null
+                && plugin.getCore().inventoryCloseSuppressor().consumeSuppressedClose(player);
+        if (suppressed && !(top.getHolder() instanceof SellGuiHolder)) {
             return;
         }
 
@@ -3231,7 +3979,7 @@ public class GuiService implements Listener {
                 if (!player.isOnline()) {
                     return;
                 }
-                plugin.getMessages().send(player, "editor-cancelled");
+                plugin.sendConfigured(player, "editor-cancelled");
                 openItemEditor(player, holder.sectionId, holder.itemId, holder.page, holder.sectionPage);
             });
             return;
@@ -3245,7 +3993,7 @@ public class GuiService implements Listener {
                 if (!player.isOnline()) {
                     return;
                 }
-                plugin.getMessages().send(player, "editor-cancelled");
+                plugin.sendConfigured(player, "editor-cancelled");
                 openSectionDetailEditor(player, holder.sectionId, holder.sectionPage);
             });
             return;
@@ -3259,7 +4007,7 @@ public class GuiService implements Listener {
                 if (!player.isOnline()) {
                     return;
                 }
-                plugin.getMessages().send(player, "editor-cancelled");
+                plugin.sendConfigured(player, "editor-cancelled");
                 openActiveSellBoosters(player, holder.page);
             });
             return;
@@ -3275,9 +4023,13 @@ public class GuiService implements Listener {
         if (!hasSellGuiItems(top)) {
             return;
         }
+        if (denyBlockedSellGamemode(player)) {
+            returnUnsoldItems(player, top);
+            return;
+        }
         if (!plugin.getEconomyService().isAvailable()) {
             returnUnsoldItems(player, top);
-            plugin.getMessages().send(player, "no-economy");
+            plugin.sendConfigured(player, "no-economy");
             return;
         }
         if (!sellingInProgress.add(player.getUniqueId())) {
@@ -3300,8 +4052,13 @@ public class GuiService implements Listener {
     @EventHandler
     public void onQuit(PlayerQuitEvent event) {
         UUID uuid = event.getPlayer().getUniqueId();
+        publicSections.remove(uuid);
+        publicBuys.remove(uuid);
+        publicWorth.remove(uuid);
         chatPrompts.clear(event.getPlayer());
         rotatingItemSectionPages.remove(uuid);
+        rotatingItemSectionIds.remove(uuid);
+        sectionItemBrowserPages.remove(uuid);
         sellingInProgress.remove(uuid);
         suppressConfirmDeleteClose.remove(uuid);
         suppressConfirmRemoveBoosterClose.remove(uuid);
@@ -3323,7 +4080,7 @@ public class GuiService implements Listener {
             if (plugin.getFileLogger() != null) {
                 plugin.getFileLogger().info("Editor prompt saved by " + player.getName() + ": " + promptLogContext(edit));
             }
-            plugin.getMessages().send(player, outcome.feedbackMessage);
+            plugin.sendConfigured(player, outcome.feedbackMessage);
             playPromptSuccessSound(player, edit.type);
             openAfterPromptSuccess(player, edit, outcome.updatedItemId);
         } else {
@@ -3347,7 +4104,7 @@ public class GuiService implements Listener {
         if (plugin.getFileLogger() != null) {
             plugin.getFileLogger().debug("Editor prompt cancelled by " + player.getName() + ": " + promptLogContext(edit));
         }
-        plugin.getMessages().send(player, "editor-cancelled");
+        plugin.sendConfigured(player, "editor-cancelled");
         openAfterPromptCancel(player, edit);
     }
 
@@ -3361,18 +4118,18 @@ public class GuiService implements Listener {
                 try {
                     value = Double.parseDouble(input);
                 } catch (NumberFormatException exception) {
-                    plugin.getMessages().send(player, "editor-invalid", Map.of("{reason}", "Value must be a number."));
+                    plugin.sendConfigured(player, "editor-invalid", Map.of("{reason}", "Value must be a number."));
                     return PromptOutcome.failure();
                 }
                 if (!Double.isFinite(value) || value < 0D) {
-                    plugin.getMessages().send(player, "editor-invalid", Map.of("{reason}", "Value must be 0 or higher."));
+                    plugin.sendConfigured(player, "editor-invalid", Map.of("{reason}", "Value must be 0 or higher."));
                     return PromptOutcome.failure();
                 }
                 return savePromptConfigValue(player, edit, value);
             }
             case CONFIG_SOUND -> {
                 if (!SoundTypes.isValid(input)) {
-                    plugin.getMessages().send(player, "editor-invalid", Map.of("{reason}", "Invalid Bukkit sound."));
+                    plugin.sendConfigured(player, "editor-invalid", Map.of("{reason}", "Invalid Bukkit sound."));
                     return PromptOutcome.failure();
                 }
                 return savePromptConfigValue(player, edit, input.trim());
@@ -3399,11 +4156,11 @@ public class GuiService implements Listener {
                 try {
                     rows = Integer.parseInt(input);
                 } catch (NumberFormatException exception) {
-                    plugin.getMessages().send(player, "editor-invalid", Map.of("{reason}", "Main shop rows must be a number."));
+                    plugin.sendConfigured(player, "editor-invalid", Map.of("{reason}", "Main shop rows must be a number."));
                     return PromptOutcome.failure();
                 }
                 if (rows < 1 || rows > 6) {
-                    plugin.getMessages().send(player, "editor-invalid", Map.of("{reason}", "Main shop rows must be 1-6."));
+                    plugin.sendConfigured(player, "editor-invalid", Map.of("{reason}", "Main shop rows must be 1-6."));
                     return PromptOutcome.failure();
                 }
                 return updateMainGuiRows(rows, player) ? PromptOutcome.success(edit.itemId) : PromptOutcome.failure();
@@ -3422,12 +4179,12 @@ public class GuiService implements Listener {
                 try {
                     size = Integer.parseInt(input);
                 } catch (NumberFormatException exception) {
-                    plugin.getMessages().send(player, "editor-invalid", Map.of("{reason}", "Size must be a number."));
+                    plugin.sendConfigured(player, "editor-invalid", Map.of("{reason}", "Size must be a number."));
                     return PromptOutcome.failure();
                 }
 
                 if (size < 9 || size > 54 || size % 9 != 0) {
-                    plugin.getMessages().send(player, "editor-invalid", Map.of("{reason}", "Size must be 9-54 and divisible by 9."));
+                    plugin.sendConfigured(player, "editor-invalid", Map.of("{reason}", "Size must be 9-54 and divisible by 9."));
                     return PromptOutcome.failure();
                 }
 
@@ -3441,11 +4198,11 @@ public class GuiService implements Listener {
                 try {
                     slot = Integer.parseInt(input);
                 } catch (NumberFormatException exception) {
-                    plugin.getMessages().send(player, "editor-invalid", Map.of("{reason}", "Main menu slot must be a number."));
+                    plugin.sendConfigured(player, "editor-invalid", Map.of("{reason}", "Main menu slot must be a number."));
                     return PromptOutcome.failure();
                 }
-                if (slot < 0 || slot > 53) {
-                    plugin.getMessages().send(player, "editor-invalid", Map.of("{reason}", "Main menu slot must be 0-53."));
+                if (!plugin.getValidationService().publicMainSlots().contains(slot)) {
+                    plugin.sendConfigured(player, "editor-invalid", Map.of("{reason}", "Slot is outside guis/main.yml entries.sections.slots."));
                     return PromptOutcome.failure();
                 }
                 if (updateSectionField(edit.sectionId, "slot", slot, player)) {
@@ -3462,7 +4219,7 @@ public class GuiService implements Listener {
             case ITEM_ID -> {
                 String newId = normalizeItemId(input);
                 if (newId.isBlank()) {
-                    plugin.getMessages().send(player, "editor-invalid", Map.of("{reason}", "Product id is empty."));
+                    plugin.sendConfigured(player, "editor-invalid", Map.of("{reason}", "Product id is empty."));
                     return PromptOutcome.failure();
                 }
                 if (renameItem(edit.sectionId, edit.itemId, newId, player)) {
@@ -3473,7 +4230,7 @@ public class GuiService implements Listener {
             case ITEM_MATERIAL -> {
                 Material material = ItemKeys.material(input).orElse(null);
                 if (material == null || material == Material.AIR) {
-                    plugin.getMessages().send(player, "editor-invalid", Map.of("{reason}", "Invalid material."));
+                    plugin.sendConfigured(player, "editor-invalid", Map.of("{reason}", "Invalid material."));
                     return PromptOutcome.failure();
                 }
 
@@ -3487,19 +4244,19 @@ public class GuiService implements Listener {
                 try {
                     amount = Integer.parseInt(input);
                 } catch (NumberFormatException exception) {
-                    plugin.getMessages().send(player, "editor-invalid", Map.of("{reason}", "Amount must be a number."));
+                    plugin.sendConfigured(player, "editor-invalid", Map.of("{reason}", "Amount must be a number."));
                     return PromptOutcome.failure();
                 }
 
                 ShopItem item = findItem(edit.sectionId, edit.itemId);
                 if (item == null) {
-                    plugin.getMessages().send(player, "editor-invalid", Map.of("{reason}", "Product not found."));
+                    plugin.sendConfigured(player, "editor-invalid", Map.of("{reason}", "Product not found."));
                     return PromptOutcome.failure();
                 }
 
                 int maxStack = item.effectiveStackSize();
                 if (amount < 1 || amount > maxStack) {
-                    plugin.getMessages().send(player, "editor-invalid", Map.of("{reason}", "Amount must be 1-" + maxStack + "."));
+                    plugin.sendConfigured(player, "editor-invalid", Map.of("{reason}", "Amount must be 1-" + maxStack + "."));
                     return PromptOutcome.failure();
                 }
 
@@ -3513,28 +4270,23 @@ public class GuiService implements Listener {
                 try {
                     slot = Integer.parseInt(input);
                 } catch (NumberFormatException exception) {
-                    plugin.getMessages().send(player, "editor-invalid", Map.of("{reason}", "Slot must be a number."));
+                    plugin.sendConfigured(player, "editor-invalid", Map.of("{reason}", "Slot must be a number."));
                     return PromptOutcome.failure();
                 }
 
                 ShopSection section = plugin.getShopManager().getSection(edit.sectionId).orElse(null);
                 if (section == null) {
-                    plugin.getMessages().send(player, "editor-invalid", Map.of("{reason}", "Section not found."));
+                    plugin.sendConfigured(player, "editor-invalid", Map.of("{reason}", "Section not found."));
                     return PromptOutcome.failure();
                 }
 
-                if (slot < 0 || slot >= section.size()) {
-                    plugin.getMessages().send(player, "editor-invalid", Map.of("{reason}", "Slot must be 0-" + (section.size() - 1) + "."));
-                    return PromptOutcome.failure();
-                }
-
-                if (isReservedSectionSlot(section, slot)) {
-                    plugin.getMessages().send(player, "editor-invalid", Map.of("{reason}", "That slot is reserved for the back button."));
+                if (!plugin.getValidationService().publicProductSlots().contains(slot)) {
+                    plugin.sendConfigured(player, "editor-invalid", Map.of("{reason}", "Slot is outside guis/shop-section.yml entries.products.slots."));
                     return PromptOutcome.failure();
                 }
 
                 if (isSlotTakenByOther(section, edit.itemId, slot)) {
-                    plugin.getMessages().send(player, "editor-invalid", Map.of("{reason}", "Another product already uses that slot."));
+                    plugin.sendConfigured(player, "editor-invalid", Map.of("{reason}", "Another product already uses that slot."));
                     return PromptOutcome.failure();
                 }
 
@@ -3575,11 +4327,11 @@ public class GuiService implements Listener {
                 try {
                     page = Integer.parseInt(input);
                 } catch (NumberFormatException exception) {
-                    plugin.getMessages().send(player, "editor-invalid", Map.of("{reason}", "Page must be a number."));
+                    plugin.sendConfigured(player, "editor-invalid", Map.of("{reason}", "Page must be a number."));
                     return PromptOutcome.failure();
                 }
                 if (page < 1) {
-                    plugin.getMessages().send(player, "editor-invalid", Map.of("{reason}", "Page must be 1 or higher."));
+                    plugin.sendConfigured(player, "editor-invalid", Map.of("{reason}", "Page must be 1 or higher."));
                     return PromptOutcome.failure();
                 }
                 if (updateItemField(edit.sectionId, edit.itemId, "page", page - 1, player)) {
@@ -3590,7 +4342,7 @@ public class GuiService implements Listener {
             case ITEM_REQUIRED_PERMISSION -> {
                 String requiredPermission = input.isBlank() || isDisableInput(input) ? "" : input.trim();
                 if (!requiredPermission.isBlank() && requiredPermission.chars().anyMatch(Character::isWhitespace)) {
-                    plugin.getMessages().send(player, "editor-invalid", Map.of("{reason}", "Permission node cannot contain spaces."));
+                    plugin.sendConfigured(player, "editor-invalid", Map.of("{reason}", "Permission node cannot contain spaces."));
                     return PromptOutcome.failure();
                 }
                 if (updateItemField(edit.sectionId, edit.itemId, "required-permission", requiredPermission, player)) {
@@ -3601,7 +4353,7 @@ public class GuiService implements Listener {
             case ITEM_ACTION -> {
                 ShopItem item = findItem(edit.sectionId, edit.itemId);
                 if (item == null) {
-                    plugin.getMessages().send(player, "editor-invalid", Map.of("{reason}", "Product not found."));
+                    plugin.sendConfigured(player, "editor-invalid", Map.of("{reason}", "Product not found."));
                     return PromptOutcome.failure();
                 }
                 if (updateItemAction(edit.sectionId, edit.itemId, item.type(), input, player)) {
@@ -3614,19 +4366,19 @@ public class GuiService implements Listener {
                 try {
                     stackSize = Integer.parseInt(input);
                 } catch (NumberFormatException exception) {
-                    plugin.getMessages().send(player, "editor-invalid", Map.of("{reason}", "Stack cap must be a number."));
+                    plugin.sendConfigured(player, "editor-invalid", Map.of("{reason}", "Stack cap must be a number."));
                     return PromptOutcome.failure();
                 }
 
                 ShopItem item = findItem(edit.sectionId, edit.itemId);
                 if (item == null) {
-                    plugin.getMessages().send(player, "editor-invalid", Map.of("{reason}", "Product not found."));
+                    plugin.sendConfigured(player, "editor-invalid", Map.of("{reason}", "Product not found."));
                     return PromptOutcome.failure();
                 }
 
                 int maxStack = Math.max(1, Math.min(64, item.material().getMaxStackSize()));
                 if (stackSize < 1 || stackSize > maxStack) {
-                    plugin.getMessages().send(player, "editor-invalid", Map.of("{reason}", "Stack cap must be 1-" + maxStack + "."));
+                    plugin.sendConfigured(player, "editor-invalid", Map.of("{reason}", "Stack cap must be 1-" + maxStack + "."));
                     return PromptOutcome.failure();
                 }
 
@@ -3663,7 +4415,7 @@ public class GuiService implements Listener {
                 Optional<GlobalSellPriceService.GlobalEnchantmentEntry> enchantmentEntry = plugin.getGlobalSellPriceService().enchantmentEntry(edit.itemId);
                 if (enchantmentEntry.isPresent()) {
                     if (!plugin.getGlobalSellPriceService().setEnchantmentPrice(enchantmentEntry.get().enchantmentKey(), enchantmentEntry.get().level(), Math.max(0D, value))) {
-                        plugin.getMessages().send(player, "editor-invalid", Map.of("{reason}", "Failed to save enchantment price."));
+                        plugin.sendConfigured(player, "editor-invalid", Map.of("{reason}", "Failed to save enchantment price."));
                         return PromptOutcome.failure();
                     }
                     plugin.getRotatingShopService().reload();
@@ -3673,7 +4425,7 @@ public class GuiService implements Listener {
                 Optional<GlobalSellPriceService.GlobalPotionEntry> potionEntry = plugin.getGlobalSellPriceService().potionEntry(edit.itemId);
                 if (potionEntry.isPresent()) {
                     if (!plugin.getGlobalSellPriceService().setPotionPrice(potionEntry.get().potionType(), Math.max(0D, value))) {
-                        plugin.getMessages().send(player, "editor-invalid", Map.of("{reason}", "Failed to save potion price."));
+                        plugin.sendConfigured(player, "editor-invalid", Map.of("{reason}", "Failed to save potion price."));
                         return PromptOutcome.failure();
                     }
                     plugin.getRotatingShopService().reload();
@@ -3682,11 +4434,11 @@ public class GuiService implements Listener {
 
                 Material material = Material.matchMaterial(edit.itemId == null ? "" : edit.itemId);
                 if (material == null || material == Material.AIR) {
-                    plugin.getMessages().send(player, "editor-invalid", Map.of("{reason}", "Material not found."));
+                    plugin.sendConfigured(player, "editor-invalid", Map.of("{reason}", "Material not found."));
                     return PromptOutcome.failure();
                 }
                 if (!plugin.getGlobalSellPriceService().setPrice(material, Math.max(0D, value))) {
-                    plugin.getMessages().send(player, "editor-invalid", Map.of("{reason}", "Failed to save global price."));
+                    plugin.sendConfigured(player, "editor-invalid", Map.of("{reason}", "Failed to save global price."));
                     return PromptOutcome.failure();
                 }
                 plugin.getRotatingShopService().reload();
@@ -3700,7 +4452,7 @@ public class GuiService implements Listener {
     private PromptOutcome savePromptConfigValue(Player player, PromptEdit edit, Object value) {
         EditorSaveResult result = configSettingSaver.save(edit.configPath, value);
         if (!result.successful()) {
-            plugin.getMessages().send(player, "editor-invalid", Map.of("{reason}", result.errorMessage()));
+            plugin.sendConfigured(player, "editor-invalid", Map.of("{reason}", result.errorMessage()));
             return PromptOutcome.failure();
         }
         return PromptOutcome.success(edit.itemId);
@@ -3720,7 +4472,7 @@ public class GuiService implements Listener {
             try {
                 GameMode.valueOf(value);
             } catch (IllegalArgumentException exception) {
-                plugin.getMessages().send(player, "editor-invalid", Map.of("{reason}", "Invalid gamemode: " + value));
+                plugin.sendConfigured(player, "editor-invalid", Map.of("{reason}", "Invalid gamemode: " + value));
                 return null;
             }
             values.add(value);
@@ -3731,19 +4483,19 @@ public class GuiService implements Listener {
     private Long parseDurationSeconds(String input, Player player) {
         String normalized = input == null ? "" : input.trim().toLowerCase(Locale.ROOT).replace(" ", "");
         if (normalized.isBlank()) {
-            plugin.getMessages().send(player, "editor-invalid", Map.of("{reason}", "Duration is empty."));
+            plugin.sendConfigured(player, "editor-invalid", Map.of("{reason}", "Duration is empty."));
             return null;
         }
 
         OptionalLong parsed = DurationUtil.parseSeconds(normalized);
         if (parsed.isEmpty()) {
-            plugin.getMessages().send(player, "editor-invalid", Map.of("{reason}", "Duration must be 60s+, 1h, or 1d."));
+            plugin.sendConfigured(player, "editor-invalid", Map.of("{reason}", "Duration must be 60s+, 1h, or 1d."));
             return null;
         }
 
         long seconds = parsed.getAsLong();
         if (seconds < 60L) {
-            plugin.getMessages().send(player, "editor-invalid", Map.of("{reason}", "Duration must be at least 60 seconds."));
+            plugin.sendConfigured(player, "editor-invalid", Map.of("{reason}", "Duration must be at least 60 seconds."));
             return null;
         }
         return seconds;
@@ -3752,13 +4504,13 @@ public class GuiService implements Listener {
     private PromptOutcome startSellBoosterFromPrompt(PromptEdit edit, String input, Player player) {
         SellBoosterScope scope = SellBoosterScope.fromInput(edit.configPath).orElse(null);
         if (scope == null) {
-            plugin.getMessages().send(player, "editor-invalid", Map.of("{reason}", "Unknown booster scope."));
+            plugin.sendConfigured(player, "editor-invalid", Map.of("{reason}", "Unknown booster scope."));
             return PromptOutcome.failure();
         }
 
         SellBoosterInputParser.StartInput promptInput = SellBoosterInputParser.parsePromptStart(scope, input).orElse(null);
         if (promptInput == null) {
-            plugin.getMessages().send(player, "editor-invalid", Map.of("{reason}", "Expected " + (scope == SellBoosterScope.GLOBAL ? "multiplier duration." : "target multiplier duration.")));
+            plugin.sendConfigured(player, "editor-invalid", Map.of("{reason}", "Expected " + (scope == SellBoosterScope.GLOBAL ? "multiplier duration." : "target multiplier duration.")));
             return PromptOutcome.failure();
         }
 
@@ -3767,19 +4519,19 @@ public class GuiService implements Listener {
         if (scope == SellBoosterScope.PLAYER) {
             SellBoosterInputParser.Target target = SellBoosterInputParser.resolvePlayerTarget(promptInput.target()).orElse(null);
             if (target == null) {
-                plugin.getMessages().send(player, "editor-invalid", Map.of("{reason}", "Player not found."));
+                plugin.sendConfigured(player, "editor-invalid", Map.of("{reason}", "Player not found."));
                 return PromptOutcome.failure();
             }
             ownerId = target.ownerId();
             ownerName = target.ownerName();
         } else if (scope == SellBoosterScope.TEAM) {
             if (!plugin.getSellBoosterService().isFoTeamsAvailable()) {
-                plugin.getMessages().send(player, "editor-invalid", Map.of("{reason}", "FoTeams is not installed or enabled."));
+                plugin.sendConfigured(player, "editor-invalid", Map.of("{reason}", "FoTeams is not installed or enabled."));
                 return PromptOutcome.failure();
             }
             var team = plugin.getSellBoosterService().teamByInput(promptInput.target());
             if (team.isEmpty()) {
-                plugin.getMessages().send(player, "editor-invalid", Map.of("{reason}", "Team not found."));
+                plugin.sendConfigured(player, "editor-invalid", Map.of("{reason}", "Team not found."));
                 return PromptOutcome.failure();
             }
             ownerId = team.get().id();
@@ -3788,13 +4540,13 @@ public class GuiService implements Listener {
 
         Double multiplier = SellBoosterInputParser.parseMultiplier(promptInput.multiplier());
         if (multiplier == null || multiplier <= 1D) {
-            plugin.getMessages().send(player, "editor-invalid", Map.of("{reason}", "Multiplier must be above 1x."));
+            plugin.sendConfigured(player, "editor-invalid", Map.of("{reason}", "Multiplier must be above 1x."));
             return PromptOutcome.failure();
         }
 
         OptionalLong duration = DurationUtil.parseSeconds(promptInput.duration());
         if (duration.isEmpty() || duration.getAsLong() < 60L) {
-            plugin.getMessages().send(player, "editor-invalid", Map.of("{reason}", "Duration must be 60s+, 1h, or 1d."));
+            plugin.sendConfigured(player, "editor-invalid", Map.of("{reason}", "Duration must be 60s+, 1h, or 1d."));
             return PromptOutcome.failure();
         }
 
@@ -3828,7 +4580,9 @@ public class GuiService implements Listener {
             case SECTION_SEARCH -> openSectionEditorList(player, edit.page);
             case ROTATING_SECTION_SEARCH -> openRotatingSectionEditorList(player, edit.page);
             case ROTATING_ITEM_SEARCH -> openRotatingItemEditorList(player, edit.sectionId, edit.page, edit.sectionPage);
-            case GLOBAL_PRICE_SEARCH -> openGlobalSellPriceList(player, "editor".equals(edit.configPath), edit.page, "", sortFromOrdinal(edit.sectionPage));
+            case GLOBAL_PRICE_SEARCH -> openGlobalSellPriceList(player, "editor".equals(edit.configPath),
+                    edit.page, edit.previousQuery == null ? "" : edit.previousQuery,
+                    sortFromOrdinal(edit.sectionPage));
             case ITEM_SEARCH -> openItemListEditor(player, edit.sectionId, edit.page, edit.sectionPage);
             case NEW_SECTION_ID -> openSectionEditorList(player, edit.page);
             case SECTION_SIZE, SECTION_SLOT, SECTION_DESCRIPTION -> openSectionDetailEditor(player, edit.sectionId, edit.page);
@@ -3845,13 +4599,13 @@ public class GuiService implements Listener {
 
         var writeResult = plugin.getSafeYamlWriter().write(mainGuiFile, yaml);
         if (!writeResult.success()) {
-            plugin.getMessages().send(player, "editor-invalid", Map.of("{reason}", "Failed to save main GUI rows: " + writeResult.error()));
+            plugin.sendConfigured(player, "editor-invalid", Map.of("{reason}", "Failed to save main GUI rows: " + writeResult.error()));
             return false;
         }
 
         EditorSaveResult saveResult = configSettingSaver.save("gui.main.rows", rows);
         if (!saveResult.successful()) {
-            plugin.getMessages().send(player, "editor-invalid", Map.of("{reason}", saveResult.errorMessage()));
+            plugin.sendConfigured(player, "editor-invalid", Map.of("{reason}", saveResult.errorMessage()));
             return false;
         }
         return true;
@@ -3860,7 +4614,7 @@ public class GuiService implements Listener {
     private boolean updateSectionField(String sectionId, String path, Object value, Player player) {
         File sectionFile = new File(plugin.getShopManager().getShopFolder(), sectionId + ".yml");
         if (!sectionFile.exists()) {
-            plugin.getMessages().send(player, "editor-invalid", Map.of("{reason}", "Section file not found."));
+            plugin.sendConfigured(player, "editor-invalid", Map.of("{reason}", "Section file not found."));
             return false;
         }
 
@@ -3888,14 +4642,14 @@ public class GuiService implements Listener {
     private boolean updateItemField(String sectionId, String itemId, String field, Object value, Player player) {
         File sectionFile = new File(plugin.getShopManager().getShopFolder(), sectionId + ".yml");
         if (!sectionFile.exists()) {
-            plugin.getMessages().send(player, "editor-invalid", Map.of("{reason}", "Section file not found."));
+            plugin.sendConfigured(player, "editor-invalid", Map.of("{reason}", "Section file not found."));
             return false;
         }
 
         YamlConfiguration yaml = YamlConfiguration.loadConfiguration(sectionFile);
         String itemPath = "items." + itemId;
         if (!yaml.contains(itemPath)) {
-            plugin.getMessages().send(player, "editor-invalid", Map.of("{reason}", "Product not found in section file."));
+            plugin.sendConfigured(player, "editor-invalid", Map.of("{reason}", "Product not found in section file."));
             return false;
         }
 
@@ -3906,14 +4660,14 @@ public class GuiService implements Listener {
     private boolean updateItemAction(String sectionId, String itemId, ShopItemType type, String input, Player player) {
         File sectionFile = new File(plugin.getShopManager().getShopFolder(), sectionId + ".yml");
         if (!sectionFile.exists()) {
-            plugin.getMessages().send(player, "editor-invalid", Map.of("{reason}", "Section file not found."));
+            plugin.sendConfigured(player, "editor-invalid", Map.of("{reason}", "Section file not found."));
             return false;
         }
 
         YamlConfiguration yaml = YamlConfiguration.loadConfiguration(sectionFile);
         String itemPath = "items." + itemId;
         if (!yaml.contains(itemPath)) {
-            plugin.getMessages().send(player, "editor-invalid", Map.of("{reason}", "Product not found in section file."));
+            plugin.sendConfigured(player, "editor-invalid", Map.of("{reason}", "Product not found in section file."));
             return false;
         }
 
@@ -3932,7 +4686,7 @@ public class GuiService implements Listener {
                 }
             }
             case ITEM, DUMMY -> {
-                plugin.getMessages().send(player, "editor-invalid", Map.of("{reason}", "This item type has no action data."));
+                plugin.sendConfigured(player, "editor-invalid", Map.of("{reason}", "This item type has no action data."));
                 return false;
             }
         }
@@ -3943,14 +4697,14 @@ public class GuiService implements Listener {
     private boolean updateItemMaterial(String sectionId, String itemId, Material material, Player player) {
         File sectionFile = new File(plugin.getShopManager().getShopFolder(), sectionId + ".yml");
         if (!sectionFile.exists()) {
-            plugin.getMessages().send(player, "editor-invalid", Map.of("{reason}", "Section file not found."));
+            plugin.sendConfigured(player, "editor-invalid", Map.of("{reason}", "Section file not found."));
             return false;
         }
 
         YamlConfiguration yaml = YamlConfiguration.loadConfiguration(sectionFile);
         String itemPath = "items." + itemId;
         if (!yaml.contains(itemPath)) {
-            plugin.getMessages().send(player, "editor-invalid", Map.of("{reason}", "Product not found in section file."));
+            plugin.sendConfigured(player, "editor-invalid", Map.of("{reason}", "Product not found in section file."));
             return false;
         }
 
@@ -3971,14 +4725,14 @@ public class GuiService implements Listener {
     private boolean updateItemStackSize(String sectionId, String itemId, int stackSize, Player player) {
         File sectionFile = new File(plugin.getShopManager().getShopFolder(), sectionId + ".yml");
         if (!sectionFile.exists()) {
-            plugin.getMessages().send(player, "editor-invalid", Map.of("{reason}", "Section file not found."));
+            plugin.sendConfigured(player, "editor-invalid", Map.of("{reason}", "Section file not found."));
             return false;
         }
 
         YamlConfiguration yaml = YamlConfiguration.loadConfiguration(sectionFile);
         String itemPath = "items." + itemId;
         if (!yaml.contains(itemPath)) {
-            plugin.getMessages().send(player, "editor-invalid", Map.of("{reason}", "Product not found in section file."));
+            plugin.sendConfigured(player, "editor-invalid", Map.of("{reason}", "Product not found in section file."));
             return false;
         }
 
@@ -3993,21 +4747,21 @@ public class GuiService implements Listener {
     private boolean applyItemFromCursor(String sectionId, String itemId, ItemStack cursor, Player player) {
         Optional<ItemStack> cursorItem = CursorItemEditor.cloneItem(cursor);
         if (cursorItem.isEmpty()) {
-            plugin.getMessages().send(player, "editor-invalid", Map.of("{reason}", "Hold an item on your cursor first."));
+            plugin.sendConfigured(player, "editor-invalid", Map.of("{reason}", "Hold an item on your cursor first."));
             return false;
         }
         ItemStack source = cursorItem.get();
 
         File sectionFile = new File(plugin.getShopManager().getShopFolder(), sectionId + ".yml");
         if (!sectionFile.exists()) {
-            plugin.getMessages().send(player, "editor-invalid", Map.of("{reason}", "Section file not found."));
+            plugin.sendConfigured(player, "editor-invalid", Map.of("{reason}", "Section file not found."));
             return false;
         }
 
         YamlConfiguration yaml = YamlConfiguration.loadConfiguration(sectionFile);
         String itemPath = "items." + itemId;
         if (!yaml.contains(itemPath)) {
-            plugin.getMessages().send(player, "editor-invalid", Map.of("{reason}", "Product not found in section file."));
+            plugin.sendConfigured(player, "editor-invalid", Map.of("{reason}", "Product not found in section file."));
             return false;
         }
 
@@ -4061,7 +4815,7 @@ public class GuiService implements Listener {
     private boolean renameItem(String sectionId, String oldId, String newId, Player player) {
         File sectionFile = new File(plugin.getShopManager().getShopFolder(), sectionId + ".yml");
         if (!sectionFile.exists()) {
-            plugin.getMessages().send(player, "editor-invalid", Map.of("{reason}", "Section file not found."));
+            plugin.sendConfigured(player, "editor-invalid", Map.of("{reason}", "Section file not found."));
             return false;
         }
 
@@ -4070,12 +4824,12 @@ public class GuiService implements Listener {
         String newPath = "items." + newId;
 
         if (!yaml.contains(oldPath)) {
-            plugin.getMessages().send(player, "editor-invalid", Map.of("{reason}", "Product not found."));
+            plugin.sendConfigured(player, "editor-invalid", Map.of("{reason}", "Product not found."));
             return false;
         }
 
         if (!oldId.equalsIgnoreCase(newId) && yaml.contains(newPath)) {
-            plugin.getMessages().send(player, "editor-invalid", Map.of("{reason}", "Another product already has that id."));
+            plugin.sendConfigured(player, "editor-invalid", Map.of("{reason}", "Another product already has that id."));
             return false;
         }
 
@@ -4089,14 +4843,14 @@ public class GuiService implements Listener {
     private boolean removeItem(String sectionId, String itemId, Player player) {
         File sectionFile = new File(plugin.getShopManager().getShopFolder(), sectionId + ".yml");
         if (!sectionFile.exists()) {
-            plugin.getMessages().send(player, "editor-invalid", Map.of("{reason}", "Section file not found."));
+            plugin.sendConfigured(player, "editor-invalid", Map.of("{reason}", "Section file not found."));
             return false;
         }
 
         YamlConfiguration yaml = YamlConfiguration.loadConfiguration(sectionFile);
         String itemPath = "items." + itemId;
         if (!yaml.contains(itemPath)) {
-            plugin.getMessages().send(player, "editor-invalid", Map.of("{reason}", "Product not found."));
+            plugin.sendConfigured(player, "editor-invalid", Map.of("{reason}", "Product not found."));
             return false;
         }
 
@@ -4108,7 +4862,7 @@ public class GuiService implements Listener {
         ShopManager.DeleteResult result = plugin.getShopManager().deleteSection(sectionId);
         if (!result.success()) {
             String reason = result.error() == null || result.error().isBlank() ? "Failed to remove section." : result.error();
-            plugin.getMessages().send(player, "editor-invalid", Map.of("{reason}", reason));
+            plugin.sendConfigured(player, "editor-invalid", Map.of("{reason}", reason));
             if (plugin.getFileLogger() != null) {
                 plugin.getFileLogger().warn("Editor section delete failed for " + sectionId + ": " + reason);
             }
@@ -4125,13 +4879,13 @@ public class GuiService implements Listener {
     private void addProductFromCursor(Player player, ItemStack cursorItem, String sectionId, int page, int sectionPage) {
         ShopSection section = plugin.getShopManager().getSection(sectionId).orElse(null);
         if (section == null) {
-            plugin.getMessages().send(player, "editor-invalid", Map.of("{reason}", "Section not found."));
+            plugin.sendConfigured(player, "editor-invalid", Map.of("{reason}", "Section not found."));
             return;
         }
 
         Optional<ItemStack> cursorClone = CursorItemEditor.cloneItem(cursorItem);
         if (cursorClone.isEmpty()) {
-            plugin.getMessages().send(player, "editor-invalid", Map.of("{reason}", "Hold an item on your cursor first."));
+            plugin.sendConfigured(player, "editor-invalid", Map.of("{reason}", "Hold an item on your cursor first."));
             return;
         }
         ItemStack hand = cursorClone.get();
@@ -4148,7 +4902,7 @@ public class GuiService implements Listener {
 
         int slot = firstFreeSlot(section, null);
         if (slot < 0) {
-            plugin.getMessages().send(player, "editor-invalid", Map.of("{reason}", "No free slot available in this section GUI."));
+            plugin.sendConfigured(player, "editor-invalid", Map.of("{reason}", "No free slot available in this section GUI."));
             return;
         }
 
@@ -4186,7 +4940,7 @@ public class GuiService implements Listener {
         }
 
         if (persistSectionYaml(sectionId, yaml, player, "Failed to add product.")) {
-            plugin.getMessages().send(player, "editor-saved");
+            plugin.sendConfigured(player, "editor-saved");
             plugin.getEditorSounds().add(player);
             openItemEditor(player, sectionId, itemId, page, sectionPage);
         }
@@ -4205,10 +4959,7 @@ public class GuiService implements Listener {
     }
 
     private int firstFreeSlot(ShopSection section, String exceptItemId) {
-        for (int slot = 0; slot < section.size(); slot++) {
-            if (isReservedSectionSlot(section, slot)) {
-                continue;
-            }
+        for (int slot : plugin.getValidationService().publicProductSlots().stream().sorted().toList()) {
             if (!isSlotTakenByOther(section, exceptItemId, slot)) {
                 return slot;
             }
@@ -4241,6 +4992,19 @@ public class GuiService implements Listener {
         return section.items().stream().filter(item -> item.id().equalsIgnoreCase(itemId)).findFirst().orElse(null);
     }
 
+    private ShopItem findPublicItem(String sectionId, String itemId) {
+        ShopSection section = plugin.getShopManager().getSection(sectionId).orElse(null);
+        if (section == null || !section.enabled()) {
+            return null;
+        }
+        return section.items().stream().filter(item -> item.id().equalsIgnoreCase(itemId)).findFirst().orElse(null);
+    }
+
+    static boolean isCurrentPublicItem(ShopSection section, ShopItem item) {
+        return section != null && section.enabled() && item != null
+                && section.items().stream().anyMatch(current -> current == item);
+    }
+
     private Double parsePriceInput(String input, Player player) {
         if (input.equalsIgnoreCase("disable") || input.equalsIgnoreCase("disabled") || input.equals("-1")) {
             return -1D;
@@ -4248,13 +5012,13 @@ public class GuiService implements Listener {
 
         OptionalDouble parsed = LargeNumberParser.parseDouble(input);
         if (parsed.isEmpty()) {
-            plugin.getMessages().send(player, "editor-invalid", Map.of("{reason}", "Price must be a number, 50k/1.5m/1Qa, or -1."));
+            plugin.sendConfigured(player, "editor-invalid", Map.of("{reason}", "Price must be a number, 50k/1.5m/1Qa, or -1."));
             return null;
         }
 
         double value = parsed.getAsDouble();
         if (value < 0D || !Double.isFinite(value)) {
-            plugin.getMessages().send(player, "editor-invalid", Map.of("{reason}", "Use -1 to disable, or 0+ for a price."));
+            plugin.sendConfigured(player, "editor-invalid", Map.of("{reason}", "Use -1 to disable, or 0+ for a price."));
             return null;
         }
 
@@ -4268,12 +5032,12 @@ public class GuiService implements Listener {
         try {
             int value = Integer.parseInt(input);
             if (value < 0) {
-                plugin.getMessages().send(player, "editor-invalid", Map.of("{reason}", label + " must be 0+ or -1."));
+                plugin.sendConfigured(player, "editor-invalid", Map.of("{reason}", label + " must be 0+ or -1."));
                 return null;
             }
             return value;
         } catch (NumberFormatException exception) {
-            plugin.getMessages().send(player, "editor-invalid", Map.of("{reason}", label + " must be a number."));
+            plugin.sendConfigured(player, "editor-invalid", Map.of("{reason}", label + " must be a number."));
             return null;
         }
     }
@@ -4286,12 +5050,12 @@ public class GuiService implements Listener {
     private boolean createSection(String input, Player player) {
         String sectionId = normalizeItemId(input);
         if (sectionId.isBlank()) {
-            plugin.getMessages().send(player, "editor-invalid", Map.of("{reason}", "Section id is empty."));
+            plugin.sendConfigured(player, "editor-invalid", Map.of("{reason}", "Section id is empty."));
             return false;
         }
 
         if (plugin.getShopManager().getSection(sectionId).isPresent()) {
-            plugin.getMessages().send(player, "editor-invalid", Map.of("{reason}", "Section id already exists."));
+            plugin.sendConfigured(player, "editor-invalid", Map.of("{reason}", "Section id already exists."));
             return false;
         }
 
@@ -4319,7 +5083,7 @@ public class GuiService implements Listener {
     private boolean toggleSectionEnabled(String sectionId, Player player) {
         File sectionFile = plugin.getShopManager().getSectionFile(sectionId);
         if (!sectionFile.exists()) {
-            plugin.getMessages().send(player, "editor-invalid", Map.of("{reason}", "Section file not found."));
+            plugin.sendConfigured(player, "editor-invalid", Map.of("{reason}", "Section file not found."));
             return false;
         }
 
@@ -4335,14 +5099,14 @@ public class GuiService implements Listener {
     private boolean applySectionIconFromCursor(String sectionId, ItemStack cursor, Player player) {
         Optional<ItemStack> cursorItem = CursorItemEditor.cloneItem(cursor);
         if (cursorItem.isEmpty()) {
-            plugin.getMessages().send(player, "editor-invalid", Map.of("{reason}", "Hold an item on your cursor first."));
+            plugin.sendConfigured(player, "editor-invalid", Map.of("{reason}", "Hold an item on your cursor first."));
             return false;
         }
         ItemStack source = cursorItem.get();
 
         File sectionFile = plugin.getShopManager().getSectionFile(sectionId);
         if (!sectionFile.exists()) {
-            plugin.getMessages().send(player, "editor-invalid", Map.of("{reason}", "Section file not found."));
+            plugin.sendConfigured(player, "editor-invalid", Map.of("{reason}", "Section file not found."));
             return false;
         }
 
@@ -4376,7 +5140,7 @@ public class GuiService implements Listener {
         var result = plugin.getShopManager().saveSectionYaml(sectionId, yaml);
         if (!result.success()) {
             String reason = result.error() == null || result.error().isBlank() ? fallbackReason : result.error();
-            plugin.getMessages().send(player, "editor-invalid", Map.of("{reason}", reason));
+            plugin.sendConfigured(player, "editor-invalid", Map.of("{reason}", reason));
             plugin.getEditorSounds().error(player);
             if (plugin.getFileLogger() != null) {
                 plugin.getFileLogger().warn("Editor save failed for section " + sectionId + ": " + reason);
@@ -4392,12 +5156,7 @@ public class GuiService implements Listener {
     }
 
     private void returnUnsoldItems(Player player, Inventory inventory) {
-        int inputEnd = inventory.getSize() - 9;
-        SellGuiHolder holder = inventory.getHolder() instanceof SellGuiHolder sellGuiHolder ? sellGuiHolder : null;
-        for (int slot = 0; slot < inputEnd; slot++) {
-            if (holder != null && holder.decorationSlots.contains(slot)) {
-                continue;
-            }
+        for (int slot : sellGuiInputSlots(inventory)) {
             ItemStack item = inventory.getItem(slot);
             if (item == null || item.getType() == Material.AIR) {
                 continue;
@@ -4408,12 +5167,7 @@ public class GuiService implements Listener {
     }
 
     private boolean hasSellGuiItems(Inventory inventory) {
-        int inputEnd = inventory.getSize() - 9;
-        SellGuiHolder holder = inventory.getHolder() instanceof SellGuiHolder sellGuiHolder ? sellGuiHolder : null;
-        for (int slot = 0; slot < inputEnd; slot++) {
-            if (holder != null && holder.decorationSlots.contains(slot)) {
-                continue;
-            }
+        for (int slot : sellGuiInputSlots(inventory)) {
             ItemStack item = inventory.getItem(slot);
             if (item != null && item.getType() != Material.AIR) {
                 return true;
@@ -4426,12 +5180,18 @@ public class GuiService implements Listener {
         if (plugin.getFileLogger() != null) {
             plugin.getFileLogger().debug("Editor prompt opened by " + player.getName() + ": " + promptLogContext(edit));
         }
-        TextDialogRequest request = buildDialogInputRequest(edit, message);
+        if (edit.type == PromptType.GLOBAL_PRICE_SEARCH && "worth".equals(edit.configPath)
+                && !worthDialogReady()) {
+            player.closeInventory();
+            startChatPrompt(player, edit, message);
+            return;
+        }
         if (!canUseNativeDialogs(player)) {
             player.closeInventory();
             startChatPrompt(player, edit, message);
             return;
         }
+        TextDialogRequest request = buildDialogInputRequest(edit, message);
 
         runSyncIfEnabled(() -> {
             if (!player.isOnline()) {
@@ -4445,13 +5205,37 @@ public class GuiService implements Listener {
         });
     }
 
+    private boolean worthDialogReady() {
+        return !publicValue("worth-search-title").isBlank()
+                && !publicValue("worth-search-label").isBlank()
+                && !publicValue("worth-search-submit-label").isBlank()
+                && !publicValue("worth-search-cancel-label").isBlank()
+                && publicIntValue("worth-search-submit-width") > 0
+                && publicIntValue("worth-search-cancel-width") > 0
+                && publicIntValue("worth-search-body-width") > 0
+                && publicIntValue("worth-search-input-width") > 0
+                && publicIntValue("worth-search-max-length") > 0;
+    }
+
     private void startChatPrompt(Player player, PromptEdit edit, String message) {
-        String promptLine = plugin.getMessages().render("editor-prompt", "", Map.of("{prompt}", message));
+        String promptLine = plugin.renderConfigured("editor-prompt", Map.of("{prompt}", message));
         chatPrompts.openRaw(player, List.of(promptLine), input -> handlePromptInput(player, edit, input), () -> handlePromptCancel(player, edit));
     }
 
     public void close() {
+        for (Player player : Bukkit.getOnlinePlayers()) {
+            Inventory top = player.getOpenInventory().getTopInventory();
+            if (top.getHolder() instanceof SellGuiHolder) {
+                returnUnsoldItems(player, top);
+                player.closeInventory();
+            }
+        }
+        publicGuis.close();
+        worthGuis.close();
         chatPrompts.close();
+        publicSections.clear();
+        publicBuys.clear();
+        publicWorth.clear();
     }
 
     private boolean canUseNativeDialogs(Player player) {
@@ -4489,7 +5273,7 @@ public class GuiService implements Listener {
         if (!player.hasPermission("foshop.admin") || !nativeDialogFallbackWarnings.add(player.getUniqueId())) {
             return;
         }
-        plugin.getMessages().send(player, "native-dialogs-fallback");
+        plugin.sendConfigured(player, "native-dialogs-fallback");
     }
 
     private TextDialogRequest buildDialogInputRequest(PromptEdit edit, String prompt) {
@@ -4502,16 +5286,24 @@ public class GuiService implements Listener {
 
         if (isSearchPrompt(edit.type)) {
             return new TextDialogRequest(
-                    "Search",
+                    edit.type == PromptType.GLOBAL_PRICE_SEARCH && "worth".equals(edit.configPath)
+                            ? publicValue("worth-search-title") : "Search",
                     body,
-                    "Search",
+                    edit.type == PromptType.GLOBAL_PRICE_SEARCH && "worth".equals(edit.configPath)
+                            ? publicValue("worth-search-label") : "Search",
                     "",
-                    "Search...",
-                    DialogButton.search(),
-                    DialogButton.cancel(),
-                    320,
-                    300,
-                    64,
+                    edit.type == PromptType.GLOBAL_PRICE_SEARCH && "worth".equals(edit.configPath)
+                            ? publicValue("worth-search-placeholder") : "Search...",
+                    edit.type == PromptType.GLOBAL_PRICE_SEARCH && "worth".equals(edit.configPath)
+                            ? publicDialogButton("worth-search-submit") : DialogButton.search(),
+                    edit.type == PromptType.GLOBAL_PRICE_SEARCH && "worth".equals(edit.configPath)
+                            ? publicDialogButton("worth-search-cancel") : DialogButton.cancel(),
+                    edit.type == PromptType.GLOBAL_PRICE_SEARCH && "worth".equals(edit.configPath)
+                            ? publicIntValue("worth-search-body-width") : 320,
+                    edit.type == PromptType.GLOBAL_PRICE_SEARCH && "worth".equals(edit.configPath)
+                            ? publicIntValue("worth-search-input-width") : 300,
+                    edit.type == PromptType.GLOBAL_PRICE_SEARCH && "worth".equals(edit.configPath)
+                            ? publicIntValue("worth-search-max-length") : 64,
                     true,
                     true,
                     false
@@ -4886,20 +5678,31 @@ public class GuiService implements Listener {
         Map<GlobalPriceListEntry, Double> effectivePrices = new HashMap<>(entries.size());
         entries.forEach(entry -> effectivePrices.put(entry, globalListPrice(entry)));
         Comparator<GlobalPriceListEntry> comparator = switch (sort == null ? WorthSort.NAME : sort) {
-            case NAME -> Comparator.comparing(GlobalPriceListEntry::sortName);
+            case NAME -> Comparator.comparing(entry -> editor ? entry.sortName() : publicGlobalDisplayName(entry),
+                    String.CASE_INSENSITIVE_ORDER);
             case PRICE -> Comparator
                     .comparingDouble((GlobalPriceListEntry entry) -> effectivePrices.get(entry))
                     .reversed()
-                    .thenComparing(GlobalPriceListEntry::sortName);
+                    .thenComparing(entry -> editor ? entry.sortName() : publicGlobalDisplayName(entry),
+                            String.CASE_INSENSITIVE_ORDER);
         };
 
         return entries.stream()
                 .filter(entry -> editor || effectivePrices.get(entry) > 0D)
                 .filter(entry -> query.isBlank()
                         || entry.searchName().contains(query)
-                        || prettify(entry.sortName()).toLowerCase(Locale.ROOT).contains(query))
+                        || prettify(entry.sortName()).toLowerCase(Locale.ROOT).contains(query)
+                        || (!editor && publicGlobalDisplayName(entry).toLowerCase(Locale.ROOT).contains(query)))
                 .sorted(comparator)
                 .toList();
+    }
+
+    private String publicGlobalDisplayName(GlobalPriceListEntry entry) {
+        if (entry.isEnchantment()) {
+            return enchantmentDisplayName(entry.enchantmentEntry());
+        }
+        return entry.isPotion() ? publicPotionName(entry.potionType().name())
+                : publicMaterialName(entry.material());
     }
 
     private double globalListPrice(GlobalPriceListEntry entry) {
@@ -4943,11 +5746,59 @@ public class GuiService implements Listener {
         return stack;
     }
 
-    private ItemStack globalPriceItem(GlobalPriceListEntry entry, boolean editor) {
-        if (entry.isEnchantment()) {
-            return globalEnchantmentPriceItem(entry.enchantmentEntry(), editor);
+    private ItemStack globalPriceItem(Player player, GlobalPriceListEntry entry, boolean editor) {
+        if (!editor) {
+            return publicWorthPriceItem(player, entry);
         }
-        return entry.isPotion() ? globalPotionPriceItem(entry.potionEntry(), editor) : globalPriceItem(entry.materialEntry(), editor);
+        if (entry.isEnchantment()) {
+            return globalEnchantmentPriceItem(entry.enchantmentEntry(), true);
+        }
+        return entry.isPotion() ? globalPotionPriceItem(entry.potionEntry(), true) : globalPriceItem(entry.materialEntry(), true);
+    }
+
+    private ItemStack publicWorthPriceItem(Player player, GlobalPriceListEntry entry) {
+        ItemStack stack = globalPriceBaseStack(entry);
+        ItemMeta meta = stack.getItemMeta();
+        if (meta == null) {
+            return stack;
+        }
+
+        String type;
+        String itemName;
+        String itemId;
+        if (entry.isEnchantment()) {
+            type = "enchantment";
+            itemName = enchantmentDisplayName(entry.enchantmentEntry());
+            itemId = GlobalSellPriceService.enchantmentEntryId(entry.enchantmentEntry().enchantmentKey(), entry.enchantmentEntry().level());
+        } else if (entry.isPotion()) {
+            type = "potion";
+            itemName = publicPotionName(entry.potionEntry().potionType().name());
+            itemId = entry.potionEntry().potionType().name();
+        } else {
+            type = "material";
+            itemName = publicMaterialName(entry.materialEntry().material());
+            itemId = entry.materialEntry().material().name();
+        }
+        Map<String, String> placeholders = Map.of(
+                "item", itemName,
+                "item_id", itemId,
+                "worth", formatGlobalPrice(effectiveGlobalPrice(stack))
+        );
+        String nameTemplate = plugin.getFoConfig().guiString("worth", "entries." + type + ".name", "&f{item}");
+        List<String> loreTemplate = plugin.getFoConfig().guiStringList("worth", "entries." + type + ".lore",
+                List.of("&#ffffffWorth: &#03fc88{worth}"));
+        meta.setDisplayName(Text.colorize(applyPlaceholderApi(player, replaceGuiPlaceholders(nameTemplate, placeholders))));
+        meta.setLore(loreTemplate.stream()
+                .map(line -> replaceGuiPlaceholders(line, placeholders))
+                .map(line -> applyPlaceholderApi(player, line))
+                .map(Text::colorize)
+                .toList());
+        meta.addItemFlags(ItemFlag.HIDE_ATTRIBUTES);
+        if (entry.isEnchantment()) {
+            meta.addItemFlags(ItemFlag.HIDE_ENCHANTS);
+        }
+        stack.setItemMeta(meta);
+        return stack;
     }
 
     private ItemStack globalPriceItem(GlobalSellPriceService.GlobalSellPriceEntry entry, boolean editor) {
@@ -5021,7 +5872,7 @@ public class GuiService implements Listener {
 
         boolean shopOverride = plugin.getShopManager().hasMatchingSellOffer(stack);
         double effectivePrice = effectiveGlobalPrice(stack);
-        meta.setDisplayName(Text.colorize("&f" + prettify(entry.potionType().name()) + " Potion"));
+        meta.setDisplayName(Text.colorize("&f" + prettify(entry.potionType().name()) + publicValue("potion-suffix")));
         List<String> lore = new ArrayList<>();
         lore.add(Text.colorize("&#ffffffWorth: &#03fc88" + formatGlobalPrice(effectivePrice)));
         if (editor) {
@@ -5044,7 +5895,9 @@ public class GuiService implements Listener {
     }
 
     private String enchantmentDisplayName(GlobalSellPriceService.GlobalEnchantmentEntry entry) {
-        return prettify(entry.enchantmentKey()) + " " + romanNumeral(entry.level());
+        String id = GlobalSellPriceService.enchantmentEntryId(entry.enchantmentKey(), entry.level());
+        return publicItemName("enchantments", id,
+                prettify(entry.enchantmentKey()) + " " + romanNumeral(entry.level()));
     }
 
     private String romanNumeral(int value) {
@@ -5066,28 +5919,36 @@ public class GuiService implements Listener {
                 meta.setDisplayName(Text.colorize(applyTextPlaceholders(player, sectionId, item, amount, item.displayName())));
             }
             List<String> lore = new ArrayList<>();
-            for (String line : item.lore()) {
+            List<String> originalLore = meta.hasLore() && meta.getLore() != null ? meta.getLore() : List.of();
+            for (String line : originalLore) {
                 lore.add(Text.colorize(applyTextPlaceholders(player, sectionId, item, amount, line)));
             }
             if (item.canBuy()) {
-        lore.add(Text.colorize("&#3ecf8eBuy: " + plugin.getEconomyService().formatCompact(item.buyPrice())));
+                appendShopItemGuiLore(lore, player, sectionId, item, amount, "item-lore.buy", List.of("&#3ecf8eBuy: {buy}"));
             }
             if (item.canSell()) {
-        lore.add(Text.colorize("&#ff5d73Sell: " + plugin.getEconomyService().formatCompact(item.sellPrice())));
+                appendShopItemGuiLore(lore, player, sectionId, item, amount, "item-lore.sell", List.of("&#ff5d73Sell: {sell}"));
             }
             int stock = plugin.getShopManager().getStock(sectionId, item.id());
             if (stock >= 0) {
-                lore.add(Text.colorize("&#a7b8b0Stock: &#03fc88" + stock));
+                appendShopItemGuiLore(lore, player, sectionId, item, amount, "item-lore.stock", List.of("&#a7b8b0Stock: &#03fc88{stock}"));
             }
             int limit = plugin.getShopManager().getRemainingBuyLimit(player.getUniqueId(), sectionId, item);
             if (limit >= 0) {
-                lore.add(Text.colorize("&#a7b8b0Limit left: &#03fc88" + limit));
+                appendShopItemGuiLore(lore, player, sectionId, item, amount, "item-lore.buy-limit", List.of("&#a7b8b0Limit left: &#03fc88{buy_limit}"));
             }
             meta.setLore(lore);
             meta.addItemFlags(ItemFlag.HIDE_ATTRIBUTES);
             stack.setItemMeta(meta);
         }
         return stack;
+    }
+
+    private void appendShopItemGuiLore(List<String> target, Player player, String sectionId, ShopItem item,
+                                       int amount, String path, List<String> fallback) {
+        for (String line : plugin.getFoConfig().guiStringList("shop-section", path, fallback)) {
+            target.add(Text.colorize(applyTextPlaceholders(player, sectionId, item, amount, line)));
+        }
     }
 
     private ItemStack createRotatingDisplayItem(Player player, RotatingShopService.RotatingEntry entry, ShopItem item) {
@@ -5117,32 +5978,33 @@ public class GuiService implements Listener {
         return stack;
     }
 
-    private ItemStack createGlobalRotatingDisplayItem(RotatingShopService.RotatingEntry entry, GlobalSellPriceService.GlobalSellPriceEntry globalEntry) {
+    private ItemStack createGlobalRotatingDisplayItem(Player player, RotatingShopService.RotatingEntry entry, GlobalSellPriceService.GlobalSellPriceEntry globalEntry) {
         ItemStack stack = new ItemStack(globalEntry.material());
         ItemMeta meta = stack.getItemMeta();
         if (meta == null) {
             return stack;
         }
 
-        meta.setDisplayName(Text.colorize("&#03fc88" + prettify(globalEntry.material().name())));
-        List<String> lore = new ArrayList<>();
-        lore.add(Text.colorize("&#ff5d73Sell: " + plugin.getEconomyService().formatCompact(globalEntry.price())));
-        lore.add(Text.colorize(""));
-        List<String> boostLore = plugin.getFoConfig().guiStringList("rotating-shop", "boost-lore", List.of(
+        String name = plugin.getFoConfig().guiString("rotating-shop", "global-material.name", "&#03fc88{item}");
+        List<String> loreTemplate = plugin.getFoConfig().guiStringList("rotating-shop", "global-material.lore", List.of(
+                "&#ff5d73Sell: {base_price}",
+                "",
                 "&#ffffffBoost: &#03fc88{boost}x",
                 "&#ffffffBoosted sell: &#03fc88{price}",
                 "&#a7b8b0Resets in {time}."
         ));
-        for (String line : boostLore) {
-            lore.add(Text.colorize(formatGlobalRotatingLine(line, entry, globalEntry)));
-        }
+        meta.setDisplayName(Text.colorize(applyPlaceholderApi(player, formatGlobalRotatingLine(name, entry, globalEntry))));
+        List<String> lore = loreTemplate.stream()
+                .map(line -> applyPlaceholderApi(player, formatGlobalRotatingLine(line, entry, globalEntry)))
+                .map(Text::colorize)
+                .toList();
         meta.setLore(lore);
         meta.addItemFlags(ItemFlag.HIDE_ATTRIBUTES);
         stack.setItemMeta(meta);
         return stack;
     }
 
-    private ItemStack createGlobalEnchantmentRotatingDisplayItem(RotatingShopService.RotatingEntry entry, GlobalSellPriceService.GlobalEnchantmentEntry globalEntry) {
+    private ItemStack createGlobalEnchantmentRotatingDisplayItem(Player player, RotatingShopService.RotatingEntry entry, GlobalSellPriceService.GlobalEnchantmentEntry globalEntry) {
         ItemStack stack = new ItemStack(Material.ENCHANTED_BOOK);
         ItemMeta meta = stack.getItemMeta();
         if (meta == null) {
@@ -5154,25 +6016,26 @@ public class GuiService implements Listener {
             meta = storageMeta;
         }
 
-        meta.setDisplayName(Text.colorize("&#03fc88" + enchantmentDisplayName(globalEntry)));
-        List<String> lore = new ArrayList<>();
-        lore.add(Text.colorize("&#ff5d73Sell: " + plugin.getEconomyService().formatCompact(globalEntry.price())));
-        lore.add(Text.colorize(""));
-        List<String> boostLore = plugin.getFoConfig().guiStringList("rotating-shop", "boost-lore", List.of(
+        String name = plugin.getFoConfig().guiString("rotating-shop", "global-enchantment.name", "&#03fc88{item}");
+        List<String> loreTemplate = plugin.getFoConfig().guiStringList("rotating-shop", "global-enchantment.lore", List.of(
+                "&#ff5d73Sell: {base_price}",
+                "",
                 "&#ffffffBoost: &#03fc88{boost}x",
                 "&#ffffffBoosted sell: &#03fc88{price}",
                 "&#a7b8b0Resets in {time}."
         ));
-        for (String line : boostLore) {
-            lore.add(Text.colorize(formatGlobalEnchantmentRotatingLine(line, entry, globalEntry)));
-        }
+        meta.setDisplayName(Text.colorize(applyPlaceholderApi(player, formatGlobalEnchantmentRotatingLine(name, entry, globalEntry))));
+        List<String> lore = loreTemplate.stream()
+                .map(line -> applyPlaceholderApi(player, formatGlobalEnchantmentRotatingLine(line, entry, globalEntry)))
+                .map(Text::colorize)
+                .toList();
         meta.setLore(lore);
         meta.addItemFlags(ItemFlag.HIDE_ATTRIBUTES, ItemFlag.HIDE_ENCHANTS);
         stack.setItemMeta(meta);
         return stack;
     }
 
-    private ItemStack createGlobalPotionRotatingDisplayItem(RotatingShopService.RotatingEntry entry, GlobalSellPriceService.GlobalPotionEntry globalEntry) {
+    private ItemStack createGlobalPotionRotatingDisplayItem(Player player, RotatingShopService.RotatingEntry entry, GlobalSellPriceService.GlobalPotionEntry globalEntry) {
         ItemStack stack = new ItemStack(Material.POTION);
         ItemMeta meta = stack.getItemMeta();
         if (meta == null) {
@@ -5182,18 +6045,19 @@ public class GuiService implements Listener {
             potionMeta.setBasePotionType(globalEntry.potionType());
         }
 
-        meta.setDisplayName(Text.colorize("&#03fc88" + prettify(globalEntry.potionType().name()) + " Potion"));
-        List<String> lore = new ArrayList<>();
-        lore.add(Text.colorize("&#ff5d73Sell: " + plugin.getEconomyService().formatCompact(globalEntry.price())));
-        lore.add(Text.colorize(""));
-        List<String> boostLore = plugin.getFoConfig().guiStringList("rotating-shop", "boost-lore", List.of(
+        String name = plugin.getFoConfig().guiString("rotating-shop", "global-potion.name", "&#03fc88{item}");
+        List<String> loreTemplate = plugin.getFoConfig().guiStringList("rotating-shop", "global-potion.lore", List.of(
+                "&#ff5d73Sell: {base_price}",
+                "",
                 "&#ffffffBoost: &#03fc88{boost}x",
                 "&#ffffffBoosted sell: &#03fc88{price}",
                 "&#a7b8b0Resets in {time}."
         ));
-        for (String line : boostLore) {
-            lore.add(Text.colorize(formatGlobalPotionRotatingLine(line, entry, globalEntry)));
-        }
+        meta.setDisplayName(Text.colorize(applyPlaceholderApi(player, formatGlobalPotionRotatingLine(name, entry, globalEntry))));
+        List<String> lore = loreTemplate.stream()
+                .map(line -> applyPlaceholderApi(player, formatGlobalPotionRotatingLine(line, entry, globalEntry)))
+                .map(Text::colorize)
+                .toList();
         meta.setLore(lore);
         meta.addItemFlags(ItemFlag.HIDE_ATTRIBUTES);
         stack.setItemMeta(meta);
@@ -5225,7 +6089,8 @@ public class GuiService implements Listener {
         String resetTime = DurationUtil.format(plugin.getRotatingShopService().timeUntilResetMillis() / 1000L);
         return line
                 .replace("{section}", "global")
-                .replace("{item}", globalEntry.material().name())
+                .replace("{item}", publicMaterialName(globalEntry.material()))
+                .replace("{item_id}", globalEntry.material().name())
                 .replace("{boost}", boost)
                 .replace("{multiplier}", boost)
                 .replace("{base_price}", baseSell)
@@ -5243,7 +6108,8 @@ public class GuiService implements Listener {
         String resetTime = DurationUtil.format(plugin.getRotatingShopService().timeUntilResetMillis() / 1000L);
         return line
                 .replace("{section}", "global")
-                .replace("{item}", GlobalSellPriceService.enchantmentEntryId(globalEntry.enchantmentKey(), globalEntry.level()))
+                .replace("{item}", enchantmentDisplayName(globalEntry))
+                .replace("{item_id}", GlobalSellPriceService.enchantmentEntryId(globalEntry.enchantmentKey(), globalEntry.level()))
                 .replace("{boost}", boost)
                 .replace("{multiplier}", boost)
                 .replace("{base_price}", baseSell)
@@ -5261,7 +6127,8 @@ public class GuiService implements Listener {
         String resetTime = DurationUtil.format(plugin.getRotatingShopService().timeUntilResetMillis() / 1000L);
         return line
                 .replace("{section}", "global")
-                .replace("{item}", globalEntry.potionType().name())
+                .replace("{item}", publicPotionName(globalEntry.potionType().name()))
+                .replace("{item_id}", globalEntry.potionType().name())
                 .replace("{boost}", boost)
                 .replace("{multiplier}", boost)
                 .replace("{base_price}", baseSell)
@@ -5443,11 +6310,11 @@ public class GuiService implements Listener {
             return 0;
         }
         if (!plugin.getPermissionService().isEnabled()) {
-            plugin.getMessages().send(player, "permission-provider-missing");
+            plugin.sendConfigured(player, "permission-provider-missing");
             return 0;
         }
         if (plugin.getPermissionService().has(player, item.permission())) {
-            plugin.getMessages().send(player, "permission-already-owned");
+            plugin.sendConfigured(player, "permission-already-owned");
             return 0;
         }
         return plugin.getPermissionService().grant(player, item.permission()) ? amount : 0;
@@ -5559,14 +6426,15 @@ public class GuiService implements Listener {
             soldUnits += other.soldUnits;
             soldItems.addAll(other.soldItems);
             for (SoldLine line : other.soldLines) {
-                addSoldLine(line.item(), line.amount(), line.price());
+                if (line.overflow()) addOverflowSoldLine(line.amount(), line.price());
+                else addSoldLine(line.item(), line.amount(), line.price());
             }
         }
 
         private void addSoldLine(String item, int amount, double price) {
             for (int i = 0; i < soldLines.size(); i++) {
                 SoldLine existing = soldLines.get(i);
-                if (existing.item().equals(item)) {
+                if (!existing.overflow() && existing.item().equals(item)) {
                     soldLines.set(i, new SoldLine(item, existing.amount() + amount, existing.price() + price));
                     return;
                 }
@@ -5581,12 +6449,12 @@ public class GuiService implements Listener {
         private void addOverflowSoldLine(int amount, double price) {
             for (int i = 0; i < soldLines.size(); i++) {
                 SoldLine existing = soldLines.get(i);
-                if (existing.item().equals(OTHER_SOLD_ITEMS_LABEL)) {
-                    soldLines.set(i, new SoldLine(OTHER_SOLD_ITEMS_LABEL, existing.amount() + amount, existing.price() + price));
+                if (existing.overflow()) {
+                    soldLines.set(i, new SoldLine("", existing.amount() + amount, existing.price() + price, true));
                     return;
                 }
             }
-            soldLines.add(new SoldLine(OTHER_SOLD_ITEMS_LABEL, amount, price));
+            soldLines.add(new SoldLine("", amount, price, true));
         }
     }
 
@@ -5606,10 +6474,18 @@ public class GuiService implements Listener {
         }
     }
 
-    private record SoldLine(String item, int amount, double price) {
+    private record SoldLine(String item, int amount, double price, boolean overflow) {
+        private SoldLine(String item, int amount, double price) {
+            this(item, amount, price, false);
+        }
     }
 
-    private record PromptEdit(PromptType type, String configPath, String sectionId, String itemId, int page, int sectionPage) {
+    private record PromptEdit(PromptType type, String configPath, String sectionId, String itemId,
+                              int page, int sectionPage, String previousQuery) {
+        private PromptEdit(PromptType type, String configPath, String sectionId, String itemId,
+                           int page, int sectionPage) {
+            this(type, configPath, sectionId, itemId, page, sectionPage, null);
+        }
     }
 
     private record PromptOutcome(boolean success, String updatedItemId, String feedbackMessage) {
@@ -5783,6 +6659,7 @@ public class GuiService implements Listener {
     }
 
     private static class SellGuiHolder extends FoHolder {
+        private PublicGuiFrame frame;
         private final List<Integer> decorationSlots = new ArrayList<>();
         private final Map<Integer, List<String>> playerCommands = new HashMap<>();
         private final Map<Integer, List<String>> consoleCommands = new HashMap<>();
@@ -5836,6 +6713,12 @@ public class GuiService implements Listener {
         private final String query;
         private final WorthSort sort;
         private final Map<Integer, GlobalPriceListEntry> slotToEntry = new HashMap<>();
+        private int previousSlot = -1;
+        private int sortSlot = -1;
+        private int backSlot = -1;
+        private int searchSlot = -1;
+        private int clearSearchSlot = -1;
+        private int nextSlot = -1;
 
         private GlobalSellPriceListHolder(boolean editor, int page, int totalPages, String query, WorthSort sort) {
             this.editor = editor;

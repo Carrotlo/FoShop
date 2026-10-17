@@ -1,18 +1,16 @@
-# Public /sellgui layout. Top rows are player input slots; bottom row is protected controls.
 title: "&8ꜱᴇʟʟ ɢᴜɪ"
 rows: 6
-
 filler:
-  material: GRAY_STAINED_GLASS_PANE
+  enabled: true
+  material: "GRAY_STAINED_GLASS_PANE"
   amount: 1
   name: " "
   lore: []
-  custom-model-data: -1
-
 buttons:
   sell:
-    slot: -1 # -1 means plugin default: bottom center.
-    material: EMERALD
+    slot: 49
+    enabled: true
+    material: "EMERALD"
     amount: 1
     name: ":emerald: &#03fc88&lSELL ITEMS"
     lore:
@@ -23,8 +21,50 @@ buttons:
       - "&7&l | &fUnsellable items are returned."
       - " "
       - "&#3ecf8e→ Click to Sell Items ←"
-    custom-model-data: -1
-
-# Optional static buttons/decorations.
-# Keys are arbitrary. Use player-commands and console-commands for click actions.
-decorations: {}
+    action: "shop.sell"
+sell-slots:
+  - 0
+  - 1
+  - 2
+  - 3
+  - 4
+  - 5
+  - 6
+  - 7
+  - 8
+  - 9
+  - 10
+  - 11
+  - 12
+  - 13
+  - 14
+  - 15
+  - 16
+  - 17
+  - 18
+  - 19
+  - 20
+  - 21
+  - 22
+  - 23
+  - 24
+  - 25
+  - 26
+  - 27
+  - 28
+  - 29
+  - 30
+  - 31
+  - 32
+  - 33
+  - 34
+  - 35
+  - 36
+  - 37
+  - 38
+  - 39
+  - 40
+  - 41
+  - 42
+  - 43
+  - 44

@@ -1,0 +1,14 @@
+# Main public shop menu. Dynamic section icons come from shops/*.yml.
+title: "&8ꜱʜᴏᴘ"
+rows: 3
+
+filler:
+  material: GRAY_STAINED_GLASS_PANE
+  amount: 1
+  name: " "
+  lore: []
+  custom-model-data: -1
+
+# Used only when a shop section icon has no custom display name.
+section:
+  fallback-name: "&#03fc88{section}"

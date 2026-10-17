@@ -18,13 +18,13 @@ public class FoSellGuiCommand implements CommandExecutor {
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if (!sender.hasPermission("foshop.sellgui.use")) {
-            plugin.getMessages().send(sender, "no-permission");
+            plugin.sendConfigured(sender, "no-permission");
             plugin.getAdminSounds().updateError(sender);
             return true;
         }
 
         if (!(sender instanceof Player player)) {
-            plugin.getMessages().send(sender, "player-only");
+            plugin.sendConfigured(sender, "player-only");
             return true;
         }
 

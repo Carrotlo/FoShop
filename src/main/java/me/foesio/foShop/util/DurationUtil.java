@@ -5,7 +5,9 @@ import me.foesio.core.number.TickDuration;
 
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.OptionalLong;
+import java.util.function.BiFunction;
 
 public final class DurationUtil {
     private DurationUtil() {
@@ -68,5 +70,31 @@ public final class DurationUtil {
             return minutes + "m " + secs + "s";
         }
         return secs + "s";
+    }
+
+    public static String formatConfigured(long seconds,
+                                          BiFunction<String, Map<String, String>, String> render) {
+        long remaining = Math.max(0L, seconds);
+        long days = remaining / TickDuration.SECONDS_PER_DAY;
+        remaining %= TickDuration.SECONDS_PER_DAY;
+        long hours = remaining / TickDuration.SECONDS_PER_HOUR;
+        remaining %= TickDuration.SECONDS_PER_HOUR;
+        long minutes = remaining / TickDuration.SECONDS_PER_MINUTE;
+        long secs = remaining % TickDuration.SECONDS_PER_MINUTE;
+
+        if (days > 0L) return pair(render, unit(render, "day", days), unit(render, "hour", hours));
+        if (hours > 0L) return pair(render, unit(render, "hour", hours), unit(render, "minute", minutes));
+        if (minutes > 0L) return pair(render, unit(render, "minute", minutes), unit(render, "second", secs));
+        return unit(render, "second", secs);
+    }
+
+    private static String unit(BiFunction<String, Map<String, String>, String> render, String unit, long value) {
+        return render.apply("duration." + unit + (value == 1L ? "-one" : "-other"),
+                Map.of("{value}", String.valueOf(value)));
+    }
+
+    private static String pair(BiFunction<String, Map<String, String>, String> render,
+                               String first, String second) {
+        return render.apply("duration.pair", Map.of("{first}", first, "{second}", second));
     }
 }

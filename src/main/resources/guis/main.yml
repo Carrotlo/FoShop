@@ -1,10 +1,48 @@
-# Main public shop menu. Dynamic section icons come from shops/*.yml.
 title: "&8ꜱʜᴏᴘ"
 rows: 3
-
 filler:
-  material: GRAY_STAINED_GLASS_PANE
+  enabled: true
+  material: "GRAY_STAINED_GLASS_PANE"
   amount: 1
   name: " "
   lore: []
-  custom-model-data: -1
+entries:
+  sections:
+    slots:
+      - 0
+      - 1
+      - 2
+      - 3
+      - 4
+      - 5
+      - 6
+      - 7
+      - 8
+      - 9
+      - 10
+      - 11
+      - 12
+      - 13
+      - 14
+      - 15
+      - 16
+      - 17
+      - 18
+      - 19
+      - 20
+      - 21
+      - 22
+      - 23
+      - 24
+      - 25
+      - 26
+    source-item:
+      default-name: "&#03fc88{section}"
+    actions:
+      left: "shop.open-section"
+      shift-left: "shop.open-section"
+    empty-item:
+      material: "GRAY_STAINED_GLASS_PANE"
+      amount: 1
+      name: " "
+      lore: []

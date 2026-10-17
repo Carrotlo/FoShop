@@ -6,10 +6,12 @@ import me.foesio.foShop.model.ShopSection;
 import me.foesio.foShop.util.ItemKeys;
 import org.bukkit.Material;
 import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.configuration.InvalidConfigurationException;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.inventory.ItemStack;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -21,13 +23,57 @@ import java.util.Set;
 
 public class ShopValidationService {
 
+    private Set<Integer> publicMainSlots = Set.of();
+    private Set<Integer> publicProductSlots = Set.of();
+
+    public void configurePublicLayout(Set<Integer> mainSlots, Set<Integer> productSlots) {
+        this.publicMainSlots = Set.copyOf(mainSlots);
+        this.publicProductSlots = Set.copyOf(productSlots);
+    }
+
+    public Set<Integer> publicProductSlots() {
+        return publicProductSlots;
+    }
+
+    public Set<Integer> publicMainSlots() {
+        return publicMainSlots;
+    }
+
     public SectionValidationResult parseAndValidate(File file) {
-        YamlConfiguration yaml = YamlConfiguration.loadConfiguration(file);
+        YamlConfiguration yaml = new YamlConfiguration();
+        try {
+            yaml.load(file);
+        } catch (IOException | InvalidConfigurationException exception) {
+            return new SectionValidationResult(null, 0,
+                    List.of("shop file invalid: " + exception.getMessage()));
+        }
         return validateSectionYaml(stripExt(file.getName()), yaml);
     }
 
     public SectionValidationResult validateSectionYaml(String fallbackId, YamlConfiguration yaml) {
         List<String> issues = new ArrayList<>();
+
+        for (String field : List.of("id", "title", "icon")) {
+            Object value = yaml.get(field);
+            if (value != null && !(value instanceof String)) {
+                issues.add("Section " + fallbackId + " " + field + " must be text.");
+                return new SectionValidationResult(null, 0, issues);
+            }
+        }
+        Object descriptionValue = yaml.get("description");
+        if (descriptionValue != null && !(descriptionValue instanceof String)
+                && (!(descriptionValue instanceof List<?> lines)
+                || lines.stream().anyMatch(line -> !(line instanceof String)))) {
+            issues.add("Section " + fallbackId + " description must be text or a list of text lines.");
+            return new SectionValidationResult(null, 0, issues);
+        }
+        Object sizeValue = yaml.get("size");
+        if (sizeValue != null && (!(sizeValue instanceof Number number)
+                || !Double.isFinite(number.doubleValue())
+                || number.doubleValue() != Math.rint(number.doubleValue()))) {
+            issues.add("Section " + fallbackId + " size must be a whole number.");
+            return new SectionValidationResult(null, 0, issues);
+        }
 
         String id = normalizeId(yaml.getString("id", fallbackId));
         if (id.isBlank()) {
@@ -36,11 +82,28 @@ public class ShopValidationService {
         }
 
         String title = yaml.getString("title", "&8" + id);
-        int size = yaml.getInt("size", 54);
+        int size = sizeValue == null ? 54 : ((Number) sizeValue).intValue();
         if (!isValidSize(size)) {
             issues.add("Section " + id + " has invalid size " + size + " (must be 9..54 and divisible by 9).");
             return new SectionValidationResult(null, 0, issues);
         }
+
+        Object enabledValue = yaml.get("enabled");
+        if (enabledValue != null && !(enabledValue instanceof Boolean)) {
+            issues.add("Section " + id + " has invalid enabled value (must be true or false).");
+            return new SectionValidationResult(null, 0, issues);
+        }
+        boolean enabled = enabledValue == null || (Boolean) enabledValue;
+
+        Object slotValue = yaml.get("slot");
+        if (slotValue != null && (!(slotValue instanceof Number number)
+                || !Double.isFinite(number.doubleValue())
+                || number.doubleValue() != Math.rint(number.doubleValue())
+                || number.doubleValue() < 0 || number.doubleValue() > 53)) {
+            issues.add("Section " + id + " has invalid menu slot " + slotValue + " (must be 0..53).");
+            return new SectionValidationResult(null, 0, issues);
+        }
+        int sectionSlot = slotValue == null ? 10 : ((Number) slotValue).intValue();
 
         String iconRaw = yaml.getString("icon", "CHEST");
         Material icon = parseMaterial(iconRaw).orElse(null);
@@ -54,16 +117,22 @@ public class ShopValidationService {
         }
 
         List<String> description = readStringList(yaml, "description");
-        boolean enabled = yaml.getBoolean("enabled", true);
-
-        int sectionSlot = yaml.getInt("slot", 10);
         if (sectionSlot < 0 || sectionSlot > 53) {
             issues.add("Section " + id + " has invalid menu slot " + sectionSlot + " (must be 0..53).");
+            return new SectionValidationResult(null, 0, issues);
+        }
+        if (!publicMainSlots.isEmpty() && !publicMainSlots.contains(sectionSlot)) {
+            issues.add("public GUI layout: Section " + id + " main menu slot " + sectionSlot
+                    + " is outside guis/main.yml entries.sections.slots.");
             return new SectionValidationResult(null, 0, issues);
         }
 
         ConfigurationSection itemsSection = yaml.getConfigurationSection("items");
         if (itemsSection == null) {
+            if (yaml.isSet("items")) {
+                issues.add("Section " + id + " items must be an object.");
+                return new SectionValidationResult(null, 0, issues);
+            }
             ShopSection section = new ShopSection(id, title, size, icon, iconItem, description, enabled, sectionSlot, List.of());
             return new SectionValidationResult(section, 0, issues);
         }
@@ -77,6 +146,27 @@ public class ShopValidationService {
             ConfigurationSection itemSection = itemsSection.getConfigurationSection(itemIdRaw);
             if (itemSection == null) {
                 issues.add("Section " + id + " item " + itemIdRaw + " is not a valid object.");
+                skippedItems++;
+                continue;
+            }
+
+            boolean invalidText = false;
+            for (String field : List.of("material", "display-name")) {
+                Object value = itemSection.get(field);
+                if (value != null && !(value instanceof String)) {
+                    issues.add("Section " + id + " item " + itemIdRaw + " " + field + " must be text.");
+                    invalidText = true;
+                    break;
+                }
+            }
+            if (invalidText) {
+                skippedItems++;
+                continue;
+            }
+            Object loreValue = itemSection.get("lore");
+            if (loreValue != null && (!(loreValue instanceof List<?> lines)
+                    || lines.stream().anyMatch(line -> !(line instanceof String)))) {
+                issues.add("Section " + id + " item " + itemIdRaw + " lore must be a list of text lines.");
                 skippedItems++;
                 continue;
             }
@@ -104,21 +194,32 @@ public class ShopValidationService {
                 continue;
             }
 
-            int page = itemSection.getInt("page", 0);
-            if (page < 0) {
-                issues.add("Section " + id + " item " + itemId + " has invalid page " + page + ".");
+            Object pageValue = itemSection.get("page");
+            if (pageValue != null && (!(pageValue instanceof Number number)
+                    || !Double.isFinite(number.doubleValue())
+                    || number.doubleValue() != Math.rint(number.doubleValue())
+                    || number.doubleValue() < 0 || number.doubleValue() >= Integer.MAX_VALUE)) {
+                issues.add("Section " + id + " item " + itemId + " has invalid page " + pageValue
+                        + " (must be a nonnegative whole number below " + Integer.MAX_VALUE + ").");
                 skippedItems++;
                 continue;
             }
+            int page = pageValue == null ? 0 : ((Number) pageValue).intValue();
 
             int slot = itemSection.getInt("slot", -1);
-            if (slot < 0 || slot >= size) {
+            if (!publicProductSlots.isEmpty() && !publicProductSlots.contains(slot)) {
+                issues.add("public GUI layout: Section " + id + " item " + itemId + " slot " + slot
+                        + " is outside guis/shop-section.yml entries.products.slots.");
+                skippedItems++;
+                continue;
+            }
+            if (publicProductSlots.isEmpty() && (slot < 0 || slot >= size)) {
                 issues.add("Section " + id + " item " + itemId + " has invalid slot " + slot + " (0-" + (size - 1) + ").");
                 skippedItems++;
                 continue;
             }
 
-            if (isReservedSlot(size, slot)) {
+            if (publicProductSlots.isEmpty() && isReservedSlot(size, slot)) {
                 issues.add("Section " + id + " item " + itemId + " uses reserved slot " + slot + ".");
                 skippedItems++;
                 continue;
@@ -252,6 +353,11 @@ public class ShopValidationService {
             issues.add("Section " + section.id() + " has invalid menu slot " + section.slot() + ".");
             return issues;
         }
+        if (!publicMainSlots.isEmpty() && !publicMainSlots.contains(section.slot())) {
+            issues.add("public GUI layout: Section " + section.id() + " main menu slot " + section.slot()
+                    + " is outside guis/main.yml entries.sections.slots.");
+            return issues;
+        }
 
         Set<String> ids = new HashSet<>();
         Set<String> slots = new HashSet<>();
@@ -272,17 +378,22 @@ public class ShopValidationService {
                 continue;
             }
 
-            if (item.page() < 0) {
+            if (item.page() < 0 || item.page() == Integer.MAX_VALUE) {
                 issues.add("Section " + section.id() + " item " + item.id() + " has invalid page " + item.page() + ".");
                 continue;
             }
 
-            if (item.slot() < 0 || item.slot() >= section.size()) {
+            if (!publicProductSlots.isEmpty() && !publicProductSlots.contains(item.slot())) {
+                issues.add("public GUI layout: Section " + section.id() + " item " + item.id()
+                        + " slot " + item.slot() + " is outside guis/shop-section.yml entries.products.slots.");
+                continue;
+            }
+            if (publicProductSlots.isEmpty() && (item.slot() < 0 || item.slot() >= section.size())) {
                 issues.add("Section " + section.id() + " item " + item.id() + " has invalid slot " + item.slot() + ".");
                 continue;
             }
 
-            if (isReservedSlot(section.size(), item.slot())) {
+            if (publicProductSlots.isEmpty() && isReservedSlot(section.size(), item.slot())) {
                 issues.add("Section " + section.id() + " item " + item.id() + " uses reserved slot " + item.slot() + ".");
                 continue;
             }

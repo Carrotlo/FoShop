@@ -18,12 +18,12 @@ public class FoRotatingShopCommand implements CommandExecutor {
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if (!(sender instanceof Player player)) {
-            plugin.getMessages().send(sender, "player-only");
+            plugin.sendConfigured(sender, "player-only");
             return true;
         }
 
         if (!player.hasPermission("foshop.rotatingshop")) {
-            plugin.getMessages().send(player, "no-permission");
+            plugin.sendConfigured(player, "no-permission");
             plugin.getAdminSounds().updateError(player);
             return true;
         }

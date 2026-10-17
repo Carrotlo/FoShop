@@ -43,15 +43,8 @@ public class ShopManager {
     private final SafeYamlWriter safeYamlWriter;
     private final UserDataStore userDataStore;
 
-    private final Map<String, ShopSection> sections = new LinkedHashMap<>();
-    private final Map<Material, Double> highestSellPrices = new HashMap<>();
-    private final Map<Material, Double> highestPlainSellPrices = new HashMap<>();
-    private final List<SellOffer> sellOffers = new ArrayList<>();
-    private final Map<Material, List<SellOffer>> sellOffersByMaterial = new HashMap<>();
-    private final Map<String, Integer> stockByItem = new HashMap<>();
+    private volatile ShopLiveData live = ShopLiveData.empty();
     private final Map<UUID, Map<String, PurchaseLimitState>> purchaseLimits = new HashMap<>();
-    private volatile Map<Material, List<SellOffer>> sellOffersByMaterialSnapshot = Map.of();
-    private volatile long priceRevision;
 
     public ShopManager(FoShop plugin, ShopValidationService validationService, SafeYamlWriter safeYamlWriter, UserDataStore userDataStore) {
         this.plugin = plugin;
@@ -61,19 +54,21 @@ public class ShopManager {
     }
 
     public ReloadResult reload() {
-        sections.clear();
-        highestSellPrices.clear();
-        highestPlainSellPrices.clear();
-        sellOffers.clear();
-        sellOffersByMaterial.clear();
-        stockByItem.clear();
+        prepareResources(false);
+        PreparedReload prepared = prepareReload(validationService);
+        if (prepared.result().issues().isEmpty()) {
+            publish(prepared);
+        }
+        return prepared.result();
+    }
 
+    public void prepareResources(boolean freshInstall) {
         File shopFolder = getShopFolder();
         if (!shopFolder.exists() && !shopFolder.mkdirs()) {
-            return new ReloadResult(0, 0, 0, List.of("Failed to create shops folder."));
+            throw new IllegalStateException("Failed to create shops folder.");
         }
 
-        ensureDefaultShop(shopFolder);
+        if (freshInstall) ensureDefaultShop(shopFolder);
         int migratedEnchantmentItems = migrateLegacyEnchantmentItems(shopFolder);
         if (migratedEnchantmentItems > 0) {
             String message = "Migrated " + migratedEnchantmentItems + " legacy enchantment shop item(s) to copied item stacks.";
@@ -90,28 +85,57 @@ public class ShopManager {
                 plugin.getFileLogger().info(message);
             }
         }
-        ReloadResult result = scanInternal(true);
-        Map<Material, List<SellOffer>> snapshot = new HashMap<>();
-        sellOffersByMaterial.forEach((material, offers) -> snapshot.put(material, List.copyOf(offers)));
-        sellOffersByMaterialSnapshot = Map.copyOf(snapshot);
-        priceRevision++;
-        return result;
+    }
+
+    public PreparedReload prepareReload(ShopValidationService candidateValidator) {
+        return scanInternal(candidateValidator);
+    }
+
+    public void publish(PreparedReload prepared) {
+        live = prepared.data;
+    }
+
+    private static ShopLiveData buildLiveData(Map<String, ShopSection> sections, long revision) {
+        Map<Material, Double> highestSellPrices = new HashMap<>();
+        Map<Material, Double> highestPlainSellPrices = new HashMap<>();
+        Map<Material, List<SellOffer>> sellOffersByMaterial = new HashMap<>();
+        Map<String, Integer> stockByItem = new HashMap<>();
+        for (ShopSection section : sections.values()) {
+            if (!section.enabled()) continue;
+            for (ShopItem item : section.items()) {
+                if (item.canSell()) {
+                    highestSellPrices.merge(item.material(), item.sellPrice(), Math::max);
+                    SellOffer offer = new SellOffer(section.id(), item.id(), item.material(), item.itemStack(), item.sellPrice());
+                    sellOffersByMaterial.computeIfAbsent(item.material(), ignored -> new ArrayList<>()).add(offer);
+                    if (!offer.hasTemplate()) highestPlainSellPrices.merge(item.material(), item.sellPrice(), Math::max);
+                }
+                if (item.tracksStock()) stockByItem.put(itemKey(section.id(), item.id()), item.stock());
+            }
+        }
+        Map<Material, List<SellOffer>> offers = new HashMap<>();
+        sellOffersByMaterial.forEach((material, values) -> offers.put(material, List.copyOf(values)));
+        return new ShopLiveData(Map.copyOf(sections), Map.copyOf(highestSellPrices),
+                Map.copyOf(highestPlainSellPrices), Map.copyOf(offers), stockByItem, revision);
     }
 
     public ReloadResult scanValidation() {
+        return scanValidation(validationService);
+    }
+
+    public ReloadResult scanValidation(ShopValidationService candidateValidator) {
         File shopFolder = getShopFolder();
         if (!shopFolder.exists() && !shopFolder.mkdirs()) {
             return new ReloadResult(0, 0, 0, List.of("Failed to create shops folder."));
         }
 
-        return scanInternal(false);
+        return prepareReload(candidateValidator).result();
     }
 
-    private ReloadResult scanInternal(boolean apply) {
+    private PreparedReload scanInternal(ShopValidationService candidateValidator) {
         File shopFolder = getShopFolder();
         File[] files = shopFolder.listFiles((dir, name) -> name.toLowerCase(Locale.ROOT).endsWith(".yml"));
         if (files == null) {
-            return new ReloadResult(0, 0, 0, List.of("No shop files found."));
+            return new PreparedReload(Map.of(), new ReloadResult(0, 0, 0, List.of("No shop files found.")), live.revision + 1);
         }
 
         List<File> sortedFiles = List.of(files).stream()
@@ -123,9 +147,11 @@ public class ShopManager {
         int skippedItems = 0;
         List<String> issues = new ArrayList<>();
         Set<String> sectionIds = new TreeSet<>();
+        Set<Integer> sectionSlots = new TreeSet<>();
+        Map<String, ShopSection> parsedSections = new LinkedHashMap<>();
 
         for (File file : sortedFiles) {
-            ShopValidationService.SectionValidationResult validation = validationService.parseAndValidate(file);
+            ShopValidationService.SectionValidationResult validation = candidateValidator.parseAndValidate(file);
             for (String issue : validation.issues()) {
                 issues.add("[" + file.getName() + "] " + issue);
             }
@@ -144,31 +170,20 @@ public class ShopManager {
                 skippedSections++;
                 continue;
             }
+            if (!candidateValidator.publicMainSlots().isEmpty() && section.enabled()
+                    && !sectionSlots.add(section.slot())) {
+                issues.add("public GUI layout: [" + file.getName() + "] duplicate main menu slot "
+                        + section.slot() + ".");
+                skippedSections++;
+                continue;
+            }
 
             loadedSections++;
-            if (apply) {
-                sections.put(section.id(), section);
-                if (!section.enabled()) {
-                    continue;
-                }
-                for (ShopItem item : section.items()) {
-                    if (item.canSell()) {
-                        highestSellPrices.merge(item.material(), item.sellPrice(), Math::max);
-                        SellOffer offer = new SellOffer(section.id(), item.id(), item.material(), item.itemStack(), item.sellPrice());
-                        sellOffers.add(offer);
-                        sellOffersByMaterial.computeIfAbsent(item.material(), ignored -> new ArrayList<>()).add(offer);
-                        if (!offer.hasTemplate()) {
-                            highestPlainSellPrices.merge(item.material(), item.sellPrice(), Math::max);
-                        }
-                    }
-                    if (item.tracksStock()) {
-                        stockByItem.put(itemKey(section.id(), item.id()), item.stock());
-                    }
-                }
-            }
+            parsedSections.put(section.id(), section);
         }
 
-        return new ReloadResult(loadedSections, skippedSections, skippedItems, issues);
+        return new PreparedReload(parsedSections,
+                new ReloadResult(loadedSections, skippedSections, skippedItems, List.copyOf(issues)), live.revision + 1);
     }
 
     private void ensureDefaultShop(File shopFolder) {
@@ -459,17 +474,17 @@ public class ShopManager {
     }
 
     public Collection<ShopSection> getSectionsOrdered() {
-        return sections.values().stream()
+        return live.sections.values().stream()
                 .sorted(Comparator.comparingInt(ShopSection::slot))
                 .toList();
     }
 
     public Optional<ShopSection> getSection(String id) {
-        return Optional.ofNullable(sections.get(id));
+        return Optional.ofNullable(live.sections.get(id));
     }
 
     public double getHighestSellPrice(Material material) {
-        double shopPrice = highestSellPrices.getOrDefault(material, -1D);
+        double shopPrice = live.highestSellPrices.getOrDefault(material, -1D);
         if (shopPrice > 0D) {
             return shopPrice;
         }
@@ -499,7 +514,7 @@ public class ShopManager {
 
         ItemStack candidate = null;
         double best = -1D;
-        List<SellOffer> materialOffers = sellOffersByMaterialSnapshot.get(stack.getType());
+        List<SellOffer> materialOffers = live.sellOffersByMaterial.get(stack.getType());
         if (materialOffers != null && !materialOffers.isEmpty()) {
             for (SellOffer offer : materialOffers) {
                 if (offer.hasTemplate()) {
@@ -551,7 +566,7 @@ public class ShopManager {
         ItemStack candidate = null;
         double best = -1D;
 
-        List<SellOffer> materialOffers = sellOffersByMaterialSnapshot.get(stack.getType());
+        List<SellOffer> materialOffers = live.sellOffersByMaterial.get(stack.getType());
         if (materialOffers != null) {
             for (SellOffer offer : materialOffers) {
                 if (offer.hasTemplate()) {
@@ -575,26 +590,26 @@ public class ShopManager {
     }
 
     public long priceRevision() {
-        return priceRevision;
+        return live.revision;
     }
 
     public Map<Material, Double> getHighestSellPrices() {
-        return Map.copyOf(highestSellPrices);
+        return live.highestSellPrices;
     }
 
     public Map<Material, Double> getHighestPlainSellPrices() {
-        return Map.copyOf(highestPlainSellPrices);
+        return live.highestPlainSellPrices;
     }
 
     public boolean hasPlainSellOffer(Material material) {
-        return highestPlainSellPrices.containsKey(material);
+        return live.highestPlainSellPrices.containsKey(material);
     }
 
     public boolean hasMatchingSellOffer(ItemStack stack) {
         if (stack == null || stack.getType() == Material.AIR) {
             return false;
         }
-        List<SellOffer> materialOffers = sellOffersByMaterialSnapshot.get(stack.getType());
+        List<SellOffer> materialOffers = live.sellOffersByMaterial.get(stack.getType());
         if (materialOffers == null) {
             return false;
         }
@@ -619,7 +634,7 @@ public class ShopManager {
         if (material == null || material == Material.AIR) {
             return -1D;
         }
-        double shopPrice = highestPlainSellPrices.getOrDefault(material, -1D);
+        double shopPrice = live.highestPlainSellPrices.getOrDefault(material, -1D);
         if (shopPrice > 0D) {
             return shopPrice;
         }
@@ -627,7 +642,7 @@ public class ShopManager {
     }
 
     public int getStock(String sectionId, String itemId) {
-        return stockByItem.getOrDefault(itemKey(sectionId, itemId), -1);
+        return live.stockByItem.getOrDefault(itemKey(sectionId, itemId), -1);
     }
 
     public int getRemainingBuyLimit(UUID playerId, String sectionId, ShopItem item) {
@@ -649,7 +664,7 @@ public class ShopManager {
     public void recordPurchase(UUID playerId, String sectionId, ShopItem item, int amount) {
         String key = itemKey(sectionId, item.id());
         if (item.tracksStock()) {
-            stockByItem.computeIfPresent(key, (ignored, current) -> Math.max(0, current - amount));
+            live.stockByItem.computeIfPresent(key, (ignored, current) -> Math.max(0, current - amount));
         }
 
         if (item.hasBuyLimit()) {
@@ -682,11 +697,36 @@ public class ShopManager {
                 .orElse(null);
     }
 
-    private String itemKey(String sectionId, String itemId) {
+    private static String itemKey(String sectionId, String itemId) {
         return sectionId.toLowerCase(Locale.ROOT) + ":" + itemId.toLowerCase(Locale.ROOT);
     }
 
     public record ReloadResult(int loadedSections, int skippedSections, int skippedItems, List<String> issues) {
+    }
+
+    public static final class PreparedReload {
+        private final ShopLiveData data;
+        private final ReloadResult result;
+
+        public PreparedReload(Map<String, ShopSection> sections, ReloadResult result, long revision) {
+            this.data = buildLiveData(sections, revision);
+            this.result = result;
+        }
+
+        public ReloadResult result() {
+            return result;
+        }
+    }
+
+    private record ShopLiveData(Map<String, ShopSection> sections,
+                                Map<Material, Double> highestSellPrices,
+                                Map<Material, Double> highestPlainSellPrices,
+                                Map<Material, List<SellOffer>> sellOffersByMaterial,
+                                Map<String, Integer> stockByItem,
+                                long revision) {
+        private static ShopLiveData empty() {
+            return new ShopLiveData(Map.of(), Map.of(), Map.of(), Map.of(), new HashMap<>(), 0);
+        }
     }
 
     public record SaveResult(boolean success, String error, File backupFile) {

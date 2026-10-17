@@ -1,24 +1,45 @@
-# Public bulk-buy selector. Slot indexes are 0-based for a 27-slot GUI.
 title: "&8ʙᴜʏ ᴍᴏʀᴇ: {item}"
+rows: 3
 filler:
-  material: GRAY_STAINED_GLASS_PANE
+  enabled: true
+  material: "GRAY_STAINED_GLASS_PANE"
   amount: 1
   name: " "
   lore: []
-  custom-model-data: -1
-
-option:
-  material: LIME_SHULKER_BOX
-  name: ":lime_shulker_box: &#03fc88&l{stacks} STACK{plural}"
-  lore:
-    - "&8ʙᴜᴛᴛᴏɴ"
-    - " "
-    - "&eⓘ Information ↓"
-    - "&7&l | &fAmount: &#03fc88{amount}"
-    - "&7&l | &fPrice: &#03fc88{price}"
-    - " "
-    - "&#3ecf8e→ Click to Buy ←"
-
 buttons:
   back:
     slot: 22
+    enabled: true
+    material: "IRON_DOOR"
+    amount: 1
+    name: ":iron_door: &#ff5d73&lBACK"
+    lore:
+      - "&8ʙᴜᴛᴛᴏɴ"
+      - " "
+      - "&#3ecf8e→ Click to Return ←"
+    action: "shop.more-back"
+entries:
+  options:
+    slots:
+      - 10
+      - 11
+      - 12
+      - 13
+      - 14
+      - 15
+      - 16
+    item:
+      material: "LIME_SHULKER_BOX"
+      amount: 1
+      name: ":lime_shulker_box: &#03fc88&l{stacks} {stack_unit}"
+      lore:
+        - "&8ʙᴜᴛᴛᴏɴ"
+        - " "
+        - "&eⓘ Information ↓"
+        - "&7&l | &fAmount: &#03fc88{amount}"
+        - "&7&l | &fPrice: &#03fc88{price}"
+        - " "
+        - "&#3ecf8e→ Click to Buy ←"
+    actions:
+      left: "shop.more-buy"
+      shift-left: "shop.more-buy"

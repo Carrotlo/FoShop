@@ -2,6 +2,7 @@ package me.foesio.foShop;
 
 import me.foesio.core.FoCoreContext;
 import me.foesio.core.FoPluginCore;
+import me.foesio.core.dialog.DialogIcons;
 import me.foesio.core.economy.VaultEconomyBridge;
 import me.foesio.core.sound.FoAdminSounds;
 import me.foesio.core.sound.FoEditorSounds;
@@ -10,6 +11,7 @@ import me.foesio.core.sound.FoSoundMigrations;
 import me.foesio.core.sound.FoSoundService;
 import me.foesio.core.logging.FoFileLogger;
 import me.foesio.core.message.FoMessageService;
+import me.foesio.core.message.FoMessageMigrations;
 import me.foesio.core.reload.FoReloadRegistry;
 import me.foesio.core.reload.FoReloadResult;
 import me.foesio.core.update.UpdateNoticeService;
@@ -35,12 +37,19 @@ import me.foesio.foShop.shop.GlobalSellPriceService;
 import me.foesio.foShop.shop.ShopManager;
 import me.foesio.foShop.validation.ShopValidationService;
 import me.foesio.foShop.worth.WorthLoreService;
+import net.kyori.adventure.text.Component;
 import org.bukkit.command.PluginCommand;
+import org.bukkit.command.CommandSender;
+import org.bukkit.configuration.file.YamlConfiguration;
+import org.bukkit.configuration.InvalidConfigurationException;
+import org.bukkit.entity.Player;
 import org.bukkit.plugin.ServicePriority;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.Objects;
 import java.util.Map;
+import java.io.File;
+import java.io.IOException;
 import java.util.concurrent.atomic.AtomicReference;
 
 public final class FoShop extends JavaPlugin {
@@ -58,6 +67,7 @@ public final class FoShop extends JavaPlugin {
     private FoEditorSounds editorSounds;
     private FoAdminSounds adminSounds;
     private FoMessageService coreMessages;
+    private YamlConfiguration ownerMessageValues;
     private UpdateNoticeService updateNotices;
     private ShopGUIPlusConverter converter;
     private ShopValidationService validationService;
@@ -74,15 +84,25 @@ public final class FoShop extends JavaPlugin {
 
     @Override
     public void onEnable() {
+        boolean freshInstall = isFreshInstall(getDataFolder());
         saveDefaultConfig();
-        this.foConfig = new FoConfig(this);
+        if (freshInstall) {
+            saveResource("messages.yml", false);
+            saveResource("sounds.yml", false);
+        }
+        this.foConfig = new FoConfig(this, freshInstall);
         this.foConfig.reload();
         this.fileLogger = FoFileLogger.create(this);
         this.fileLogger.configure(foConfig.isFileLoggingEnabled(), true);
         fileLogger.info("Plugin enable started.");
         refreshCoreContext();
-        this.coreMessages = FoMessageService.load(this);
-        migrateSprites();
+        this.coreMessages = FoMessageService.loadPreservingRemovals(this, FoMessageMigrations.none());
+        try {
+            this.ownerMessageValues = readOwnerMessages();
+        } catch (IllegalStateException exception) {
+            getLogger().warning(exception.getMessage());
+            this.ownerMessageValues = new YamlConfiguration();
+        }
         this.updateNotices = core.createUpdateNotices(coreMessages, "foshop").start();
         this.userDataStore = new UserDataStore(this);
         this.userDataStore.open();
@@ -90,6 +110,7 @@ public final class FoShop extends JavaPlugin {
         this.validationService = new ShopValidationService();
         this.safeYamlWriter = new SafeYamlWriter();
         this.shopManager = new ShopManager(this, validationService, safeYamlWriter, userDataStore);
+        this.shopManager.prepareResources(freshInstall);
         this.globalSellPriceService = new GlobalSellPriceService(this);
         this.rotatingShopService = new RotatingShopService(this);
         this.foTeamsHook = new FoTeamsHook(this);
@@ -114,9 +135,15 @@ public final class FoShop extends JavaPlugin {
         }
 
         registerCommands();
-        getServer().getPluginManager().registerEvents(guiService, this);
 
         fileLogger.info("Plugin enabled.");
+    }
+
+    static boolean isFreshInstall(File dataFolder) {
+        if (!dataFolder.exists()) return true;
+        if (!dataFolder.isDirectory()) return false;
+        String[] entries = dataFolder.list();
+        return entries != null && entries.length == 0;
     }
 
     @Override
@@ -167,9 +194,19 @@ public final class FoShop extends JavaPlugin {
                         fileLogger.configure(foConfig.isFileLoggingEnabled(), false);
                     }
                 })
-                .add("core context", this::refreshCoreContext)
+                .add("native dialog settings", () -> core.reloadNativeDialogSettings())
                 .add("core messages", this::reloadCoreMessages)
-                .add("shops", () -> shopReloadResult.set(shopManager.reload()))
+                .add("sounds", () -> {
+                    if (sounds != null && !sounds.reloadChecked()) {
+                        throw new IllegalStateException("sounds.yml is invalid; prior sound cache remains active");
+                    }
+                })
+                .add("public GUIs", () -> {
+                    if (guiService != null && !guiService.reloadPublicGuis().successful()) {
+                        throw new IllegalStateException("Public GUI files or dependent shop slots failed validation; prior GUI revision remains active");
+                    }
+                })
+                .add("shops", () -> shopReloadResult.set(guiService.lastShopReloadResult()))
                 .add("global sell prices", () -> {
                     if (globalSellPriceService != null) {
                         globalSellPriceService.reload();
@@ -218,6 +255,13 @@ public final class FoShop extends JavaPlugin {
             return new ShopManager.ReloadResult(0, 0, 0, java.util.List.of(issue));
         }
 
+        if (guiService != null && !guiService.worthGuiIssues().isEmpty()) {
+            java.util.List<String> issues = new java.util.ArrayList<>(result.issues());
+            issues.addAll(guiService.worthGuiIssues());
+            result = new ShopManager.ReloadResult(result.loadedSections(), result.skippedSections(),
+                    result.skippedItems(), java.util.List.copyOf(issues));
+        }
+
         String resultMessage = "Loaded " + result.loadedSections() + " shop section(s). Skipped sections: " + result.skippedSections() + ", skipped items: " + result.skippedItems() + ".";
         getLogger().info(resultMessage);
         if (fileLogger != null) {
@@ -239,32 +283,19 @@ public final class FoShop extends JavaPlugin {
         if (coreMessages == null) {
             return;
         }
+        YamlConfiguration next = readOwnerMessages();
         coreMessages.reload();
-        coreMessages.save();
+        ownerMessageValues = next;
     }
 
-    private void migrateSprites() {
-        coreMessages.migrateToVersion(core.migrations(), 1, config -> {
-            boolean changed = false;
-            changed |= FoMessageService.addMissingToken(config, "tokens.prefix", ":emerald:", null);
-            changed |= FoMessageService.addMissingToken(config, "no-economy", ":redstone:");
-            changed |= FoMessageService.addMissingToken(config, "inventory-full", ":chest:");
-            changed |= FoMessageService.addMissingToken(config, "transaction-failed", ":redstone:");
-            changed |= FoMessageService.addMissingToken(config, "buy-success", ":emerald:");
-            changed |= FoMessageService.addMissingToken(config, "sell-success", ":emerald:");
-            changed |= FoMessageService.addMissingToken(config, "sellgui-success", ":emerald:");
-            changed |= FoMessageService.addMissingToken(config, "rotating-shop-reset", ":clock:");
-            changed |= FoMessageService.addMissingToken(config, "booster-started", ":experience_bottle:");
-            changed |= FoMessageService.addMissingToken(config, "booster-cleared", ":redstone:");
-            changed |= FoMessageService.addMissingToken(config, "reload-success", ":emerald:");
-            changed |= FoMessageService.addMissingToken(config, "reload-warning", ":redstone:");
-            changed |= FoMessageService.addMissingToken(config, "convert-success", ":emerald:");
-            changed |= FoMessageService.addMissingToken(config, "convert-fail", ":redstone:");
-            changed |= FoMessageService.addMissingToken(config, "editor-saved", ":emerald:");
-            changed |= FoMessageService.addMissingToken(config, "editor-invalid", ":redstone:");
-            return changed;
-        });
-        coreMessages.reload();
+    private YamlConfiguration readOwnerMessages() {
+        YamlConfiguration next = new YamlConfiguration();
+        try {
+            next.load(new File(getDataFolder(), "messages.yml"));
+            return next;
+        } catch (IOException | InvalidConfigurationException exception) {
+            throw new IllegalStateException("messages.yml could not be loaded; previous messages remain active", exception);
+        }
     }
 
     private void refreshCoreContext() {
@@ -272,7 +303,7 @@ public final class FoShop extends JavaPlugin {
             core.close();
         }
         core = FoPluginCore.create(this);
-        sounds = core.createSounds(soundMigrations());
+        sounds = FoSoundService.loadPreservingRemovals(this);
         guiSounds = FoGuiSounds.create(sounds);
         editorSounds = FoEditorSounds.create(sounds);
         adminSounds = FoAdminSounds.create(sounds);
@@ -338,6 +369,68 @@ public final class FoShop extends JavaPlugin {
 
     public FoMessageService getMessages() {
         return coreMessages;
+    }
+
+    /** Missing or deliberately empty owner messages stay silent. */
+    public void sendConfigured(CommandSender sender, String path) {
+        sendConfigured(sender, path, Map.of());
+    }
+
+    public void sendConfigured(CommandSender sender, String path, Map<String, String> placeholders) {
+        if (coreMessages == null || ownerMessageValues == null || !ownerMessageValues.isSet(path)) {
+            return;
+        }
+        Object value = ownerMessageValues.get(path);
+        if (value instanceof String text && text.isEmpty()) {
+            return;
+        }
+        coreMessages.send(sender, path, "", placeholders);
+    }
+
+    public String renderConfigured(String path) {
+        return renderConfigured(path, Map.of());
+    }
+
+    public String renderConfigured(String path, Map<String, String> placeholders) {
+        if (coreMessages == null || ownerMessageValues == null || !ownerMessageValues.isSet(path)) {
+            return "";
+        }
+        return coreMessages.render(path, "", placeholders);
+    }
+
+    public Component renderConfiguredComponent(Player player, String path, Map<String, String> placeholders) {
+        if (coreMessages == null || ownerMessageValues == null || !ownerMessageValues.isString(path)) {
+            return Component.empty();
+        }
+        return coreMessages.renderComponent(player, path, "", placeholders);
+    }
+
+    public String configuredMessageTemplate(String path) {
+        if (ownerMessageValues == null || !ownerMessageValues.isString(path)) {
+            return "";
+        }
+        return ownerMessageValues.getString(path, "");
+    }
+
+    /** Render a configured separator without Core's item-sprite whitespace cleanup. */
+    public String renderConfiguredSeparator(String path) {
+        if (coreMessages == null || ownerMessageValues == null || !ownerMessageValues.isString(path)) {
+            return "";
+        }
+        String rendered = coreMessages.renderTemplateForItem(ownerMessageValues.getString(path), Map.of());
+        StringBuilder result = new StringBuilder(rendered.length());
+        int start = 0;
+        while (start < rendered.length()) {
+            boolean whitespace = Character.isWhitespace(rendered.charAt(start));
+            int end = start + 1;
+            while (end < rendered.length() && Character.isWhitespace(rendered.charAt(end)) == whitespace) {
+                end++;
+            }
+            String part = rendered.substring(start, end);
+            result.append(whitespace ? part : DialogIcons.fallbackText(part));
+            start = end;
+        }
+        return result.toString();
     }
 
     public ShopManager getShopManager() {

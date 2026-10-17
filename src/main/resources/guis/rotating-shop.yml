@@ -1,26 +1,133 @@
-# Public rotating boosted shop page.
 title: "&8ʀᴏᴛᴀᴛɪɴɢ ꜱʜᴏᴘ"
-
+rows: 3
 filler:
-  material: GRAY_STAINED_GLASS_PANE
+  enabled: true
+  material: "GRAY_STAINED_GLASS_PANE"
   amount: 1
   name: " "
   lore: []
-  custom-model-data: -1
-
-# Middle row, columns 3-7 in a 3-row GUI.
-slots: [11, 12, 13, 14, 15]
-
-boost-lore:
-  - "&#ffffffBoost: &#03fc88{boost}x"
-  - "&#ffffffBoosted sell: &#03fc88{price}"
-  - "&#a7b8b0Resets in {time}."
-
-empty:
-  slot: 13
-  material: GRAY_DYE
-  amount: 1
-  name: "&#ff5d73No Boosts"
-  lore:
-    - "&#ffffffNo sellable rotating items available."
-  custom-model-data: -1
+entries:
+  center:
+    slots:
+      - 13
+    source-item:
+      lore:
+        mode: "append"
+        lines:
+          - "&#ffffffBoost: &#03fc88{boost}x"
+          - "&#ffffffBoosted sell: &#03fc88{price}"
+          - "&#a7b8b0Resets in {time}."
+      lore-states:
+        global-material:
+          mode: "replace"
+          lines:
+            - "&#ff5d73Sell: {base_price}"
+            - " "
+            - "&#ffffffBoost: &#03fc88{boost}x"
+            - "&#ffffffBoosted sell: &#03fc88{price}"
+            - "&#a7b8b0Resets in {time}."
+          default-name: "&#03fc88{item}"
+        global-enchantment:
+          mode: "replace"
+          lines:
+            - "&#ff5d73Sell: {base_price}"
+            - " "
+            - "&#ffffffBoost: &#03fc88{boost}x"
+            - "&#ffffffBoosted sell: &#03fc88{price}"
+            - "&#a7b8b0Resets in {time}."
+          default-name: "&#03fc88{item}"
+        global-potion:
+          mode: "replace"
+          lines:
+            - "&#ff5d73Sell: {base_price}"
+            - " "
+            - "&#ffffffBoost: &#03fc88{boost}x"
+            - "&#ffffffBoosted sell: &#03fc88{price}"
+            - "&#a7b8b0Resets in {time}."
+          default-name: "&#03fc88{item}"
+        shop-buy:
+          mode: "append"
+          lines:
+            - "&#3ecf8eBuy: {buy}"
+            - "&#ff5d73Sell: {base_price}"
+            - ""
+            - "&#ffffffBoost: &#03fc88{boost}x"
+            - "&#ffffffBoosted sell: &#03fc88{price}"
+            - "&#a7b8b0Resets in {time}."
+        shop-sell-only:
+          mode: "append"
+          lines:
+            - "&#ff5d73Sell: {base_price}"
+            - ""
+            - "&#ffffffBoost: &#03fc88{boost}x"
+            - "&#ffffffBoosted sell: &#03fc88{price}"
+            - "&#a7b8b0Resets in {time}."
+    empty-item:
+      material: "GRAY_DYE"
+      amount: 1
+      name: "&#ff5d73No Boosts"
+      lore:
+        - "&#ffffffNo sellable rotating items available."
+  boosts:
+    slots:
+      - 11
+      - 12
+      - 14
+      - 15
+    source-item:
+      lore:
+        mode: "append"
+        lines:
+          - "&#ffffffBoost: &#03fc88{boost}x"
+          - "&#ffffffBoosted sell: &#03fc88{price}"
+          - "&#a7b8b0Resets in {time}."
+      lore-states:
+        global-material:
+          mode: "replace"
+          lines:
+            - "&#ff5d73Sell: {base_price}"
+            - " "
+            - "&#ffffffBoost: &#03fc88{boost}x"
+            - "&#ffffffBoosted sell: &#03fc88{price}"
+            - "&#a7b8b0Resets in {time}."
+          default-name: "&#03fc88{item}"
+        global-enchantment:
+          mode: "replace"
+          lines:
+            - "&#ff5d73Sell: {base_price}"
+            - " "
+            - "&#ffffffBoost: &#03fc88{boost}x"
+            - "&#ffffffBoosted sell: &#03fc88{price}"
+            - "&#a7b8b0Resets in {time}."
+          default-name: "&#03fc88{item}"
+        global-potion:
+          mode: "replace"
+          lines:
+            - "&#ff5d73Sell: {base_price}"
+            - " "
+            - "&#ffffffBoost: &#03fc88{boost}x"
+            - "&#ffffffBoosted sell: &#03fc88{price}"
+            - "&#a7b8b0Resets in {time}."
+          default-name: "&#03fc88{item}"
+        shop-buy:
+          mode: "append"
+          lines:
+            - "&#3ecf8eBuy: {buy}"
+            - "&#ff5d73Sell: {base_price}"
+            - ""
+            - "&#ffffffBoost: &#03fc88{boost}x"
+            - "&#ffffffBoosted sell: &#03fc88{price}"
+            - "&#a7b8b0Resets in {time}."
+        shop-sell-only:
+          mode: "append"
+          lines:
+            - "&#ff5d73Sell: {base_price}"
+            - ""
+            - "&#ffffffBoost: &#03fc88{boost}x"
+            - "&#ffffffBoosted sell: &#03fc88{price}"
+            - "&#a7b8b0Resets in {time}."
+    empty-item:
+      material: "GRAY_STAINED_GLASS_PANE"
+      amount: 1
+      name: " "
+      lore: []

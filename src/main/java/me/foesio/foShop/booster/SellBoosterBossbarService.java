@@ -15,8 +15,6 @@ import java.util.Map;
 import java.util.UUID;
 
 public final class SellBoosterBossbarService {
-    private static final String DEFAULT_TITLE = "&#03fc88{multiplier}x &#a7b8b0SELL BOOSTER &8- &#ffffff{time}";
-
     private final FoShop plugin;
     private final SellBoosterService sellBoosterService;
     private final Map<UUID, BossBar> bars = new HashMap<>();
@@ -42,17 +40,30 @@ public final class SellBoosterBossbarService {
     }
 
     public void reload() {
-        enabled = plugin.getConfig().getBoolean("sell-boosters.bossbar.enabled", true);
-        title = plugin.getConfig().getString("sell-boosters.bossbar.title", DEFAULT_TITLE);
-        color = barColor(plugin.getConfig().getString("sell-boosters.bossbar.color", "GREEN"));
-        style = barStyle(plugin.getConfig().getString("sell-boosters.bossbar.style", "SEGMENTED_10"));
-        updateTicks = Math.max(5L, plugin.getConfig().getLong("sell-boosters.bossbar.update-ticks", 20L));
-
-        if (!enabled) {
+        var config = plugin.getConfig();
+        boolean requested = config.isSet("sell-boosters.bossbar.enabled")
+                && config.getBoolean("sell-boosters.bossbar.enabled");
+        String nextTitle = config.isSet("sell-boosters.bossbar.title")
+                ? config.getString("sell-boosters.bossbar.title", "") : "";
+        if (!requested || nextTitle.isBlank()) {
+            enabled = false;
             stopSchedule();
             clear();
             return;
         }
+        BarColor nextColor = config.isSet("sell-boosters.bossbar.color")
+                ? barColor(config.getString("sell-boosters.bossbar.color")) : null;
+        BarStyle nextStyle = config.isSet("sell-boosters.bossbar.style")
+                ? barStyle(config.getString("sell-boosters.bossbar.style")) : null;
+        if (nextColor == null || nextStyle == null) {
+            plugin.getLogger().warning("Invalid bossbar color or style; previous bossbar settings remain active.");
+            return;
+        }
+        enabled = true;
+        title = nextTitle;
+        color = nextColor;
+        style = nextStyle;
+        updateTicks = Math.max(5L, config.getLong("sell-boosters.bossbar.update-ticks", 20L));
         if (updateLoopActive) {
             schedule();
         }
@@ -142,9 +153,11 @@ public final class SellBoosterBossbarService {
     private String time(SellBoosterService.EffectiveSellBoost boost, ActiveSellBooster booster) {
         long expiresAt = nextExpiresAtMillis(boost, booster);
         if (expiresAt <= 0L) {
-            return "Active";
+            return plugin.renderConfigured("duration.active");
         }
-        return DurationUtil.format(Math.max(0L, (expiresAt - System.currentTimeMillis() + 999L) / 1000L));
+        return DurationUtil.formatConfigured(
+                Math.max(0L, (expiresAt - System.currentTimeMillis() + 999L) / 1000L),
+                plugin::renderConfigured);
     }
 
     private double progress(SellBoosterService.EffectiveSellBoost boost, ActiveSellBooster booster) {
@@ -200,18 +213,20 @@ public final class SellBoosterBossbarService {
     }
 
     private BarColor barColor(String input) {
+        if (input == null) return null;
         try {
-            return BarColor.valueOf((input == null ? "GREEN" : input).trim().toUpperCase(Locale.ROOT));
+            return BarColor.valueOf(input.trim().toUpperCase(Locale.ROOT));
         } catch (IllegalArgumentException exception) {
-            return BarColor.GREEN;
+            return null;
         }
     }
 
     private BarStyle barStyle(String input) {
+        if (input == null) return null;
         try {
-            return BarStyle.valueOf((input == null ? "SEGMENTED_10" : input).trim().toUpperCase(Locale.ROOT));
+            return BarStyle.valueOf(input.trim().toUpperCase(Locale.ROOT));
         } catch (IllegalArgumentException exception) {
-            return BarStyle.SEGMENTED_10;
+            return null;
         }
     }
 }

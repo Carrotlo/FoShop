@@ -566,7 +566,7 @@ final class PacketEventsWorthLoreService extends PacketListenerAbstract implemen
     }
 
     private String createWorthLine(ItemStack original) {
-        if (original == null || original.getType() == Material.AIR) {
+        if (original == null || original.getType() == Material.AIR || format == null || format.isBlank()) {
             return null;
         }
 

@@ -29,6 +29,8 @@ import java.util.Set;
 public class FoConfig {
 
     private final FoShop plugin;
+    private final boolean freshInstall;
+    private boolean initialized;
 
     private static final String DEFAULT_THEME = "#03fc88";
     private static final String DEFAULT_MUTED = "#a7b8b0";
@@ -67,19 +69,23 @@ public class FoConfig {
     private boolean sellRemoveTrailingZeros;
     private boolean sellAbbreviateNumbers;
     private Set<String> sellBlockedGamemodes = Set.of();
+    private boolean publicGuiMigrationReady;
 
 
     private final DecimalFormat moneyFormat = new DecimalFormat("#,##0.00");
     private final Map<String, YamlConfiguration> guiFiles = new HashMap<>();
 
-    public FoConfig(FoShop plugin) {
+    public FoConfig(FoShop plugin, boolean freshInstall) {
         this.plugin = plugin;
+        this.freshInstall = freshInstall;
     }
 
     public void reload() {
-        ensureEditableDefaults();
         plugin.reloadConfig();
-        ensureNativeDialogDefaults();
+        if (!initialized || !publicGuiMigrationReady) {
+            this.publicGuiMigrationReady = PublicGuiMigration.migrate(plugin, freshInstall);
+            initialized = true;
+        }
         loadGuiFiles();
         FileConfiguration config = plugin.getConfig();
 
@@ -97,21 +103,22 @@ public class FoConfig {
         this.worthLoreEnabled = globalSellPricesEnabled && config.getBoolean("global-sell-prices.worth-lore.enabled", false);
         String legacyWorthLoreFormat = config.getString("global-sell-prices.worth-lore.format", DEFAULT_WORTH_LORE_FORMAT);
         this.worthLoreFormat = rawMessage("worth-lore", legacyWorthLoreFormat);
-        if (worthLoreFormat == null || worthLoreFormat.isBlank()) {
-            worthLoreFormat = DEFAULT_WORTH_LORE_FORMAT;
-        }
 
-        this.mainTitle = config.contains("gui.main.title") ? config.getString("gui.main.title", "&8Shop") : guiString("main", "title", "&8Shop");
-        this.mainRows = Math.clamp(config.contains("gui.main.rows") ? config.getInt("gui.main.rows", 3) : guiInt("main", "rows", 3), 1, 6);
+        this.mainTitle = !publicGuiMigrationReady && config.contains("gui.main.title")
+                ? config.getString("gui.main.title", "&8Shop") : guiString("main", "title", "&8Shop");
+        this.mainRows = Math.clamp(!publicGuiMigrationReady && config.contains("gui.main.rows")
+                ? config.getInt("gui.main.rows", 3) : guiInt("main", "rows", 3), 1, 6);
 
-        this.sellTitle = config.contains("gui.sell.title") ? config.getString("gui.sell.title", "&8Sell Gui") : guiString("sell-gui", "title", "&8Sell Gui");
-        this.sellRows = Math.clamp(config.contains("gui.sell.rows") ? config.getInt("gui.sell.rows", 6) : guiInt("sell-gui", "rows", 6), 3, 6);
+        this.sellTitle = !publicGuiMigrationReady && config.contains("gui.sell.title")
+                ? config.getString("gui.sell.title", "&8Sell Gui") : guiString("sell-gui", "title", "&8Sell Gui");
+        this.sellRows = Math.clamp(!publicGuiMigrationReady && config.contains("gui.sell.rows")
+                ? config.getInt("gui.sell.rows", 6) : guiInt("sell-gui", "rows", 6), 3, 6);
         this.sellReceiptType = Math.clamp(configInt("sellgui.receipts.type", "gui.sell.receipts.type", 1), 0, 1);
-        this.sellTitlesEnabled = configBool("sellgui.titles.enabled", "gui.sell.titles.enabled", true);
-        this.sellTitleMessage = applyStaticTokens(configString("sellgui.titles.title", "gui.sell.titles.title", "{good}+{earning}"));
-        this.sellSubtitleMessage = applyStaticTokens(configString("sellgui.titles.subtitle", "gui.sell.titles.subtitle", "{muted}You sold {theme}{amount}{muted} items."));
-        this.sellActionBarEnabled = configBool("sellgui.action-bar.enabled", "gui.sell.action-bar.enabled", true);
-        this.sellActionBarMessage = applyStaticTokens(configString("sellgui.action-bar.message", "gui.sell.action-bar.message", "{good}Sold {theme}{amount}{good} item(s) for {theme}{earning}{good}."));
+        this.sellTitlesEnabled = publicFeedbackEnabled(config, "sellgui.titles.enabled", "gui.sell.titles.enabled", publicGuiMigrationReady);
+        this.sellTitleMessage = applyStaticTokens(publicFeedbackText(config, "sellgui.titles.title", "gui.sell.titles.title", publicGuiMigrationReady));
+        this.sellSubtitleMessage = applyStaticTokens(publicFeedbackText(config, "sellgui.titles.subtitle", "gui.sell.titles.subtitle", publicGuiMigrationReady));
+        this.sellActionBarEnabled = publicFeedbackEnabled(config, "sellgui.action-bar.enabled", "gui.sell.action-bar.enabled", publicGuiMigrationReady);
+        this.sellActionBarMessage = applyStaticTokens(publicFeedbackText(config, "sellgui.action-bar.message", "gui.sell.action-bar.message", publicGuiMigrationReady));
         this.sellTransactionLogEnabled = configBool("sellgui.transaction-log.enabled", "gui.sell.transaction-log.enabled", true);
         this.sellTransactionLogDateFormat = configString("sellgui.transaction-log.date-format", "gui.sell.transaction-log.date-format", "yyyy/MM/dd HH:mm:ss");
         this.sellRoundedPricing = configBool("sellgui.price-format.rounded-pricing", "gui.sell.price-format.rounded-pricing", false);
@@ -122,12 +129,6 @@ public class FoConfig {
     }
 
     private void ensureEditableDefaults() {
-        ensureResource("guis/main.yml");
-        ensureResource("guis/shop-section.yml");
-        ensureResource("guis/sell-gui.yml");
-        ensureResource("guis/rotating-shop.yml");
-        ensureResource("guis/buy-item.yml");
-        ensureResource("guis/buy-more.yml");
         ensureConfigBlock();
     }
 
@@ -148,10 +149,9 @@ public class FoConfig {
 
     private void loadGuiFiles() {
         guiFiles.clear();
-        for (String name : List.of("main", "shop-section", "sell-gui", "rotating-shop", "buy-item", "buy-more")) {
+        for (String name : List.of("main", "shop-section", "sell-gui", "rotating-shop", "buy-item", "buy-more", "worth")) {
             File file = new File(plugin.getDataFolder(), "guis/" + name + ".yml");
             YamlConfiguration gui = YamlConfiguration.loadConfiguration(file);
-            migrateDefaultGuiStyle(name, file, gui);
             guiFiles.put(name, gui);
         }
     }
@@ -422,6 +422,17 @@ public class FoConfig {
         return config.getString(legacyPath, fallback);
     }
 
+    static String publicFeedbackText(FileConfiguration config, String path, String legacyPath, boolean migrationReady) {
+        if (config.isSet(path)) return Objects.toString(config.getString(path), "");
+        return !migrationReady && config.isSet(legacyPath)
+                ? Objects.toString(config.getString(legacyPath), "") : "";
+    }
+
+    static boolean publicFeedbackEnabled(FileConfiguration config, String path, String legacyPath, boolean migrationReady) {
+        if (config.isSet(path)) return config.getBoolean(path);
+        return !migrationReady && config.isSet(legacyPath) && config.getBoolean(legacyPath);
+    }
+
     private boolean configBool(String path, String legacyPath, boolean fallback) {
         FileConfiguration config = plugin.getConfig();
         if (config.contains(path)) {
@@ -490,7 +501,7 @@ public class FoConfig {
         if (plugin.getMessages() == null) {
             return Text.format(fallback, tokenMap());
         }
-        return plugin.getMessages().render(path, fallback);
+        return plugin.renderConfigured(path);
     }
 
     public String formatMoney(double amount) {
@@ -511,6 +522,10 @@ public class FoConfig {
 
     public boolean isGlobalSellPricesEnabled() {
         return globalSellPricesEnabled;
+    }
+
+    public boolean isPublicGuiMigrationReady() {
+        return publicGuiMigrationReady;
     }
 
     public boolean isWorthLoreEnabled() {
@@ -595,6 +610,15 @@ public class FoConfig {
 
     public boolean isSellGamemodeBlocked(String gamemode) {
         return gamemode != null && sellBlockedGamemodes.contains(gamemode.toUpperCase());
+    }
+
+    public String publicGamemodeName(String gamemode) {
+        return configuredGamemodeName(plugin.getConfig(), gamemode);
+    }
+
+    static String configuredGamemodeName(FileConfiguration config, String gamemode) {
+        String path = "public-values.gamemode-names." + gamemode;
+        return config.isSet(path) ? Objects.toString(config.getString(path), "") : "";
     }
 
     public String formatSellMoney(double amount, String fallback) {

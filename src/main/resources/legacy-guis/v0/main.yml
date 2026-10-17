@@ -1,0 +1,10 @@
+# Main public shop menu. Dynamic section icons come from shops/*.yml.
+title: "&8Shop"
+rows: 3
+
+filler:
+  material: GRAY_STAINED_GLASS_PANE
+  amount: 1
+  name: " "
+  lore: []
+  custom-model-data: -1

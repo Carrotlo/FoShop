@@ -1,17 +1,16 @@
-# Public buy amount selector. Slot indexes are 0-based for a 27-slot GUI.
 title: "&8ʙᴜʏ: {item}"
+rows: 3
 filler:
-  material: GRAY_STAINED_GLASS_PANE
+  enabled: true
+  material: "GRAY_STAINED_GLASS_PANE"
   amount: 1
   name: " "
   lore: []
-  custom-model-data: -1
-
 buttons:
   remove-64:
     slot: 10
-    change: -64
-    material: RED_STAINED_GLASS_PANE
+    enabled: true
+    material: "RED_STAINED_GLASS_PANE"
     amount: 1
     name: ":red_stained_glass_pane: &#ff5d73&l-64"
     lore:
@@ -21,11 +20,11 @@ buttons:
       - "&7&l | &fRemoves 64 items from the purchase."
       - " "
       - "&#3ecf8e→ Click to Remove 64 ←"
-    custom-model-data: -1
+    action: "shop.amount-remove-64"
   remove-10:
     slot: 11
-    change: -10
-    material: RED_STAINED_GLASS_PANE
+    enabled: true
+    material: "RED_STAINED_GLASS_PANE"
     amount: 1
     name: ":red_stained_glass_pane: &#ff5d73&l-10"
     lore:
@@ -35,11 +34,11 @@ buttons:
       - "&7&l | &fRemoves 10 items from the purchase."
       - " "
       - "&#3ecf8e→ Click to Remove 10 ←"
-    custom-model-data: -1
+    action: "shop.amount-remove-10"
   remove-1:
     slot: 12
-    change: -1
-    material: RED_STAINED_GLASS_PANE
+    enabled: true
+    material: "RED_STAINED_GLASS_PANE"
     amount: 1
     name: ":red_stained_glass_pane: &#ff5d73&l-1"
     lore:
@@ -49,11 +48,11 @@ buttons:
       - "&7&l | &fRemoves 1 item from the purchase."
       - " "
       - "&#3ecf8e→ Click to Remove 1 ←"
-    custom-model-data: -1
+    action: "shop.amount-remove-1"
   add-1:
     slot: 14
-    change: 1
-    material: LIME_STAINED_GLASS_PANE
+    enabled: true
+    material: "LIME_STAINED_GLASS_PANE"
     amount: 1
     name: ":lime_stained_glass_pane: &#3ecf8e&l+1"
     lore:
@@ -63,11 +62,11 @@ buttons:
       - "&7&l | &fAdds 1 item to the purchase."
       - " "
       - "&#3ecf8e→ Click to Add 1 ←"
-    custom-model-data: -1
+    action: "shop.amount-add-1"
   add-10:
     slot: 15
-    change: 10
-    material: LIME_STAINED_GLASS_PANE
+    enabled: true
+    material: "LIME_STAINED_GLASS_PANE"
     amount: 1
     name: ":lime_stained_glass_pane: &#3ecf8e&l+10"
     lore:
@@ -77,11 +76,11 @@ buttons:
       - "&7&l | &fAdds 10 items to the purchase."
       - " "
       - "&#3ecf8e→ Click to Add 10 ←"
-    custom-model-data: -1
+    action: "shop.amount-add-10"
   add-64:
     slot: 16
-    change: 64
-    material: LIME_STAINED_GLASS_PANE
+    enabled: true
+    material: "LIME_STAINED_GLASS_PANE"
     amount: 1
     name: ":lime_stained_glass_pane: &#3ecf8e&l+64"
     lore:
@@ -91,12 +90,22 @@ buttons:
       - "&7&l | &fAdds 64 items to the purchase."
       - " "
       - "&#3ecf8e→ Click to Add 64 ←"
-    custom-model-data: -1
+    action: "shop.amount-add-64"
   cancel:
     slot: 22
+    enabled: true
+    material: "IRON_DOOR"
+    amount: 1
+    name: ":iron_door: &#ff5d73&lBACK"
+    lore:
+      - "&8ʙᴜᴛᴛᴏɴ"
+      - " "
+      - "&#3ecf8e→ Click to Return ←"
+    action: "shop.amount-cancel"
   bulk:
     slot: 21
-    material: HOPPER
+    enabled: true
+    material: "HOPPER"
     amount: 1
     name: ":hopper: &#03fc88&lBUY MORE"
     lore:
@@ -106,10 +115,17 @@ buttons:
       - "&7&l | &fChoose a stack amount preset."
       - " "
       - "&#3ecf8e→ Click to Choose Amount ←"
-    custom-model-data: -1
+    action: "shop.amount-bulk"
+    states:
+      unavailable:
+        material: "GRAY_STAINED_GLASS_PANE"
+        name: " "
+        lore: []
+        clickable: false
   confirm:
     slot: 23
-    material: LIME_SHULKER_BOX
+    enabled: true
+    material: "LIME_SHULKER_BOX"
     amount: 1
     name: ":lime_shulker_box: &#3ecf8e&lCONFIRM BUY"
     lore:
@@ -120,4 +136,15 @@ buttons:
       - "&7&l | &fPrice: &#03fc88{price}"
       - " "
       - "&#3ecf8e→ Click to Confirm Purchase ←"
-    custom-model-data: -1
+    action: "shop.amount-confirm"
+entries:
+  preview:
+    slots:
+      - 13
+    source-item:
+      lore:
+        mode: "append"
+        lines:
+          - "&#ffffffSelected amount: &#03fc88{amount}"
+          - "&#ffffffPrice: &#03fc88{price}"
+          - "&#a7b8b0Use the buttons below."
