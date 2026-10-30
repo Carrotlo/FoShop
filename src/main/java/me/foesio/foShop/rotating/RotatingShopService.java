@@ -1,6 +1,8 @@
 package me.foesio.foShop.rotating;
 
 import me.foesio.foShop.FoShop;
+import me.foesio.foShop.api.FoShopRotatingOffer;
+import me.foesio.foShop.api.FoShopRotationChangedEvent;
 import me.foesio.foShop.model.ShopItem;
 import me.foesio.foShop.model.ShopSection;
 import me.foesio.foShop.shop.GlobalSellPriceService;
@@ -31,6 +33,9 @@ public class RotatingShopService {
     private long nextResetAt;
     private long resetGeneration;
     private boolean resetScheduled;
+    private boolean initialized;
+    private boolean previouslyEnabled;
+    private boolean resetting;
 
     public RotatingShopService(FoShop plugin) {
         this.plugin = plugin;
@@ -39,18 +44,31 @@ public class RotatingShopService {
 
     public void reload() {
         cancelTask();
+        List<RotatingEntry> previous = previouslyEnabled ? entries : List.of();
         loadState();
 
         if (!isEnabled()) {
+            boolean changed = initialized && !previous.isEmpty();
+            initialized = true;
+            previouslyEnabled = false;
+            if (changed) {
+                publishChange(previous, List.of(), FoShopRotationChangedEvent.Cause.RELOAD);
+            }
             return;
         }
 
         if (entries.isEmpty() || nextResetAt <= System.currentTimeMillis() || !entriesAreStillValid()) {
-            resetNow();
+            resetNow(FoShopRotationChangedEvent.Cause.RELOAD);
             return;
         }
 
         scheduleNextReset();
+        boolean changed = initialized && !previous.equals(entries);
+        initialized = true;
+        previouslyEnabled = true;
+        if (changed) {
+            publishChange(previous, entries, FoShopRotationChangedEvent.Cause.RELOAD);
+        }
     }
 
     public void shutdown() {
@@ -151,20 +169,53 @@ public class RotatingShopService {
     }
 
     public void resetNow() {
-        List<RotationCandidate> candidates = eligibleCandidates();
-        Collections.shuffle(candidates, ThreadLocalRandom.current());
+        resetNow(FoShopRotationChangedEvent.Cause.ADMIN);
+    }
 
-        List<RotatingEntry> nextEntries = new ArrayList<>();
-        int count = Math.min(MULTIPLIERS.size(), candidates.size());
-        for (int index = 0; index < count; index++) {
-            RotationCandidate candidate = candidates.get(index);
-            nextEntries.add(new RotatingEntry(candidate.sectionId(), candidate.itemId(), MULTIPLIERS.get(index)));
+    public boolean rotateNow(FoShopRotationChangedEvent.Cause cause) {
+        return isEnabled() && resetNow(cause);
+    }
+
+    private boolean resetNow(FoShopRotationChangedEvent.Cause cause) {
+        if (resetting) return false;
+        resetting = true;
+        try {
+            List<RotatingEntry> previous = previouslyEnabled ? entries : List.of();
+            List<RotationCandidate> candidates = eligibleCandidates();
+            Collections.shuffle(candidates, ThreadLocalRandom.current());
+
+            List<RotatingEntry> nextEntries = new ArrayList<>();
+            int count = Math.min(MULTIPLIERS.size(), candidates.size());
+            for (int index = 0; index < count; index++) {
+                RotationCandidate candidate = candidates.get(index);
+                nextEntries.add(new RotatingEntry(candidate.sectionId(), candidate.itemId(), MULTIPLIERS.get(index)));
+            }
+
+            entries = List.copyOf(nextEntries);
+            nextResetAt = System.currentTimeMillis() + resetIntervalSeconds() * 1000L;
+            saveState();
+            scheduleNextReset();
+            List<RotatingEntry> current = isEnabled() ? entries : List.of();
+            boolean changed = initialized && !previous.equals(current);
+            initialized = true;
+            previouslyEnabled = isEnabled();
+            if (changed) {
+                publishChange(previous, current, cause);
+            }
+            return true;
+        } finally {
+            resetting = false;
         }
+    }
 
-        entries = List.copyOf(nextEntries);
-        nextResetAt = System.currentTimeMillis() + resetIntervalSeconds() * 1000L;
-        saveState();
-        scheduleNextReset();
+    private void publishChange(List<RotatingEntry> previous, List<RotatingEntry> current,
+                               FoShopRotationChangedEvent.Cause cause) {
+        List<FoShopRotatingOffer> before = previous.stream()
+                .map(entry -> new FoShopRotatingOffer(entry.sectionId(), entry.itemId(), entry.multiplier())).toList();
+        List<FoShopRotatingOffer> after = current.stream()
+                .map(entry -> new FoShopRotatingOffer(entry.sectionId(), entry.itemId(), entry.multiplier())).toList();
+        Bukkit.getPluginManager().callEvent(new FoShopRotationChangedEvent(before, after,
+                isEnabled() ? nextResetAt : 0L, cause));
     }
 
     private boolean entriesAreStillValid() {
@@ -359,7 +410,7 @@ public class RotatingShopService {
                 return;
             }
             resetScheduled = false;
-            resetNow();
+            rotateNow(FoShopRotationChangedEvent.Cause.TIMED);
         }, delayTicks);
     }
 

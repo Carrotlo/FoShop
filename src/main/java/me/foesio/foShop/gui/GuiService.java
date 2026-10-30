@@ -49,6 +49,11 @@ import me.foesio.core.selector.TriStateSelectionState;
 import me.foesio.core.sound.SoundTypes;
 import me.foesio.core.text.PromptNormalizer;
 import me.foesio.foShop.FoShop;
+import me.foesio.foShop.api.FoShopPrePurchaseEvent;
+import me.foesio.foShop.api.FoShopPurchaseCompletedEvent;
+import me.foesio.foShop.api.FoShopPreSaleEvent;
+import me.foesio.foShop.api.FoShopSaleCompletedEvent;
+import me.foesio.foShop.api.FoShopSaleSource;
 import me.foesio.foShop.booster.ActiveSellBooster;
 import me.foesio.foShop.booster.SellBoosterInputParser;
 import me.foesio.foShop.booster.SellBoosterScope;
@@ -691,6 +696,10 @@ public class GuiService implements Listener {
         screenOpened(player, player.getOpenInventory().getTopInventory().getHolder());
     }
 
+    public boolean hasPublicShopGui() {
+        return publicGuis.snapshot() != null;
+    }
+
     private int nextFreeMainSlot(MainMenuHolder holder, int start, int size) {
         int safeStart = Math.clamp(start, 0, Math.max(0, size - 1));
         for (int slot = safeStart; slot < size; slot++) {
@@ -877,7 +886,7 @@ public class GuiService implements Listener {
                 "&#a7b8b0Click to browse, edit, blacklist, and toggle rotating."
         ), "browse prices"));
         inventory.setItem(11, toggleItem(player, "Worth Item Lore", plugin.getFoConfig().isWorthLoreConfiguredEnabled(),
-                "Show packet-only stack worth in inventories and containers."));
+                "Show packet-only stack worth in inventories and SellGUI. Requires PacketEvents."));
         inventory.setItem(14, EditorItemFactory.filler());
         inventory.setItem(THREE_ROW_BACK_SLOT, GUI_BUTTONS.back(player));
 
@@ -3206,6 +3215,27 @@ public class GuiService implements Listener {
             return true;
         }
 
+        ItemStack purchaseTemplate = requiresInventorySpace(shopItem) ? createPurchaseStack(shopItem, 1) : null;
+        FoShopPrePurchaseEvent prePurchase = new FoShopPrePurchaseEvent(player, sectionId,
+                shopItem.id(), shopItem.type().name(), purchaseTemplate, amount, totalCost);
+        Bukkit.getPluginManager().callEvent(prePurchase);
+        if (prePurchase.isCancelled()) {
+            plugin.getSounds().play(player, "shop.purchase-failure");
+            return true;
+        }
+        if (!player.isOnline() || !isCurrentPublicItem(plugin.getShopManager().getSection(sectionId).orElse(null), shopItem)
+                || !hasProductAccess(player, shopItem)
+                || (plugin.getShopManager().getStock(sectionId, shopItem.id()) >= 0
+                    && amount > plugin.getShopManager().getStock(sectionId, shopItem.id()))
+                || (plugin.getShopManager().getRemainingBuyLimit(player.getUniqueId(), sectionId, shopItem) >= 0
+                    && amount > plugin.getShopManager().getRemainingBuyLimit(player.getUniqueId(), sectionId, shopItem))
+                || plugin.getEconomyService().balance(player) < totalCost
+                || (requiresInventorySpace(shopItem) && !canFitExact(player.getInventory(), shopItem, amount))) {
+            plugin.sendConfigured(player, "transaction-failed");
+            plugin.getSounds().play(player, "shop.purchase-failure");
+            return true;
+        }
+
         if (!plugin.getEconomyService().withdraw(player, totalCost)) {
             plugin.sendConfigured(player, "transaction-failed");
             plugin.getSounds().play(player, "shop.purchase-failure");
@@ -3213,9 +3243,14 @@ public class GuiService implements Listener {
         }
 
         int purchasedAmount = executePurchaseDelivery(player, sectionId, shopItem, amount);
+        double chargedAmount = totalCost;
         if (purchasedAmount < amount) {
             double refund = (amount - purchasedAmount) * shopItem.buyPrice();
-            plugin.getEconomyService().deposit(player, refund);
+            if (plugin.getEconomyService().deposit(player, refund)) {
+                chargedAmount -= refund;
+            } else {
+                plugin.getLogger().warning("Failed to refund a partial purchase for " + player.getUniqueId());
+            }
             plugin.sendConfigured(player, "inventory-full");
         }
 
@@ -3225,10 +3260,12 @@ public class GuiService implements Listener {
         }
 
         plugin.getShopManager().recordPurchase(player.getUniqueId(), sectionId, shopItem, purchasedAmount);
+        Bukkit.getPluginManager().callEvent(new FoShopPurchaseCompletedEvent(player, sectionId,
+                shopItem.id(), shopItem.type().name(), purchaseTemplate, purchasedAmount, chargedAmount));
         plugin.sendConfigured(player, "buy-success", Map.of(
                 "{amount}", String.valueOf(purchasedAmount),
                 "{item}", purchaseDisplayName(player, sectionId, shopItem, purchasedAmount),
-                "{price}", plugin.getEconomyService().formatCompact(shopItem.buyPrice() * purchasedAmount)
+                "{price}", plugin.getEconomyService().formatCompact(chargedAmount)
         ));
         plugin.getSounds().play(player, "shop.purchase");
         return true;
@@ -3321,7 +3358,7 @@ public class GuiService implements Listener {
                     plugin.sendConfigured(player, "sellgui-already-processing");
                     return;
                 }
-                sellFromGui(player, top);
+                sellFromGui(player, top, false);
                 return;
             }
 
@@ -3435,6 +3472,8 @@ public class GuiService implements Listener {
         boolean foundItems = false;
         SellResult totalResult = new SellResult();
         List<ItemStack> returnedOverflow = new ArrayList<>();
+        Map<Integer, ItemStack> originalItems = new HashMap<>();
+        Map<Integer, SellResult> soldSlots = new HashMap<>();
         SellProcessingContext context = new SellProcessingContext();
         int storageSlots = Math.min(PLAYER_STORAGE_SLOT_COUNT, inventory.getSize());
 
@@ -3451,11 +3490,8 @@ public class GuiService implements Listener {
             }
 
             totalResult.merge(result);
-            inventory.setItem(slot, null);
-            if (!result.returnedItems.isEmpty()) {
-                inventory.setItem(slot, result.returnedItems.getFirst());
-                returnedOverflow.addAll(result.returnedItems.subList(1, result.returnedItems.size()));
-            }
+            originalItems.put(slot, item.clone());
+            soldSlots.put(slot, result);
         }
 
         if (!foundItems) {
@@ -3465,7 +3501,20 @@ public class GuiService implements Listener {
             return;
         }
 
-        finishSellFromGui(player, totalResult, returnedOverflow);
+        if (!beforeSale(player, FoShopSaleSource.SELL_ALL, totalResult)) return;
+        if (!player.isOnline() || originalItems.entrySet().stream()
+                .anyMatch(entry -> !sameStack(entry.getValue(), inventory.getItem(entry.getKey())))) {
+            abortChangedSale(player);
+            return;
+        }
+        for (Map.Entry<Integer, SellResult> entry : soldSlots.entrySet()) {
+            int slot = entry.getKey();
+            List<ItemStack> returned = entry.getValue().returnedItems;
+            inventory.setItem(slot, returned.isEmpty() ? null : returned.getFirst());
+            if (returned.size() > 1) returnedOverflow.addAll(returned.subList(1, returned.size()));
+        }
+
+        finishSellFromGui(player, FoShopSaleSource.SELL_ALL, totalResult, returnedOverflow);
     }
 
     public void sellHand(Player player) {
@@ -3490,12 +3539,18 @@ public class GuiService implements Listener {
             return;
         }
 
+        if (!beforeSale(player, FoShopSaleSource.SELL_HAND, result)) return;
+        if (!player.isOnline() || !sameStack(hand, inventory.getItemInMainHand())) {
+            abortChangedSale(player);
+            return;
+        }
+
         inventory.setItemInMainHand(null);
         List<ItemStack> returned = new ArrayList<>(result.returnedItems);
         if (!returned.isEmpty()) {
             inventory.setItemInMainHand(returned.removeFirst());
         }
-        finishSellFromGui(player, result, returned);
+        finishSellFromGui(player, FoShopSaleSource.SELL_HAND, result, returned);
     }
 
     private boolean startDirectSell(Player player) {
@@ -3528,8 +3583,10 @@ public class GuiService implements Listener {
         return true;
     }
 
-    private void sellFromGui(Player player, Inventory inventory) {
+    private void sellFromGui(Player player, Inventory inventory, boolean closing) {
         List<ItemStack> snapshot = new ArrayList<>();
+
+        Map<Integer, ItemStack> originalItems = new HashMap<>();
 
         for (int slot : sellGuiInputSlots(inventory)) {
             ItemStack item = inventory.getItem(slot);
@@ -3537,7 +3594,7 @@ public class GuiService implements Listener {
                 continue;
             }
             snapshot.add(item.clone());
-            inventory.setItem(slot, null);
+            originalItems.put(slot, item.clone());
         }
 
         if (snapshot.isEmpty()) {
@@ -3557,10 +3614,55 @@ public class GuiService implements Listener {
             returned.addAll(result.returnedItems);
         }
 
-        finishSellFromGui(player, totalResult, returned);
+        if (!beforeSale(player, FoShopSaleSource.SELL_GUI, totalResult)) {
+            if (closing || player.getOpenInventory().getTopInventory() != inventory) {
+                returnUnsoldItems(player, inventory);
+            }
+            return;
+        }
+        if (!player.isOnline() || originalItems.entrySet().stream()
+                .anyMatch(entry -> !sameStack(entry.getValue(), inventory.getItem(entry.getKey())))) {
+            abortChangedSale(player);
+            if (closing || player.getOpenInventory().getTopInventory() != inventory) {
+                returnUnsoldItems(player, inventory);
+            }
+            return;
+        }
+        for (int slot : originalItems.keySet()) inventory.setItem(slot, null);
+
+        finishSellFromGui(player, FoShopSaleSource.SELL_GUI, totalResult, returned);
     }
 
-    private void finishSellFromGui(Player player, SellResult totalResult, List<ItemStack> returned) {
+    private boolean beforeSale(Player player, FoShopSaleSource source, SellResult result) {
+        if (result.soldUnits <= 0) return true;
+        FoShopPreSaleEvent event = new FoShopPreSaleEvent(player, source, result.soldItems,
+                result.soldUnits, result.earned);
+        Bukkit.getPluginManager().callEvent(event);
+        boolean blockedGamemode = !event.isCancelled() && player.isOnline() && denyBlockedSellGamemode(player);
+        boolean economyAvailable = plugin.getEconomyService().isAvailable();
+        if (!event.isCancelled() && player.isOnline() && !blockedGamemode && economyAvailable) return true;
+        sellingInProgress.remove(player.getUniqueId());
+        if (event.isCancelled()) {
+            plugin.getSounds().play(player, "sell.failure");
+        } else if (player.isOnline() && !blockedGamemode && !economyAvailable) {
+            plugin.sendConfigured(player, "no-economy");
+            plugin.getSounds().play(player, "sell.failure");
+        }
+        return false;
+    }
+
+    private boolean sameStack(ItemStack expected, ItemStack actual) {
+        return expected != null && actual != null && expected.getAmount() == actual.getAmount()
+                && expected.isSimilar(actual);
+    }
+
+    private void abortChangedSale(Player player) {
+        sellingInProgress.remove(player.getUniqueId());
+        plugin.sendConfigured(player, "transaction-failed");
+        plugin.getSounds().play(player, "sell.failure");
+    }
+
+    private void finishSellFromGui(Player player, FoShopSaleSource source, SellResult totalResult, List<ItemStack> returned) {
         try {
             if (!player.isOnline()) {
                 dropSellItems(player, returned);
@@ -3585,6 +3687,8 @@ public class GuiService implements Listener {
                 if (overflowed) {
                     plugin.sendConfigured(player, "sellgui-inventory-full");
                 }
+                Bukkit.getPluginManager().callEvent(new FoShopSaleCompletedEvent(player, source,
+                        totalResult.soldItems, totalResult.soldUnits, totalResult.earned));
                 sendSellSuccess(player, totalResult);
                 plugin.getSounds().play(player, "sell.success");
                 transactionLogger.write(player, totalResult.soldUnits, formatSellMoney(totalResult.earned), buildSoldList(totalResult));
@@ -4035,7 +4139,7 @@ public class GuiService implements Listener {
         if (!sellingInProgress.add(player.getUniqueId())) {
             return;
         }
-        sellFromGui(player, top);
+        sellFromGui(player, top, true);
     }
 
     private void runSyncIfEnabled(Runnable task) {
@@ -5161,7 +5265,11 @@ public class GuiService implements Listener {
             if (item == null || item.getType() == Material.AIR) {
                 continue;
             }
-            plugin.getCore().inventoryDeposits().deposit(player, item, player.getLocation(), OverflowPolicy.DROP_OVERFLOW, false);
+            if (player.isOnline()) {
+                plugin.getCore().inventoryDeposits().deposit(player, item, player.getLocation(), OverflowPolicy.DROP_OVERFLOW, false);
+            } else {
+                dropSellItems(player, List.of(item.clone()));
+            }
             inventory.setItem(slot, null);
         }
     }

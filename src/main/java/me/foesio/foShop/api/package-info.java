@@ -2,7 +2,8 @@
  * Public FoShop developer API.
  *
  * <p>Other plugins can softdepend on FoShop and fetch {@link me.foesio.foShop.api.FoShopSellBoostApi}
- * from Bukkit's services manager:</p>
+ * or {@link me.foesio.foShop.api.FoShopMarketApi} from Bukkit's services manager.
+ * See the root API.md for event timing and consumer setup.</p>
  *
  * <pre>{@code
  * RegisteredServiceProvider<FoShopSellBoostApi> provider =

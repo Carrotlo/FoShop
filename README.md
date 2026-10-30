@@ -97,6 +97,8 @@ Main config areas: `colors`, `file-logging`, `native-dialogs`, `rotating-shop`, 
 
 `FoShopSellBoostApi` is registered with Bukkit's services manager and supports personal, team, and global multiplier boosts.
 
+`FoShopMarketApi` adds catalog and price queries, section opening, rotation control, and temporary price overrides. FoShop also exposes cancellable pre-trade and completed-trade events plus a rotation-changed event. See [public API source](src/main/java/me/foesio/foShop/api) for contracts and consumer setup.
+
 ~~~java
 FoShopSellBoostApi api = Bukkit.getServicesManager().load(FoShopSellBoostApi.class);
 if (api != null) {

@@ -23,6 +23,7 @@ import me.foesio.foShop.command.FoShopCommand;
 import me.foesio.foShop.command.FoWorthCommand;
 import me.foesio.foShop.api.DefaultFoShopSellBoostApi;
 import me.foesio.foShop.api.FoShopSellBoostApi;
+import me.foesio.foShop.api.FoShopMarketApi;
 import me.foesio.foShop.booster.SellBoosterBossbarService;
 import me.foesio.foShop.booster.SellBoosterService;
 import me.foesio.foShop.config.FoConfig;
@@ -80,6 +81,7 @@ public final class FoShop extends JavaPlugin {
     private SellBoosterService sellBoosterService;
     private SellBoosterBossbarService sellBoosterBossbarService;
     private FoShopSellBoostApi sellBoostApi;
+    private FoShopMarketApi marketApi;
     private WorthLoreService worthLoreService;
 
     @Override
@@ -110,6 +112,7 @@ public final class FoShop extends JavaPlugin {
         this.validationService = new ShopValidationService();
         this.safeYamlWriter = new SafeYamlWriter();
         this.shopManager = new ShopManager(this, validationService, safeYamlWriter, userDataStore);
+        getServer().getPluginManager().registerEvents(shopManager.temporarySellPrices(), this);
         this.shopManager.prepareResources(freshInstall);
         this.globalSellPriceService = new GlobalSellPriceService(this);
         this.rotatingShopService = new RotatingShopService(this);
@@ -121,13 +124,13 @@ public final class FoShop extends JavaPlugin {
         this.converter = new ShopGUIPlusConverter(this);
 
         this.guiService = new GuiService(this);
-        this.worthLoreService = WorthLoreService.create(this);
-
         reloadAll();
         sellBoosterService.start();
         sellBoosterBossbarService.start();
         sellBoostApi = new DefaultFoShopSellBoostApi(sellBoosterService);
         getServer().getServicesManager().register(FoShopSellBoostApi.class, sellBoostApi, this, ServicePriority.Normal);
+        marketApi = new DefaultFoShopMarketApi(this, shopManager.temporarySellPrices());
+        getServer().getServicesManager().register(FoShopMarketApi.class, marketApi, this, ServicePriority.Normal);
 
         if (!economyService.isAvailable()) {
             getLogger().warning("Vault economy not found. Buy/sell actions will be disabled until Vault + economy plugin are installed.");
@@ -148,6 +151,13 @@ public final class FoShop extends JavaPlugin {
 
     @Override
     public void onDisable() {
+        if (marketApi != null) {
+            getServer().getServicesManager().unregister(FoShopMarketApi.class, marketApi);
+            marketApi = null;
+        }
+        if (shopManager != null) {
+            shopManager.temporarySellPrices().clear();
+        }
         if (sellBoostApi != null) {
             getServer().getServicesManager().unregister(FoShopSellBoostApi.class, sellBoostApi);
             sellBoostApi = null;
@@ -188,6 +198,7 @@ public final class FoShop extends JavaPlugin {
         }
         AtomicReference<ShopManager.ReloadResult> shopReloadResult = new AtomicReference<>();
         FoReloadResult reload = FoReloadRegistry.create()
+                .add("core messages", this::reloadCoreMessages)
                 .add("config/guis", foConfig::reload)
                 .add("file logging", () -> {
                     if (fileLogger != null) {
@@ -195,7 +206,6 @@ public final class FoShop extends JavaPlugin {
                     }
                 })
                 .add("native dialog settings", () -> core.reloadNativeDialogSettings())
-                .add("core messages", this::reloadCoreMessages)
                 .add("sounds", () -> {
                     if (sounds != null && !sounds.reloadChecked()) {
                         throw new IllegalStateException("sounds.yml is invalid; prior sound cache remains active");
@@ -228,9 +238,11 @@ public final class FoShop extends JavaPlugin {
                     }
                 })
                 .add("worth lore", () -> {
-                    if (worthLoreService != null) {
-                        worthLoreService.reload();
+                    if (worthLoreService == null
+                            || worthLoreService == WorthLoreService.DisabledWorthLoreService.INSTANCE) {
+                        worthLoreService = WorthLoreService.create(this);
                     }
+                    worthLoreService.reload();
                 })
                 .add("economy", economyService::reload)
                 .add("permissions", permissionService::setup)
@@ -451,6 +463,10 @@ public final class FoShop extends JavaPlugin {
 
     public FoShopSellBoostApi getSellBoostApi() {
         return sellBoostApi;
+    }
+
+    public FoShopMarketApi getMarketApi() {
+        return marketApi;
     }
 
     public FoTeamsHook getFoTeamsHook() {

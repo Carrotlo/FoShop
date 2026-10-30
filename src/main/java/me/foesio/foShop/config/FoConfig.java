@@ -100,7 +100,7 @@ public class FoConfig {
         this.nativeDialogsEnabled = config.getBoolean("native-dialogs.enabled", true);
         this.nativeDialogsWarnOnFallback = config.getBoolean("native-dialogs.warn-on-fallback", true);
         this.globalSellPricesEnabled = config.getBoolean("global-sell-prices.enabled", false);
-        this.worthLoreEnabled = globalSellPricesEnabled && config.getBoolean("global-sell-prices.worth-lore.enabled", false);
+        this.worthLoreEnabled = configuredWorthLoreEnabled(config);
         String legacyWorthLoreFormat = config.getString("global-sell-prices.worth-lore.format", DEFAULT_WORTH_LORE_FORMAT);
         this.worthLoreFormat = rawMessage("worth-lore", legacyWorthLoreFormat);
 
@@ -325,18 +325,18 @@ public class FoConfig {
                         .append("  # Disabled by default. Shop section items always override global material prices.").append(System.lineSeparator())
                         .append("  enabled: false").append(System.lineSeparator())
                         .append("  worth-lore:").append(System.lineSeparator())
-                        .append("    # Shows packet-only worth lore in player inventories and physical containers. Requires PacketEvents.").append(System.lineSeparator())
+                        .append("    # Shows packet-only worth lore for priced items in inventories and SellGUI. Requires PacketEvents.").append(System.lineSeparator())
                         .append("    enabled: false").append(System.lineSeparator());
             } else if (!yaml.isConfigurationSection("global-sell-prices.worth-lore")) {
                 content = insertIntoTopLevelBlock(content, "global-sell-prices:",
                         "  worth-lore:" + System.lineSeparator()
-                                + "    # Shows packet-only worth lore in player inventories and physical containers. Requires PacketEvents." + System.lineSeparator()
+                                + "    # Shows packet-only worth lore for priced items in inventories and SellGUI. Requires PacketEvents." + System.lineSeparator()
                                 + "    enabled: false" + System.lineSeparator());
                 changed = true;
             } else {
                 if (!yaml.contains("global-sell-prices.worth-lore.enabled")) {
                     content = insertIntoIndentedBlock(content, "  worth-lore:",
-                            "    # Shows packet-only worth lore in player inventories and physical containers. Requires PacketEvents." + System.lineSeparator()
+                            "    # Shows packet-only worth lore for priced items in inventories and SellGUI. Requires PacketEvents." + System.lineSeparator()
                                     + "    enabled: false" + System.lineSeparator());
                     changed = true;
                 }
@@ -530,6 +530,10 @@ public class FoConfig {
 
     public boolean isWorthLoreEnabled() {
         return worthLoreEnabled;
+    }
+
+    static boolean configuredWorthLoreEnabled(FileConfiguration config) {
+        return config.getBoolean("global-sell-prices.worth-lore.enabled", false);
     }
 
     public boolean isWorthLoreConfiguredEnabled() {

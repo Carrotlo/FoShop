@@ -104,7 +104,8 @@ global-sell-prices:
   # Disabled by default. Shop section items always override global material prices.
   enabled: false
   worth-lore:
-    # Shows packet-only worth lore in player inventories and physical containers. Requires PacketEvents.
+    # Shows packet-only worth lore for priced items in player inventories, containers, and SellGUI. Requires PacketEvents.
+    # Works with shop prices even when global-sell-prices.enabled is false.
     enabled: false
 
 # SellGUI behavior settings. Visible layout lives in guis/sell-gui.yml.

@@ -10,6 +10,17 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class FoConfigPublicFeedbackTest {
 
     @Test
+    void worthLoreToggleWorksForShopPricesWithoutGlobalPrices() {
+        YamlConfiguration config = new YamlConfiguration();
+        config.set("global-sell-prices.enabled", false);
+        config.set("global-sell-prices.worth-lore.enabled", true);
+        assertTrue(FoConfig.configuredWorthLoreEnabled(config));
+
+        config.set("global-sell-prices.worth-lore.enabled", false);
+        assertFalse(FoConfig.configuredWorthLoreEnabled(config));
+    }
+
+    @Test
     void currentSchemaDoesNotResurrectRemovedTitleOrActionBar() {
         YamlConfiguration defaults = new YamlConfiguration();
         defaults.set("sellgui.titles.title", "English title");

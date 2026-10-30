@@ -25,6 +25,7 @@ import io.github.retrooper.packetevents.adventure.serializer.legacy.LegacyCompon
 import me.foesio.foShop.FoShop;
 import me.foesio.foShop.util.Text;
 import me.foesio.foShop.util.WorthPriceFormatter;
+import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
@@ -103,6 +104,9 @@ final class PacketEventsWorthLoreService extends PacketListenerAbstract implemen
         boolean previous = enabled;
         enabled = plugin.getFoConfig().isWorthLoreEnabled();
         format = plugin.getFoConfig().getWorthLoreFormat();
+        if (enabled && (format == null || format.isBlank())) {
+            plugin.getLogger().warning("Worth item lore is enabled, but messages.yml worth-lore is missing or empty.");
+        }
         invalidateCache();
         packetFailureLogged.set(false);
         if (previous || enabled) {
@@ -272,25 +276,25 @@ final class PacketEventsWorthLoreService extends PacketListenerAbstract implemen
         if (hashedSlots == null) {
             return;
         }
-        Set<ItemType> overlayTypes = state.interactionTypes(
+        Set<OverlayDescriptor> overlays = state.interactionOverlays(
                 wrapper.getWindowId(), wrapper.getSlot(), hashedSlots.keySet());
-        if (overlayTypes.isEmpty()) {
+        if (overlays.isEmpty()) {
             return;
         }
 
         Map<Integer, Optional<HashedStack>> cleanedSlots = new HashMap<>(hashedSlots.size());
         boolean changed = false;
         for (Map.Entry<Integer, Optional<HashedStack>> entry : hashedSlots.entrySet()) {
-            OverlayDescriptor overlay = hashedOverlay(entry.getValue(), overlayTypes);
-            Optional<HashedStack> cleaned = stripHashedLore(entry.getValue(), overlayTypes);
+            OverlayDescriptor overlay = hashedOverlay(entry.getValue(), overlays);
+            Optional<HashedStack> cleaned = stripHashedLore(entry.getValue(), overlay);
             cleanedSlots.put(entry.getKey(), cleaned);
             state.setSlot(wrapper.getWindowId(), entry.getKey(), overlay);
             changed |= !cleaned.equals(entry.getValue());
         }
 
         Optional<HashedStack> carried = wrapper.getCarriedHashedStack();
-        OverlayDescriptor carriedOverlay = hashedOverlay(carried, overlayTypes);
-        Optional<HashedStack> cleanedCarried = stripHashedLore(carried, overlayTypes);
+        OverlayDescriptor carriedOverlay = hashedOverlay(carried, overlays);
+        Optional<HashedStack> cleanedCarried = stripHashedLore(carried, carriedOverlay);
         state.setCursor(carriedOverlay);
         changed |= !cleanedCarried.equals(carried);
         if (!changed) {
@@ -328,27 +332,27 @@ final class PacketEventsWorthLoreService extends PacketListenerAbstract implemen
             ClientOverlayState state,
             Map<Integer, com.github.retrooper.packetevents.protocol.item.ItemStack> slots
     ) {
-        Set<ItemType> overlayTypes = state.interactionTypes(
+        Set<OverlayDescriptor> overlays = state.interactionOverlays(
                 wrapper.getWindowId(), wrapper.getSlot(), slots.keySet());
-        if (overlayTypes.isEmpty()) {
+        if (overlays.isEmpty()) {
             return;
         }
 
         Map<Integer, com.github.retrooper.packetevents.protocol.item.ItemStack> cleanedSlots = new HashMap<>(slots.size());
         boolean changed = false;
         for (Map.Entry<Integer, com.github.retrooper.packetevents.protocol.item.ItemStack> entry : slots.entrySet()) {
-            OverlayDescriptor overlay = fullStackOverlay(entry.getValue(), overlayTypes);
+            OverlayDescriptor overlay = fullStackOverlay(entry.getValue(), overlays);
             com.github.retrooper.packetevents.protocol.item.ItemStack cleaned = stripFullStackOverlay(
-                    entry.getValue(), overlayTypes);
+                    entry.getValue(), overlay);
             cleanedSlots.put(entry.getKey(), cleaned);
             state.setSlot(wrapper.getWindowId(), entry.getKey(), overlay);
             changed |= cleaned != entry.getValue();
         }
 
         com.github.retrooper.packetevents.protocol.item.ItemStack carried = wrapper.getCarriedItemStack();
-        OverlayDescriptor carriedOverlay = fullStackOverlay(carried, overlayTypes);
+        OverlayDescriptor carriedOverlay = fullStackOverlay(carried, overlays);
         com.github.retrooper.packetevents.protocol.item.ItemStack cleanedCarried = stripFullStackOverlay(
-                carried, overlayTypes);
+                carried, carriedOverlay);
         state.setCursor(carriedOverlay);
         changed |= cleanedCarried != carried;
         if (!changed) {
@@ -368,11 +372,11 @@ final class PacketEventsWorthLoreService extends PacketListenerAbstract implemen
         }
 
         ClientOverlayState state = overlayStates.get(player.getUniqueId());
-        Set<ItemType> overlayTypes = state == null
+        Set<OverlayDescriptor> overlays = state == null
                 ? Set.of()
-                : state.interactionTypes(0, wrapper.getSlot(), Set.of(wrapper.getSlot()));
-        OverlayDescriptor overlay = fullStackOverlay(packetItem, overlayTypes);
-        com.github.retrooper.packetevents.protocol.item.ItemStack clean = stripFullStackOverlay(packetItem, overlayTypes);
+                : state.interactionOverlays(0, wrapper.getSlot(), Set.of(wrapper.getSlot()));
+        OverlayDescriptor overlay = fullStackOverlay(packetItem, overlays);
+        com.github.retrooper.packetevents.protocol.item.ItemStack clean = stripFullStackOverlay(packetItem, overlay);
         if (state != null) {
             state.setSlot(0, wrapper.getSlot(), overlay);
         }
@@ -382,65 +386,82 @@ final class PacketEventsWorthLoreService extends PacketListenerAbstract implemen
         }
     }
 
-    private OverlayDescriptor hashedOverlay(Optional<HashedStack> optional, Set<ItemType> overlayTypes) {
+    static OverlayDescriptor hashedOverlay(Optional<HashedStack> optional, Set<OverlayDescriptor> overlays) {
         if (optional == null || optional.isEmpty()) {
             return null;
         }
         HashedStack stack = optional.get();
-        if (!overlayTypes.contains(stack.getItem())
-                || !stack.getComponents().getAddedComponents().containsKey(ComponentTypes.LORE)) {
-            return null;
-        }
-        return new OverlayDescriptor(stack.getItem());
+        Integer loreHash = stack.getComponents().getAddedComponents().get(ComponentTypes.LORE);
+        return overlays.stream()
+                .filter(overlay -> overlay.type().equals(stack.getItem())
+                        && overlay.decoratedLoreHash() != null
+                        && overlay.decoratedLoreHash().equals(loreHash))
+                .findFirst().orElse(null);
     }
 
-    private OverlayDescriptor fullStackOverlay(
+    static OverlayDescriptor fullStackOverlay(
             com.github.retrooper.packetevents.protocol.item.ItemStack packetItem,
-            Set<ItemType> overlayTypes
+            Set<OverlayDescriptor> overlays
     ) {
-        if (packetItem == null || packetItem.isEmpty() || !overlayTypes.contains(packetItem.getType())
-                || !packetItem.hasComponentPatches()
-                || !packetItem.getComponents().getPatches().containsKey(ComponentTypes.LORE)) {
+        if (packetItem == null || packetItem.isEmpty() || !packetItem.hasComponentPatches()) {
             return null;
         }
-        return new OverlayDescriptor(packetItem.getType());
+        ItemLore lore = packetItem.getComponent(ComponentTypes.LORE).orElse(null);
+        return overlays.stream()
+                .filter(overlay -> overlay.type().equals(packetItem.getType())
+                        && overlay.decoratedLore().equals(lore))
+                .findFirst().orElse(null);
     }
 
-    private Optional<HashedStack> stripHashedLore(Optional<HashedStack> optional, Set<ItemType> overlayTypes) {
+    static Optional<HashedStack> stripHashedLore(Optional<HashedStack> optional, OverlayDescriptor overlay) {
         if (optional == null || optional.isEmpty()) {
             return optional == null ? Optional.empty() : optional;
         }
+        if (overlay == null) {
+            return optional;
+        }
+
         HashedStack stack = optional.get();
-        if (!overlayTypes.contains(stack.getItem())) {
-            return optional;
-        }
-
-        HashedComponentPatchMap components = stack.getComponents();
-        Map<ComponentType<?>, Integer> added = components.getAddedComponents();
-        if (!added.containsKey(ComponentTypes.LORE)) {
-            return optional;
-        }
-
-        Map<ComponentType<?>, Integer> cleanedAdded = new HashMap<>(added);
-        cleanedAdded.remove(ComponentTypes.LORE);
-        HashedComponentPatchMap cleanedComponents = new HashedComponentPatchMap(
-                cleanedAdded, new HashSet<>(components.getRemovedComponents()));
+        HashedComponentPatchMap cleanedComponents = restoreHashedLoreComponents(
+                stack.getComponents(), overlay.originalLoreHash(), overlay.originalLoreRemoved());
         return Optional.of(new HashedStack(stack.getItem(), stack.getCount(), cleanedComponents));
+    }
+
+    static HashedComponentPatchMap restoreHashedLoreComponents(
+            HashedComponentPatchMap components, Integer originalLoreHash, boolean originalLoreRemoved
+    ) {
+        Map<ComponentType<?>, Integer> added = components.getAddedComponents();
+        Map<ComponentType<?>, Integer> cleanedAdded = new HashMap<>(added);
+        Set<ComponentType<?>> cleanedRemoved = new HashSet<>(components.getRemovedComponents());
+        if (originalLoreHash == null) {
+            cleanedAdded.remove(ComponentTypes.LORE);
+        } else {
+            cleanedAdded.put(ComponentTypes.LORE, originalLoreHash);
+        }
+        if (originalLoreRemoved) {
+            cleanedRemoved.add(ComponentTypes.LORE);
+        } else {
+            cleanedRemoved.remove(ComponentTypes.LORE);
+        }
+        return new HashedComponentPatchMap(cleanedAdded, cleanedRemoved);
     }
 
     private com.github.retrooper.packetevents.protocol.item.ItemStack stripFullStackOverlay(
             com.github.retrooper.packetevents.protocol.item.ItemStack packetItem,
-            Set<ItemType> overlayTypes
+            OverlayDescriptor overlay
     ) {
         if (packetItem == null || packetItem.isEmpty()) {
             return packetItem;
         }
         com.github.retrooper.packetevents.protocol.item.ItemStack clean = packetItem;
-        if (overlayTypes.contains(packetItem.getType()) && packetItem.hasComponentPatches()
-                && packetItem.getComponents().getPatches().containsKey(ComponentTypes.LORE)) {
+        if (overlay != null) {
             clean = packetItem.copy();
             PatchableComponentMap components = clean.getComponents().copy();
-            components.getPatches().remove(ComponentTypes.LORE);
+            if (overlay.originalLorePatch() == null) {
+                components.getPatches().remove(ComponentTypes.LORE);
+            } else {
+                components.set(ComponentTypes.LORE, overlay.originalLorePatch());
+            }
             clean.setComponents(components);
         }
 
@@ -559,10 +580,34 @@ final class PacketEventsWorthLoreService extends PacketListenerAbstract implemen
             return new PacketDecoration(cleanPacket, null);
         }
 
+        ItemLore decoratedLore = appendWorthLine(
+                cleanPacket.getComponent(ComponentTypes.LORE).orElse(ItemLore.EMPTY), line);
         com.github.retrooper.packetevents.protocol.item.ItemStack decorated = cleanPacket.copy();
-        decorated.setComponent(ComponentTypes.LORE, new ItemLore(List.of(
-                LEGACY_SERIALIZER.deserialize(line).decoration(TextDecoration.ITALIC, false))));
-        return new PacketDecoration(decorated, new OverlayDescriptor(packetItem.getType()));
+        decorated.setComponent(ComponentTypes.LORE, decoratedLore);
+        return new PacketDecoration(decorated, describeOverlay(cleanPacket, decorated, decoratedLore));
+    }
+
+    static ItemLore appendWorthLine(ItemLore original, String line) {
+        List<Component> lines = new ArrayList<>(original.getLines());
+        lines.add(LEGACY_SERIALIZER.deserialize(line).decoration(TextDecoration.ITALIC, false));
+        return new ItemLore(lines);
+    }
+
+    static OverlayDescriptor describeOverlay(
+            com.github.retrooper.packetevents.protocol.item.ItemStack cleanPacket,
+            com.github.retrooper.packetevents.protocol.item.ItemStack decorated,
+            ItemLore decoratedLore
+    ) {
+        HashedComponentPatchMap originalHashes = HashedStack.fromItemStack(cleanPacket).getComponents();
+        Integer decoratedLoreHash = HashedStack.fromItemStack(decorated).getComponents()
+                .getAddedComponents().get(ComponentTypes.LORE);
+        boolean hadLorePatch = cleanPacket.getComponents().getPatches().containsKey(ComponentTypes.LORE);
+        Optional<ItemLore> originalLorePatch = hadLorePatch
+                ? cleanPacket.getComponent(ComponentTypes.LORE) : null;
+        return new OverlayDescriptor(cleanPacket.getType(), decoratedLoreHash,
+                originalHashes.getAddedComponents().get(ComponentTypes.LORE),
+                originalHashes.getRemovedComponents().contains(ComponentTypes.LORE),
+                decoratedLore, originalLorePatch);
     }
 
     private String createWorthLine(ItemStack original) {
@@ -571,10 +616,6 @@ final class PacketEventsWorthLoreService extends PacketListenerAbstract implemen
         }
 
         refreshCacheRevision();
-        ItemMeta meta = original.getItemMeta();
-        if (meta != null && meta.hasLore() && meta.getLore() != null && !meta.getLore().isEmpty()) {
-            return null;
-        }
         ItemStack key = original.clone();
         key.setAmount(1);
         double unitWorth = cachedUnitWorth(key);
@@ -681,6 +722,7 @@ final class PacketEventsWorthLoreService extends PacketListenerAbstract implemen
         if (plugin.getGlobalSellPriceService() != null) {
             revision = revision * 31L + plugin.getGlobalSellPriceService().priceRevision();
         }
+        revision = revision * 31L + plugin.getShopManager().temporarySellPriceRevision();
         if (revision == cacheRevision) {
             return;
         }
@@ -844,7 +886,9 @@ final class PacketEventsWorthLoreService extends PacketListenerAbstract implemen
     ) {
     }
 
-    private record OverlayDescriptor(ItemType type) {
+    static record OverlayDescriptor(ItemType type, Integer decoratedLoreHash, Integer originalLoreHash,
+                                    boolean originalLoreRemoved, ItemLore decoratedLore,
+                                    Optional<ItemLore> originalLorePatch) {
     }
 
     private record SlotKey(int windowId, int slot) {
@@ -895,19 +939,19 @@ final class PacketEventsWorthLoreService extends PacketListenerAbstract implemen
             cursor = overlay;
         }
 
-        Set<ItemType> interactionTypes(int windowId, int clickedSlot, Set<Integer> changedSlots) {
-            Set<ItemType> types = new HashSet<>();
-            addType(types, cursor);
-            addType(types, slots.get(new SlotKey(windowId, clickedSlot)));
+        Set<OverlayDescriptor> interactionOverlays(int windowId, int clickedSlot, Set<Integer> changedSlots) {
+            Set<OverlayDescriptor> overlays = new HashSet<>();
+            addOverlay(overlays, cursor);
+            addOverlay(overlays, slots.get(new SlotKey(windowId, clickedSlot)));
             for (int slot : changedSlots) {
-                addType(types, slots.get(new SlotKey(windowId, slot)));
+                addOverlay(overlays, slots.get(new SlotKey(windowId, slot)));
             }
-            return types;
+            return overlays;
         }
 
-        private void addType(Set<ItemType> types, OverlayDescriptor overlay) {
+        private void addOverlay(Set<OverlayDescriptor> overlays, OverlayDescriptor overlay) {
             if (overlay != null) {
-                types.add(overlay.type());
+                overlays.add(overlay);
             }
         }
 

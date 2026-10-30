@@ -15,6 +15,9 @@ public interface WorthLoreService {
             packetEvents = plugin.getServer().getPluginManager().getPlugin("PacketEvents");
         }
         if (packetEvents == null || !packetEvents.isEnabled()) {
+            if (plugin.getConfig().getBoolean("global-sell-prices.worth-lore.enabled", false)) {
+                plugin.getLogger().warning("Worth item lore is enabled, but PacketEvents is missing or disabled. Install PacketEvents to show worth lore.");
+            }
             return DisabledWorthLoreService.INSTANCE;
         }
 

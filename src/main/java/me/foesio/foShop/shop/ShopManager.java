@@ -32,6 +32,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
+import java.util.OptionalDouble;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.UUID;
@@ -44,6 +45,7 @@ public class ShopManager {
     private final UserDataStore userDataStore;
 
     private volatile ShopLiveData live = ShopLiveData.empty();
+    private final TemporarySellPriceOverrides temporarySellPrices = new TemporarySellPriceOverrides();
     private final Map<UUID, Map<String, PurchaseLimitState>> purchaseLimits = new HashMap<>();
 
     public ShopManager(FoShop plugin, ShopValidationService validationService, SafeYamlWriter safeYamlWriter, UserDataStore userDataStore) {
@@ -483,6 +485,10 @@ public class ShopManager {
         return Optional.ofNullable(live.sections.get(id));
     }
 
+    public TemporarySellPriceOverrides temporarySellPrices() {
+        return temporarySellPrices;
+    }
+
     public double getHighestSellPrice(Material material) {
         double shopPrice = live.highestSellPrices.getOrDefault(material, -1D);
         if (shopPrice > 0D) {
@@ -502,6 +508,8 @@ public class ShopManager {
         if (stack == null || stack.getType() == Material.AIR) {
             return -1D;
         }
+
+        OptionalDouble temporaryPrice = temporarySellPrices.price(stack);
 
         double boosterMultiplier = plugin.getSellBoosterService() == null
                 ? 1D
@@ -535,7 +543,7 @@ public class ShopManager {
                 double combinedMultiplier = stackWithRotatingShop
                         ? multiplier * boosterMultiplier
                         : Math.max(multiplier, boosterMultiplier);
-                double offerPrice = offer.hasTemplate() ? offer.price() : offer.price() + itemModifierPrice;
+                double offerPrice = temporaryPrice.orElseGet(() -> offer.hasTemplate() ? offer.price() : offer.price() + itemModifierPrice);
                 best = Math.max(best, offerPrice * Math.max(1D, combinedMultiplier));
             }
         }
@@ -549,7 +557,7 @@ public class ShopManager {
                 double combinedMultiplier = stackWithRotatingShop
                         ? multiplier * boosterMultiplier
                         : Math.max(multiplier, boosterMultiplier);
-                best = globalPrice * Math.max(1D, combinedMultiplier);
+                best = temporaryPrice.orElse(globalPrice) * Math.max(1D, combinedMultiplier);
             }
         }
         return best < 0D ? -1D : best;
@@ -559,6 +567,8 @@ public class ShopManager {
         if (stack == null || stack.getType() == Material.AIR) {
             return -1D;
         }
+
+        OptionalDouble temporaryPrice = temporarySellPrices.price(stack);
 
         GlobalSellPriceService globalPrices = plugin.getGlobalSellPriceService();
         boolean globalEnabled = globalPrices != null && globalPrices.isEnabled();
@@ -578,19 +588,24 @@ public class ShopManager {
                         continue;
                     }
                 }
-                double offerPrice = offer.hasTemplate() ? offer.price() : offer.price() + itemModifierPrice;
+                double offerPrice = temporaryPrice.orElseGet(() -> offer.hasTemplate() ? offer.price() : offer.price() + itemModifierPrice);
                 best = Math.max(best, offerPrice);
             }
         }
 
         if (best < 0D && globalEnabled) {
-            best = globalPrices.price(stack);
+            double globalPrice = globalPrices.price(stack);
+            best = globalPrice > 0D ? temporaryPrice.orElse(globalPrice) : globalPrice;
         }
         return best < 0D ? -1D : best;
     }
 
     public long priceRevision() {
         return live.revision;
+    }
+
+    public long temporarySellPriceRevision() {
+        return temporarySellPrices.revision();
     }
 
     public Map<Material, Double> getHighestSellPrices() {
